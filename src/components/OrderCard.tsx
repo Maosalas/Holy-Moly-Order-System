@@ -1,7 +1,7 @@
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Trash2, MessageCircle, Calendar, Package } from "lucide-react";
+import { Edit, Trash2, MessageCircle, Calendar, Package, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface OrderCardProps {
@@ -20,6 +20,30 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
   const deliveryDate = new Date(order.deliveryDate);
   const isUpcoming = deliveryDate >= new Date();
 
+  const getStatusColor = (status: string) => {
+    const colors = {
+      "waiting-for-payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+      "partially-paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      "payment-received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      "confirmed": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+      "finished": "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+    };
+    return colors[status as keyof typeof colors] || colors["waiting-for-payment"];
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels = {
+      "waiting-for-payment": "Waiting for Payment",
+      "partially-paid": "Partially Paid",
+      "payment-received": "Payment Received",
+      "confirmed": "Confirmed",
+      "finished": "Finished",
+    };
+    return labels[status as keyof typeof labels] || status;
+  };
+
+  const remainingBalance = order.totalAmount - order.downPayment;
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-video w-full bg-muted flex items-center justify-center overflow-hidden">
@@ -34,11 +58,11 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
         )}
       </div>
       <CardHeader>
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg">{order.clientName}</CardTitle>
-          {order.needsCakeTopper && (
-            <Badge variant="secondary" className="text-xs">Topper</Badge>
-          )}
+          <Badge className={getStatusColor(order.status)}>
+            {getStatusLabel(order.status)}
+          </Badge>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />
@@ -48,10 +72,48 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground line-clamp-2">
           {order.orderDetails}
         </p>
+        
+        <div className="space-y-2 pt-2 border-t">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Total Amount:</span>
+            <span className="font-semibold flex items-center gap-1">
+              <DollarSign className="h-3 w-3" />
+              {order.totalAmount.toFixed(2)}
+            </span>
+          </div>
+          {order.downPayment > 0 && (
+            <>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Down Payment:</span>
+                <span className="text-green-600 dark:text-green-400 font-medium">
+                  ${order.downPayment.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Balance:</span>
+                <span className="font-semibold">
+                  ${remainingBalance.toFixed(2)}
+                </span>
+              </div>
+            </>
+          )}
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Payment Method:</span>
+            <Badge variant="secondary" className="text-xs capitalize">
+              {order.paymentMethod}
+            </Badge>
+          </div>
+        </div>
+
+        {order.needsCakeTopper && (
+          <Badge variant="outline" className="text-xs">
+            Needs Cake Topper
+          </Badge>
+        )}
       </CardContent>
       <CardFooter className="gap-2 flex-wrap">
         <Button

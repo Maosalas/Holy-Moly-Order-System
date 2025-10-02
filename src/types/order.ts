@@ -1,3 +1,12 @@
+export type OrderStatus = 
+  | "waiting-for-payment"
+  | "partially-paid"
+  | "payment-received"
+  | "confirmed"
+  | "finished";
+
+export type PaymentMethod = "cash" | "transfer" | "card" | "other";
+
 export interface Order {
   id: string;
   clientName: string;
@@ -6,5 +15,9 @@ export interface Order {
   deliveryDate: string;
   clientPhotos: string[];
   needsCakeTopper: boolean;
+  totalAmount: number;
+  paymentMethod: PaymentMethod;
+  downPayment: number;
+  status: OrderStatus;
   createdAt: string;
 }

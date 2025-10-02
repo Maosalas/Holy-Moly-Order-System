@@ -17,7 +17,16 @@ const Dashboard = () => {
     const loadOrders = () => {
       const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
       if (stored) {
-        setOrders(JSON.parse(stored));
+        const parsedOrders = JSON.parse(stored);
+        // Migrate old orders to new schema
+        const migratedOrders = parsedOrders.map((order: any) => ({
+          ...order,
+          totalAmount: order.totalAmount ?? 0,
+          paymentMethod: order.paymentMethod ?? "cash",
+          downPayment: order.downPayment ?? 0,
+          status: order.status ?? "waiting-for-payment",
+        }));
+        setOrders(migratedOrders);
       } else {
         setOrders([]);
       }
@@ -55,8 +64,8 @@ const Dashboard = () => {
     return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
   });
 
-  // Calculate total sales (assuming $50 per order for now since we don't have pricing)
-  const totalSales = monthOrders.length * 50;
+  // Calculate total sales using actual order amounts
+  const totalSales = monthOrders.reduce((sum, order) => sum + order.totalAmount, 0);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -147,8 +156,9 @@ const Dashboard = () => {
                     <TableHead className="font-semibold">Client</TableHead>
                     <TableHead className="font-semibold">Delivery Date</TableHead>
                     <TableHead className="font-semibold">Time Until</TableHead>
-                    <TableHead className="font-semibold">Details</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">Amount</TableHead>
+                    <TableHead className="font-semibold">Payment Status</TableHead>
+                    <TableHead className="font-semibold">Order Status</TableHead>
                     <TableHead className="text-right font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -156,6 +166,30 @@ const Dashboard = () => {
                   {upcomingOrders.map((order) => {
                     const timeUntil = getTimeUntilDelivery(order.deliveryDate);
                     const isUrgent = timeUntil === "Today" || timeUntil === "Tomorrow";
+                    const remainingBalance = order.totalAmount - order.downPayment;
+                    const paymentProgress = (order.downPayment / order.totalAmount) * 100;
+                    
+                    const getStatusColor = (status: string) => {
+                      const colors = {
+                        "waiting-for-payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+                        "partially-paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+                        "payment-received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+                        "confirmed": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+                        "finished": "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+                      };
+                      return colors[status as keyof typeof colors] || "";
+                    };
+
+                    const getStatusLabel = (status: string) => {
+                      const labels = {
+                        "waiting-for-payment": "Waiting",
+                        "partially-paid": "Partial",
+                        "payment-received": "Paid",
+                        "confirmed": "Confirmed",
+                        "finished": "Finished",
+                      };
+                      return labels[status as keyof typeof labels] || status;
+                    };
                     
                     return (
                       <TableRow 
@@ -203,25 +237,35 @@ const Dashboard = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="max-w-xs">
-                            <p className="text-sm line-clamp-2 text-muted-foreground">
-                              {order.orderDetails}
-                            </p>
+                          <div className="space-y-1">
+                            <div className="font-semibold">${order.totalAmount.toFixed(2)}</div>
+                            {order.downPayment > 0 && (
+                              <div className="text-xs text-muted-foreground">
+                                Paid: ${order.downPayment.toFixed(2)} ({paymentProgress.toFixed(0)}%)
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {order.needsCakeTopper && (
+                          <div className="space-y-1">
+                            {remainingBalance > 0 ? (
                               <Badge variant="outline" className="text-xs">
-                                Topper
+                                Balance: ${remainingBalance.toFixed(2)}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
+                                Fully Paid
                               </Badge>
                             )}
-                            {order.clientPhotos.length > 0 && (
-                              <Badge variant="outline" className="text-xs">
-                                {order.clientPhotos.length} {order.clientPhotos.length === 1 ? 'Photo' : 'Photos'}
-                              </Badge>
-                            )}
+                            <div className="text-xs text-muted-foreground capitalize">
+                              {order.paymentMethod}
+                            </div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(order.status)}>
+                            {getStatusLabel(order.status)}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button

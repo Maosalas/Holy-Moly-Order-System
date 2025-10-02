@@ -12,10 +12,34 @@ const ORDERS_STORAGE_KEY = "holy-moly-orders";
 const Orders = () => {
   const [orders, setOrders] = useState<Order[]>(() => {
     const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    
+    const parsedOrders = JSON.parse(stored);
+    // Migrate old orders to new schema
+    return parsedOrders.map((order: any) => ({
+      ...order,
+      totalAmount: order.totalAmount ?? 0,
+      paymentMethod: order.paymentMethod ?? "cash",
+      downPayment: order.downPayment ?? 0,
+      status: order.status ?? "waiting-for-payment",
+    }));
   });
 
   useEffect(() => {
+    // Migrate orders in localStorage
+    const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
+    if (stored) {
+      const parsedOrders = JSON.parse(stored);
+      const migratedOrders = parsedOrders.map((order: any) => ({
+        ...order,
+        totalAmount: order.totalAmount ?? 0,
+        paymentMethod: order.paymentMethod ?? "cash",
+        downPayment: order.downPayment ?? 0,
+        status: order.status ?? "waiting-for-payment",
+      }));
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(migratedOrders));
+    }
+    
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
   }, [orders]);
 

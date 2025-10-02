@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Order } from "@/types/order";
+import type { Order, OrderStatus, PaymentMethod } from "@/types/order";
 
 interface OrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "createdAt">) => void;
@@ -23,6 +24,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [deliveryDate, setDeliveryDate] = useState(initialData?.deliveryDate || "");
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
   const [clientPhotos, setClientPhotos] = useState<string[]>(initialData?.clientPhotos || []);
+  const [totalAmount, setTotalAmount] = useState(initialData?.totalAmount?.toString() || "");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialData?.paymentMethod || "cash");
+  const [downPayment, setDownPayment] = useState(initialData?.downPayment?.toString() || "0");
+  const [status, setStatus] = useState<OrderStatus>(initialData?.status || "waiting-for-payment");
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -43,10 +48,31 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate) {
+    if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate || !totalAmount) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const amount = parseFloat(totalAmount);
+    const downPmt = parseFloat(downPayment) || 0;
+
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid total amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (downPmt > amount) {
+      toast({
+        title: "Invalid down payment",
+        description: "Down payment cannot exceed total amount",
         variant: "destructive",
       });
       return;
@@ -59,6 +85,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       deliveryDate,
       clientPhotos,
       needsCakeTopper,
+      totalAmount: amount,
+      paymentMethod,
+      downPayment: downPmt,
+      status,
     });
 
     setClientName("");
@@ -67,6 +97,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     setDeliveryDate("");
     setClientPhotos([]);
     setNeedsCakeTopper(false);
+    setTotalAmount("");
+    setPaymentMethod("cash");
+    setDownPayment("0");
+    setStatus("waiting-for-payment");
   };
 
   return (
@@ -120,6 +154,68 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
               onChange={(e) => setDeliveryDate(e.target.value)}
               required
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="totalAmount">Total Amount *</Label>
+              <Input
+                id="totalAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={totalAmount}
+                onChange={(e) => setTotalAmount(e.target.value)}
+                placeholder="0.00"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="downPayment">Down Payment</Label>
+              <Input
+                id="downPayment"
+                type="number"
+                step="0.01"
+                min="0"
+                value={downPayment}
+                onChange={(e) => setDownPayment(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="paymentMethod">Payment Method</Label>
+              <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
+                <SelectTrigger id="paymentMethod">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value as OrderStatus)}>
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="waiting-for-payment">Waiting for Payment</SelectItem>
+                  <SelectItem value="partially-paid">Partially Paid</SelectItem>
+                  <SelectItem value="payment-received">Payment Received</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="finished">Finished</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
