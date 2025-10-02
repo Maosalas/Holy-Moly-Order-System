@@ -24,7 +24,7 @@ const Dashboard = () => {
           totalAmount: order.totalAmount ?? 0,
           paymentMethod: order.paymentMethod ?? "cash",
           downPayment: order.downPayment ?? 0,
-          status: order.status ?? "waiting-for-payment",
+          statuses: order.statuses ?? (order.status ? [order.status] : ["waiting-for-payment"]),
         }));
         setOrders(migratedOrders);
       } else {
@@ -154,11 +154,12 @@ const Dashboard = () => {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold">Client</TableHead>
-                    <TableHead className="font-semibold">Delivery Date</TableHead>
+                    <TableHead className="font-semibold">Delivery</TableHead>
                     <TableHead className="font-semibold">Time Until</TableHead>
                     <TableHead className="font-semibold">Amount</TableHead>
-                    <TableHead className="font-semibold">Payment Status</TableHead>
-                    <TableHead className="font-semibold">Order Status</TableHead>
+                    <TableHead className="font-semibold">Payment</TableHead>
+                    <TableHead className="font-semibold">Method</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="text-right font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -221,10 +222,9 @@ const Dashboard = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span>{new Date(order.deliveryDate).toLocaleDateString('en-US', { 
+                            <span className="text-sm">{new Date(order.deliveryDate).toLocaleDateString('en-US', { 
                               month: 'short', 
-                              day: 'numeric',
-                              year: 'numeric'
+                              day: 'numeric'
                             })}</span>
                           </div>
                         </TableCell>
@@ -241,7 +241,7 @@ const Dashboard = () => {
                             <div className="font-semibold">${order.totalAmount.toFixed(2)}</div>
                             {order.downPayment > 0 && (
                               <div className="text-xs text-muted-foreground">
-                                Paid: ${order.downPayment.toFixed(2)} ({paymentProgress.toFixed(0)}%)
+                                Paid: ${order.downPayment.toFixed(2)}
                               </div>
                             )}
                           </div>
@@ -249,23 +249,39 @@ const Dashboard = () => {
                         <TableCell>
                           <div className="space-y-1">
                             {remainingBalance > 0 ? (
-                              <Badge variant="outline" className="text-xs">
-                                Balance: ${remainingBalance.toFixed(2)}
-                              </Badge>
+                              <>
+                                <Badge variant="outline" className="text-xs">
+                                  ${remainingBalance.toFixed(2)}
+                                </Badge>
+                                <div className="text-xs text-muted-foreground">
+                                  {paymentProgress.toFixed(0)}% paid
+                                </div>
+                              </>
                             ) : (
                               <Badge variant="outline" className="text-xs bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
-                                Fully Paid
+                                Paid
                               </Badge>
                             )}
-                            <div className="text-xs text-muted-foreground capitalize">
-                              {order.paymentMethod}
-                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getStatusColor(order.status)}>
-                            {getStatusLabel(order.status)}
+                          <Badge variant="secondary" className="text-xs capitalize">
+                            {order.paymentMethod}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {order.statuses.slice(0, 2).map(status => (
+                              <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
+                                {getStatusLabel(status)}
+                              </Badge>
+                            ))}
+                            {order.statuses.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{order.statuses.length - 2}
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button

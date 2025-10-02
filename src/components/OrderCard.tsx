@@ -33,9 +33,9 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
 
   const getStatusLabel = (status: string) => {
     const labels = {
-      "waiting-for-payment": "Waiting for Payment",
-      "partially-paid": "Partially Paid",
-      "payment-received": "Payment Received",
+      "waiting-for-payment": "Waiting",
+      "partially-paid": "Partial",
+      "payment-received": "Paid",
       "confirmed": "Confirmed",
       "finished": "Finished",
     };
@@ -60,9 +60,13 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg">{order.clientName}</CardTitle>
-          <Badge className={getStatusColor(order.status)}>
-            {getStatusLabel(order.status)}
-          </Badge>
+          <div className="flex flex-wrap gap-1">
+            {order.statuses.map(status => (
+              <Badge key={status} className={getStatusColor(status)}>
+                {getStatusLabel(status)}
+              </Badge>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />

@@ -18,6 +18,6 @@ export interface Order {
   totalAmount: number;
   paymentMethod: PaymentMethod;
   downPayment: number;
-  status: OrderStatus;
+  statuses: OrderStatus[];
   createdAt: string;
 }

@@ -21,7 +21,7 @@ const Orders = () => {
       totalAmount: order.totalAmount ?? 0,
       paymentMethod: order.paymentMethod ?? "cash",
       downPayment: order.downPayment ?? 0,
-      status: order.status ?? "waiting-for-payment",
+      statuses: order.statuses ?? (order.status ? [order.status] : ["waiting-for-payment"]),
     }));
   });
 
@@ -35,7 +35,7 @@ const Orders = () => {
         totalAmount: order.totalAmount ?? 0,
         paymentMethod: order.paymentMethod ?? "cash",
         downPayment: order.downPayment ?? 0,
-        status: order.status ?? "waiting-for-payment",
+        statuses: order.statuses ?? (order.status ? [order.status] : ["waiting-for-payment"]),
       }));
       localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(migratedOrders));
     }

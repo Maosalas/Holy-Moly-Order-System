@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X } from "lucide-react";
@@ -27,7 +28,23 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [totalAmount, setTotalAmount] = useState(initialData?.totalAmount?.toString() || "");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialData?.paymentMethod || "cash");
   const [downPayment, setDownPayment] = useState(initialData?.downPayment?.toString() || "0");
-  const [status, setStatus] = useState<OrderStatus>(initialData?.status || "waiting-for-payment");
+  const [statuses, setStatuses] = useState<OrderStatus[]>(initialData?.statuses || ["waiting-for-payment"]);
+
+  const availableStatuses: { value: OrderStatus; label: string }[] = [
+    { value: "waiting-for-payment", label: "Waiting for Payment" },
+    { value: "partially-paid", label: "Partially Paid" },
+    { value: "payment-received", label: "Payment Received" },
+    { value: "confirmed", label: "Confirmed" },
+    { value: "finished", label: "Finished" },
+  ];
+
+  const toggleStatus = (status: OrderStatus) => {
+    setStatuses(prev => 
+      prev.includes(status)
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -88,7 +105,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       totalAmount: amount,
       paymentMethod,
       downPayment: downPmt,
-      status,
+      statuses: statuses.length > 0 ? statuses : ["waiting-for-payment"],
     });
 
     setClientName("");
@@ -100,7 +117,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     setTotalAmount("");
     setPaymentMethod("cash");
     setDownPayment("0");
-    setStatus("waiting-for-payment");
+    setStatuses(["waiting-for-payment"]);
   };
 
   return (
@@ -185,36 +202,36 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="paymentMethod">Payment Method</Label>
-              <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
-                <SelectTrigger id="paymentMethod">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="paymentMethod">Payment Method</Label>
+            <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
+              <SelectTrigger id="paymentMethod">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cash">Cash</SelectItem>
+                <SelectItem value="transfer">Bank Transfer</SelectItem>
+                <SelectItem value="card">Card</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
+          <div className="space-y-3">
+            <Label>Order Status (Select all that apply)</Label>
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={(value) => setStatus(value as OrderStatus)}>
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="waiting-for-payment">Waiting for Payment</SelectItem>
-                  <SelectItem value="partially-paid">Partially Paid</SelectItem>
-                  <SelectItem value="payment-received">Payment Received</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="finished">Finished</SelectItem>
-                </SelectContent>
-              </Select>
+              {availableStatuses.map(({ value, label }) => (
+                <div key={value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={value}
+                    checked={statuses.includes(value)}
+                    onCheckedChange={() => toggleStatus(value)}
+                  />
+                  <Label htmlFor={value} className="cursor-pointer font-normal">
+                    {label}
+                  </Label>
+                </div>
+              ))}
             </div>
           </div>
 
