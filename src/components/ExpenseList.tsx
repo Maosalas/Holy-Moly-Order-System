@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit } from "lucide-react";
+import { Trash2, Edit, ExternalLink } from "lucide-react";
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -45,13 +45,14 @@ const ExpenseList = ({ expenses, onEdit, onDelete }: ExpenseListProps) => {
           <div className="rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="font-semibold">Supermarket</TableHead>
-                  <TableHead className="font-semibold">Date</TableHead>
-                  <TableHead className="font-semibold">Amount</TableHead>
-                  <TableHead className="font-semibold">Card</TableHead>
-                  <TableHead className="text-right font-semibold">Actions</TableHead>
-                </TableRow>
+              <TableRow>
+                <TableHead className="font-semibold">Supermarket</TableHead>
+                <TableHead className="font-semibold">Date</TableHead>
+                <TableHead className="font-semibold">Amount</TableHead>
+                <TableHead className="font-semibold">Card</TableHead>
+                <TableHead className="font-semibold">Receipt</TableHead>
+                <TableHead className="text-right font-semibold">Actions</TableHead>
+              </TableRow>
               </TableHeader>
               <TableBody>
                 {expenses.map((expense) => (
@@ -71,6 +72,28 @@ const ExpenseList = ({ expenses, onEdit, onDelete }: ExpenseListProps) => {
                       <Badge variant="outline" className={getCardBadgeColor(expense.cardType)}>
                         {expense.cardType.toUpperCase()}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {expense.receiptUrl ? (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          asChild
+                          className="h-auto p-0"
+                        >
+                          <a
+                            href={expense.receiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1"
+                          >
+                            View Receipt
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No receipt</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">

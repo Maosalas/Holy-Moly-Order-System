@@ -20,6 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
   const [purchaseDate, setPurchaseDate] = useState(initialData?.purchaseDate || "");
   const [amount, setAmount] = useState(initialData?.amount?.toString() || "");
   const [cardType, setCardType] = useState<CardType>(initialData?.cardType || "visa");
+  const [receiptUrl, setReceiptUrl] = useState(initialData?.receiptUrl || "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +40,7 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
       purchaseDate,
       amount: parseFloat(amount),
       cardType,
+      receiptUrl: receiptUrl.trim() || undefined,
       createdAt: initialData?.createdAt || new Date().toISOString(),
     };
 
@@ -49,6 +51,7 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
       setPurchaseDate("");
       setAmount("");
       setCardType("visa");
+      setReceiptUrl("");
     }
   };
 
@@ -116,6 +119,20 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
             </SelectContent>
           </Select>
         </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="receiptUrl">Receipt URL (Optional)</Label>
+            <Input
+              id="receiptUrl"
+              type="url"
+              value={receiptUrl}
+              onChange={(e) => setReceiptUrl(e.target.value)}
+              placeholder="https://drive.google.com/file/..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Paste the link to your receipt (e.g., from Google Drive)
+            </p>
           </div>
 
           <div className="space-y-2">
