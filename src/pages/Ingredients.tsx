@@ -115,12 +115,11 @@ const Ingredients = () => {
       )}
 
       <DeleteConfirmDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        recipeName={
-          ingredients.find((i) => i.id === ingredientToDelete)?.name || ""
-        }
+        title="Delete Ingredient"
+        description={`Are you sure you want to delete "${ingredients.find((i) => i.id === ingredientToDelete)?.name || ""}"? This action cannot be undone.`}
       />
     </div>
   );

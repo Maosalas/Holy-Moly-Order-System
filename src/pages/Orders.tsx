@@ -139,12 +139,11 @@ const Orders = () => {
       )}
 
       <DeleteConfirmDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        recipeName={
-          orders.find((o) => o.id === orderToDelete)?.clientName || ""
-        }
+        title="Delete Order"
+        description={`Are you sure you want to delete the order for "${orders.find((o) => o.id === orderToDelete)?.clientName || ""}"? This action cannot be undone.`}
       />
     </div>
   );

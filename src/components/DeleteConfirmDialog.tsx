@@ -10,25 +10,27 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface DeleteConfirmDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
-  recipeName: string;
+  title: string;
+  description: string;
 }
 
 export const DeleteConfirmDialog = ({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
   onConfirm,
-  recipeName,
+  title,
+  description,
 }: DeleteConfirmDialogProps) => {
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Recipe</AlertDialogTitle>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{recipeName}"? This action cannot be undone.
+            {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

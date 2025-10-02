@@ -85,8 +85,7 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Total Amount:</span>
             <span className="font-semibold flex items-center gap-1">
-              <DollarSign className="h-3 w-3" />
-              {order.totalAmount.toFixed(2)}
+              ₡{order.totalAmount.toLocaleString()}
             </span>
           </div>
           {order.downPayment > 0 && (
@@ -94,13 +93,13 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Down Payment:</span>
                 <span className="text-green-600 dark:text-green-400 font-medium">
-                  ${order.downPayment.toFixed(2)}
+                  ₡{order.downPayment.toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Balance:</span>
                 <span className="font-semibold">
-                  ${remainingBalance.toFixed(2)}
+                  ₡{remainingBalance.toLocaleString()}
                 </span>
               </div>
             </>

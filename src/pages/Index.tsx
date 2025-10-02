@@ -119,12 +119,11 @@ const Index = () => {
       )}
 
       <DeleteConfirmDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        recipeName={
-          recipes.find((r) => r.id === recipeToDelete)?.name || ""
-        }
+        title="Delete Recipe"
+        description={`Are you sure you want to delete "${recipes.find((r) => r.id === recipeToDelete)?.name || ""}"? This action cannot be undone.`}
       />
     </div>
   );

@@ -118,16 +118,15 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
                 <TableCell>
                   <div className="space-y-1">
                     <div className="flex items-center gap-1 font-semibold">
-                      <DollarSign className="h-3 w-3" />
-                      {order.totalAmount.toFixed(2)}
+                      ₡{order.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     {order.downPayment > 0 && (
                       <>
                         <div className="text-xs text-green-600 dark:text-green-400">
-                          Paid: ${order.downPayment.toFixed(2)}
+                          Paid: ₡{order.downPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Balance: ${remainingBalance.toFixed(2)} ({(100-paymentProgress).toFixed(0)}%)
+                          Balance: ₡{remainingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({(100-paymentProgress).toFixed(0)}%)
                         </div>
                       </>
                     )}

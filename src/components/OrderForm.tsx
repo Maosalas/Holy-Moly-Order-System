@@ -175,7 +175,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="totalAmount">Total Amount *</Label>
+              <Label htmlFor="totalAmount">Total Amount (₡) *</Label>
               <Input
                 id="totalAmount"
                 type="number"
@@ -189,7 +189,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="downPayment">Down Payment</Label>
+              <Label htmlFor="downPayment">Down Payment (₡)</Label>
               <Input
                 id="downPayment"
                 type="number"

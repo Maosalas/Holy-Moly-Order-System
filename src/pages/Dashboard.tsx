@@ -119,7 +119,7 @@ const Dashboard = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalSales.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₡{totalSales.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               Revenue for this month
             </p>
@@ -236,10 +236,10 @@ const Dashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="font-semibold">${order.totalAmount.toFixed(2)}</div>
+                            <div className="font-semibold">₡{order.totalAmount.toLocaleString()}</div>
                             {order.downPayment > 0 && remainingBalance > 0 && (
                               <div className="text-xs text-muted-foreground">
-                                Balance: ${remainingBalance.toFixed(2)}
+                                Balance: ₡{remainingBalance.toLocaleString()}
                               </div>
                             )}
                           </div>
