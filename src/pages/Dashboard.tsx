@@ -157,7 +157,6 @@ const Dashboard = () => {
                     <TableHead className="font-semibold">Delivery</TableHead>
                     <TableHead className="font-semibold">Time Until</TableHead>
                     <TableHead className="font-semibold">Amount</TableHead>
-                    <TableHead className="font-semibold">Payment</TableHead>
                     <TableHead className="font-semibold">Method</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="text-right font-semibold">Actions</TableHead>
@@ -168,7 +167,6 @@ const Dashboard = () => {
                     const timeUntil = getTimeUntilDelivery(order.deliveryDate);
                     const isUrgent = timeUntil === "Today" || timeUntil === "Tomorrow";
                     const remainingBalance = order.totalAmount - order.downPayment;
-                    const paymentProgress = (order.downPayment / order.totalAmount) * 100;
                     
                     const getStatusColor = (status: string) => {
                       const colors = {
@@ -239,28 +237,10 @@ const Dashboard = () => {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-semibold">${order.totalAmount.toFixed(2)}</div>
-                            {order.downPayment > 0 && (
+                            {order.downPayment > 0 && remainingBalance > 0 && (
                               <div className="text-xs text-muted-foreground">
-                                Paid: ${order.downPayment.toFixed(2)}
+                                Balance: ${remainingBalance.toFixed(2)}
                               </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {remainingBalance > 0 ? (
-                              <>
-                                <Badge variant="outline" className="text-xs">
-                                  ${remainingBalance.toFixed(2)}
-                                </Badge>
-                                <div className="text-xs text-muted-foreground">
-                                  {paymentProgress.toFixed(0)}% paid
-                                </div>
-                              </>
-                            ) : (
-                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
-                                Paid
-                              </Badge>
                             )}
                           </div>
                         </TableCell>
