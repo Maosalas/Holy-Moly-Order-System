@@ -38,6 +38,7 @@ const Dashboard = () => {
           chargeAmount: order.chargeAmount ?? order.totalAmount ?? 0,
           paymentMethod: order.paymentMethod ?? "cash",
           downPayment: order.downPayment ?? 0,
+          selectedSupplies: order.selectedSupplies ?? [],
           suppliesNeeded: order.suppliesNeeded ?? "",
           statuses: order.statuses ?? (order.status ? [order.status] : ["waiting-for-payment"]),
         }));
