@@ -175,6 +175,17 @@ const Dashboard = () => {
                     className="h-8 text-xs"
                     placeholder="To"
                   />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full h-7 text-xs"
+                    onClick={() => {
+                      setOrdersStartDate("");
+                      setOrdersEndDate("");
+                    }}
+                  >
+                    Reset
+                  </Button>
                 </div>
               </PopoverContent>
             </Popover>
@@ -211,6 +222,17 @@ const Dashboard = () => {
                     className="h-8 text-xs"
                     placeholder="To"
                   />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full h-7 text-xs"
+                    onClick={() => {
+                      setSalesStartDate("");
+                      setSalesEndDate("");
+                    }}
+                  >
+                    Reset
+                  </Button>
                 </div>
               </PopoverContent>
             </Popover>
@@ -247,6 +269,17 @@ const Dashboard = () => {
                     className="h-8 text-xs"
                     placeholder="To"
                   />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full h-7 text-xs"
+                    onClick={() => {
+                      setExpensesStartDate("");
+                      setExpensesEndDate("");
+                    }}
+                  >
+                    Reset
+                  </Button>
                 </div>
               </PopoverContent>
             </Popover>
