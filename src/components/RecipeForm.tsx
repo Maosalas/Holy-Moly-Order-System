@@ -1,0 +1,264 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, X } from "lucide-react";
+import { Recipe, RecipeIngredient, RecipeFormData } from "@/types/recipe";
+import { Ingredient } from "@/types/ingredient";
+import { toast } from "@/hooks/use-toast";
+
+interface RecipeFormProps {
+  recipe?: Recipe;
+  onSubmit: (data: RecipeFormData) => void;
+  onCancel: () => void;
+}
+
+export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
+  const [name, setName] = useState(recipe?.name || "");
+  const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(
+    recipe?.ingredients || []
+  );
+  const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("holy-moly-ingredients");
+    const ingredients = stored ? JSON.parse(stored) : [];
+    setAvailableIngredients(ingredients);
+  }, []);
+
+  const calculateTotalCost = (ingredients: RecipeIngredient[]) => {
+    return ingredients.reduce((sum, ing) => sum + ing.cost, 0);
+  };
+
+  const addIngredient = () => {
+    if (availableIngredients.length === 0) {
+      toast({
+        title: "No Ingredients Available",
+        description: "Please add ingredients first in the Ingredients page",
+        variant: "destructive",
+      });
+      return;
+    }
+    setRecipeIngredients([
+      ...recipeIngredients,
+      {
+        id: crypto.randomUUID(),
+        ingredientId: "",
+        ingredientName: "",
+        quantity: 0,
+        units: "",
+        cost: 0,
+      },
+    ]);
+  };
+
+  const removeIngredient = (id: string) => {
+    setRecipeIngredients(recipeIngredients.filter((ing) => ing.id !== id));
+  };
+
+  const updateIngredientSelection = (id: string, ingredientId: string) => {
+    const selectedIngredient = availableIngredients.find((i) => i.id === ingredientId);
+    if (!selectedIngredient) return;
+
+    setRecipeIngredients(
+      recipeIngredients.map((ing) =>
+        ing.id === id
+          ? {
+              ...ing,
+              ingredientId: selectedIngredient.id,
+              ingredientName: selectedIngredient.name,
+              units: selectedIngredient.units,
+              cost: 0, // Will be calculated when quantity is set
+            }
+          : ing
+      )
+    );
+  };
+
+  const updateIngredientQuantity = (id: string, quantity: number) => {
+    setRecipeIngredients(
+      recipeIngredients.map((ing) => {
+        if (ing.id === id) {
+          const baseIngredient = availableIngredients.find((i) => i.id === ing.ingredientId);
+          if (!baseIngredient) return ing;
+          
+          // Calculate cost: (quantity / qtyProvider) * cost
+          const cost = (quantity / baseIngredient.qtyProvider) * baseIngredient.cost;
+          
+          return { ...ing, quantity, cost };
+        }
+        return ing;
+      })
+    );
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!name.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Recipe name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (recipeIngredients.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "At least one ingredient is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const hasInvalidIngredients = recipeIngredients.some(
+      (ing) => !ing.ingredientId || ing.quantity <= 0
+    );
+
+    if (hasInvalidIngredients) {
+      toast({
+        title: "Validation Error",
+        description: "All ingredients must have a selection and quantity",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const totalCost = calculateTotalCost(recipeIngredients);
+
+    onSubmit({
+      name: name.trim(),
+      ingredients: recipeIngredients,
+      totalCost,
+    });
+  };
+
+  const totalCost = calculateTotalCost(recipeIngredients);
+
+  return (
+    <Card className="w-full max-w-3xl mx-auto shadow-lg">
+      <CardHeader>
+        <CardTitle className="text-2xl">
+          {recipe ? "Edit Recipe" : "Add New Recipe"}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="name">Recipe Name *</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter recipe name"
+              required
+            />
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Ingredients *</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addIngredient}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Ingredient
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {recipeIngredients.map((ingredient) => (
+                <div key={ingredient.id} className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <Select
+                      value={ingredient.ingredientId}
+                      onValueChange={(value) =>
+                        updateIngredientSelection(ingredient.id, value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ingredient" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableIngredients.map((ing) => (
+                          <SelectItem key={ing.id} value={ing.id}>
+                            {ing.name} ({ing.units})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="w-28">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={ingredient.quantity || ""}
+                      onChange={(e) =>
+                        updateIngredientQuantity(
+                          ingredient.id,
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      placeholder="Qty"
+                      required
+                      disabled={!ingredient.ingredientId}
+                    />
+                  </div>
+                  <div className="w-24">
+                    <Input
+                      value={ingredient.units}
+                      placeholder="Unit"
+                      disabled
+                    />
+                  </div>
+                  <div className="w-28">
+                    <Input
+                      value={ingredient.cost.toFixed(2)}
+                      placeholder="Cost"
+                      disabled
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeIngredient(ingredient.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2 p-4 bg-muted rounded-lg">
+            <div className="flex justify-between items-center">
+              <Label className="text-lg font-semibold">Total Cost:</Label>
+              <span className="text-2xl font-bold text-primary">
+                ${totalCost.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end pt-4">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              {recipe ? "Update Recipe" : "Create Recipe"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
