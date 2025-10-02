@@ -13,10 +13,37 @@ const Dashboard = () => {
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
-    if (stored) {
-      setOrders(JSON.parse(stored));
-    }
+    const loadOrders = () => {
+      const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
+      if (stored) {
+        setOrders(JSON.parse(stored));
+      } else {
+        setOrders([]);
+      }
+    };
+
+    // Load orders on mount
+    loadOrders();
+
+    // Listen for visibility changes (when user switches tabs/routes)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadOrders();
+      }
+    };
+
+    // Listen for focus (when window gets focus)
+    const handleFocus = () => {
+      loadOrders();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const currentMonth = new Date().getMonth();
