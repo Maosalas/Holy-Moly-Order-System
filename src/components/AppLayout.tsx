@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt } from "lucide-react";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +19,7 @@ const menuItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Recipes", url: "/recipes", icon: ChefHat },
   { title: "Ingredients", url: "/ingredients", icon: Package },
+  { title: "Supplies", url: "/supplies", icon: Box },
   { title: "Orders", url: "/orders", icon: ShoppingBag },
   { title: "Expenses", url: "/expenses", icon: Receipt },
 ];
