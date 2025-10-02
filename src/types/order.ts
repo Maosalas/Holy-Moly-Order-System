@@ -15,9 +15,11 @@ export interface Order {
   deliveryDate: string;
   clientPhotos: string[];
   needsCakeTopper: boolean;
-  totalAmount: number;
+  costAmount: number;
+  chargeAmount: number;
   paymentMethod: PaymentMethod;
   downPayment: number;
+  suppliesNeeded: string;
   statuses: OrderStatus[];
   createdAt: string;
 }

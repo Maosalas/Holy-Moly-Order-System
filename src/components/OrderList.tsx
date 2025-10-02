@@ -71,8 +71,8 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
         </TableHeader>
         <TableBody>
           {orders.map((order) => {
-            const remainingBalance = order.totalAmount - order.downPayment;
-            const paymentProgress = (order.downPayment / order.totalAmount) * 100;
+            const remainingBalance = order.chargeAmount - order.downPayment;
+            const paymentProgress = (order.downPayment / order.chargeAmount) * 100;
 
             return (
               <TableRow key={order.id} className="hover:bg-muted/30">
@@ -112,7 +112,7 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
                 <TableCell>
                   <div className="space-y-1">
                     <div className="flex items-center gap-1 font-semibold">
-                      ₡{order.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ₡{order.chargeAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     {order.downPayment > 0 && (
                       <>

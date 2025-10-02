@@ -34,9 +34,11 @@ const Dashboard = () => {
         // Migrate old orders to new schema
         const migratedOrders = parsedOrders.map((order: any) => ({
           ...order,
-          totalAmount: order.totalAmount ?? 0,
+          costAmount: order.costAmount ?? 0,
+          chargeAmount: order.chargeAmount ?? order.totalAmount ?? 0,
           paymentMethod: order.paymentMethod ?? "cash",
           downPayment: order.downPayment ?? 0,
+          suppliesNeeded: order.suppliesNeeded ?? "",
           statuses: order.statuses ?? (order.status ? [order.status] : ["waiting-for-payment"]),
         }));
         setOrders(migratedOrders);
@@ -106,7 +108,7 @@ const Dashboard = () => {
   });
 
   // Calculate totals
-  const totalSales = filteredSalesOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const totalSales = filteredSalesOrders.reduce((sum, order) => sum + order.chargeAmount, 0);
   const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   const today = new Date();
@@ -266,7 +268,7 @@ const Dashboard = () => {
                   {upcomingOrders.map((order) => {
                     const timeUntil = getTimeUntilDelivery(order.deliveryDate);
                     const isUrgent = timeUntil === "Today" || timeUntil === "Tomorrow";
-                    const remainingBalance = order.totalAmount - order.downPayment;
+                    const remainingBalance = order.chargeAmount - order.downPayment;
                     
                     const getStatusColor = (status: string) => {
                       const colors = {
@@ -336,7 +338,7 @@ const Dashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="font-semibold">₡{order.totalAmount.toLocaleString()}</div>
+                            <div className="font-semibold">₡{order.chargeAmount.toLocaleString()}</div>
                             {order.downPayment > 0 && remainingBalance > 0 && (
                               <div className="text-xs text-muted-foreground">
                                 Balance: ₡{remainingBalance.toLocaleString()}

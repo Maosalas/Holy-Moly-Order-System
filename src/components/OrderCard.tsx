@@ -43,7 +43,7 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
     return labels[status as keyof typeof labels] || status;
   };
 
-  const remainingBalance = order.totalAmount - order.downPayment;
+  const remainingBalance = order.chargeAmount - order.downPayment;
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -92,7 +92,7 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Total Amount:</span>
             <span className="font-semibold flex items-center gap-1">
-              ₡{order.totalAmount.toLocaleString()}
+              ₡{order.chargeAmount.toLocaleString()}
             </span>
           </div>
           {order.downPayment > 0 && (

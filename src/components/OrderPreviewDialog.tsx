@@ -11,7 +11,7 @@ interface OrderPreviewDialogProps {
 
 export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
   const deliveryDate = new Date(order.deliveryDate);
-  const remainingBalance = order.totalAmount - order.downPayment;
+  const remainingBalance = order.chargeAmount - order.downPayment;
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -114,7 +114,7 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">Total Amount</p>
                 </div>
-                <p className="text-lg font-bold">₡{order.totalAmount.toLocaleString()}</p>
+                <p className="text-lg font-bold">₡{order.chargeAmount.toLocaleString()}</p>
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">

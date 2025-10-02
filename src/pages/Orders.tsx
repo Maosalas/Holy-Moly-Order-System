@@ -18,9 +18,11 @@ const Orders = () => {
     // Migrate old orders to new schema
     return parsedOrders.map((order: any) => ({
       ...order,
-      totalAmount: order.totalAmount ?? 0,
+      costAmount: order.costAmount ?? 0,
+      chargeAmount: order.chargeAmount ?? order.totalAmount ?? 0,
       paymentMethod: order.paymentMethod ?? "cash",
       downPayment: order.downPayment ?? 0,
+      suppliesNeeded: order.suppliesNeeded ?? "",
       statuses: order.statuses ?? (order.status ? [order.status] : ["waiting-for-payment"]),
     }));
   });
@@ -32,9 +34,11 @@ const Orders = () => {
       const parsedOrders = JSON.parse(stored);
       const migratedOrders = parsedOrders.map((order: any) => ({
         ...order,
-        totalAmount: order.totalAmount ?? 0,
+        costAmount: order.costAmount ?? 0,
+        chargeAmount: order.chargeAmount ?? order.totalAmount ?? 0,
         paymentMethod: order.paymentMethod ?? "cash",
         downPayment: order.downPayment ?? 0,
+        suppliesNeeded: order.suppliesNeeded ?? "",
         statuses: order.statuses ?? (order.status ? [order.status] : ["waiting-for-payment"]),
       }));
       localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(migratedOrders));
