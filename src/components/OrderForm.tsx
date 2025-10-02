@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { TopperUploadDialog } from "./TopperUploadDialog";
 import type { Order, OrderStatus, PaymentMethod } from "@/types/order";
 
 interface OrderFormProps {
@@ -286,6 +287,18 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
               Needs Cake Topper
             </Label>
           </div>
+
+          {needsCakeTopper && (
+            <div className="p-4 border rounded-lg bg-muted/50">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-base font-semibold">Cake Topper Details</Label>
+                <TopperUploadDialog clientName={clientName || "Client"} />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Click the button above to add topper reference photos and details
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <Button type="submit" className="flex-1">
