@@ -3,9 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
-import { DollarSign, ShoppingBag, Phone, Image as ImageIcon, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DollarSign, ShoppingBag, Phone, Calendar, ArrowRight, Package } from "lucide-react";
 import type { Order } from "@/types/order";
 
 const ORDERS_STORAGE_KEY = "holy-moly-orders";
@@ -64,30 +63,19 @@ const Dashboard = () => {
   
   const upcomingOrders = orders
     .filter(order => new Date(order.deliveryDate) >= today)
-    .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
+    .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
+    .slice(0, 10);
 
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  
-  // Get orders for a specific date
-  const getOrdersForDate = (date: Date) => {
-    return orders.filter(order => {
-      const orderDate = new Date(order.deliveryDate);
-      return (
-        orderDate.getDate() === date.getDate() &&
-        orderDate.getMonth() === date.getMonth() &&
-        orderDate.getFullYear() === date.getFullYear()
-      );
-    });
+  const getTimeUntilDelivery = (deliveryDate: string) => {
+    const delivery = new Date(deliveryDate);
+    const diffTime = delivery.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Tomorrow";
+    if (diffDays <= 7) return `In ${diffDays} days`;
+    return `In ${Math.ceil(diffDays / 7)} weeks`;
   };
-
-  // Get dates that have orders
-  const datesWithOrders = orders.map(order => {
-    const date = new Date(order.deliveryDate);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  });
-
-  const selectedDateOrders = selectedDate ? getOrdersForDate(selectedDate) : [];
 
   const handleWhatsApp = (phoneNumber: string, clientName: string) => {
     const message = encodeURIComponent(`Hello ${clientName}, regarding your order...`);
@@ -130,137 +118,134 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-2xl font-semibold">Upcoming Orders Calendar</h3>
-          <Button variant="ghost" onClick={() => navigate("/orders")} className="gap-2">
-            View All <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {upcomingOrders.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No upcoming orders
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Select a Date</CardTitle>
-              </CardHeader>
-              <CardContent className="flex justify-center">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className={cn("rounded-md border pointer-events-auto")}
-                  modifiers={{
-                    hasOrder: datesWithOrders,
-                  }}
-                  modifiersStyles={{
-                    hasOrder: {
-                      fontWeight: 'bold',
-                      textDecoration: 'underline',
-                    },
-                  }}
-                  disabled={(date) => {
-                    const checkDate = new Date(date);
-                    checkDate.setHours(0, 0, 0, 0);
-                    return checkDate < today;
-                  }}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  {selectedDate 
-                    ? `Orders for ${selectedDate.toLocaleDateString()}` 
-                    : 'Select a date to view orders'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {selectedDate && selectedDateOrders.length > 0 ? (
-                  <div className="space-y-4">
-                    {selectedDateOrders.map((order) => (
-                      <div key={order.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h4 className="font-semibold">{order.clientName}</h4>
-                            <p className="text-sm text-muted-foreground">{order.phoneNumber}</p>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl">Upcoming Orders</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {upcomingOrders.length} {upcomingOrders.length === 1 ? 'order' : 'orders'} scheduled for delivery
+              </p>
+            </div>
+            <Button variant="ghost" onClick={() => navigate("/orders")} className="gap-2">
+              View All <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {upcomingOrders.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p className="text-lg font-medium">No upcoming orders</p>
+              <p className="text-sm mt-1">New orders will appear here</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">Client</TableHead>
+                    <TableHead className="font-semibold">Delivery Date</TableHead>
+                    <TableHead className="font-semibold">Time Until</TableHead>
+                    <TableHead className="font-semibold">Details</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="text-right font-semibold">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {upcomingOrders.map((order) => {
+                    const timeUntil = getTimeUntilDelivery(order.deliveryDate);
+                    const isUrgent = timeUntil === "Today" || timeUntil === "Tomorrow";
+                    
+                    return (
+                      <TableRow 
+                        key={order.id} 
+                        className="hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => navigate("/orders")}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {order.clientPhotos.length > 0 ? (
+                              <img 
+                                src={order.clientPhotos[0]} 
+                                alt={order.clientName}
+                                className="w-10 h-10 rounded-full object-cover ring-2 ring-background"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                                <span className="text-sm font-medium text-muted-foreground">
+                                  {order.clientName.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div>
+                              <div className="font-medium">{order.clientName}</div>
+                              <div className="text-xs text-muted-foreground">{order.phoneNumber}</div>
+                            </div>
                           </div>
-                          {order.needsCakeTopper && (
-                            <Badge variant="secondary" className="text-xs">Topper</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm line-clamp-2">{order.orderDetails}</p>
-                        <div className="flex gap-2">
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span>{new Date(order.deliveryDate).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={isUrgent ? "destructive" : "secondary"}
+                            className="font-medium"
+                          >
+                            {timeUntil}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-xs">
+                            <p className="text-sm line-clamp-2 text-muted-foreground">
+                              {order.orderDetails}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {order.needsCakeTopper && (
+                              <Badge variant="outline" className="text-xs">
+                                Topper
+                              </Badge>
+                            )}
+                            {order.clientPhotos.length > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                {order.clientPhotos.length} {order.clientPhotos.length === 1 ? 'Photo' : 'Photos'}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleWhatsApp(order.phoneNumber, order.clientName)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleWhatsApp(order.phoneNumber, order.clientName);
+                            }}
                             className="gap-2"
                           >
-                            <Phone className="h-4 w-4" />
-                            WhatsApp
+                            <Phone className="h-3 w-3" />
+                            Contact
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate("/orders")}
-                          >
-                            View Details
-                          </Button>
-                        </div>
-                        {order.clientPhotos.length > 0 && (
-                          <div className="flex gap-2">
-                            {order.clientPhotos.slice(0, 3).map((photo, index) => (
-                              <img
-                                key={index}
-                                src={photo}
-                                alt={`Client idea ${index + 1}`}
-                                className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => window.open(photo, '_blank')}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : selectedDate ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No orders for this date
-                  </p>
-                ) : (
-                  <div className="space-y-2 py-4">
-                    <p className="text-sm text-muted-foreground">
-                      You have {upcomingOrders.length} upcoming {upcomingOrders.length === 1 ? 'order' : 'orders'}
-                    </p>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {upcomingOrders.slice(0, 5).map((order) => (
-                        <div 
-                          key={order.id} 
-                          className="text-sm p-2 rounded hover:bg-muted cursor-pointer transition-colors"
-                          onClick={() => setSelectedDate(new Date(order.deliveryDate))}
-                        >
-                          <div className="font-medium">{order.clientName}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(order.deliveryDate).toLocaleDateString()}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
