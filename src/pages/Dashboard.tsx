@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DollarSign, ShoppingBag, Phone, Calendar, ArrowRight, Package, Receipt, Filter } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Order } from "@/types/order";
 import type { Expense } from "@/types/expense";
 
@@ -15,6 +16,7 @@ const EXPENSES_STORAGE_KEY = "holy-moly-expenses";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   
@@ -84,8 +86,13 @@ const Dashboard = () => {
     };
   }, []);
 
+  // Filter orders by user role - cake topper providers only see orders with cake toppers
+  const roleFilteredOrders = user?.role === "cake_topper_provider"
+    ? orders.filter(order => order.needsCakeTopper)
+    : orders;
+
   // Filter orders by date range
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = roleFilteredOrders.filter(order => {
     const orderDate = new Date(order.createdAt);
     if (ordersStartDate && new Date(ordersStartDate) > orderDate) return false;
     if (ordersEndDate && new Date(ordersEndDate) < orderDate) return false;
@@ -93,7 +100,7 @@ const Dashboard = () => {
   });
 
   // Filter sales by date range
-  const filteredSalesOrders = orders.filter(order => {
+  const filteredSalesOrders = roleFilteredOrders.filter(order => {
     const orderDate = new Date(order.createdAt);
     if (salesStartDate && new Date(salesStartDate) > orderDate) return false;
     if (salesEndDate && new Date(salesEndDate) < orderDate) return false;
@@ -115,7 +122,7 @@ const Dashboard = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  const upcomingOrders = orders
+  const upcomingOrders = roleFilteredOrders
     .filter(order => new Date(order.deliveryDate) >= today)
     .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
     .slice(0, 10);
@@ -141,150 +148,207 @@ const Dashboard = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold">Dashboard</h2>
-        <p className="text-muted-foreground mt-1">Welcome back! Here's what's happening</p>
+        <p className="text-muted-foreground mt-1">
+          {user?.role === "cake_topper_provider" 
+            ? "Your cake topper orders overview" 
+            : "Welcome back! Here's what's happening"}
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold mb-3">{filteredOrders.length}</div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full gap-2">
-                  <Filter className="h-3 w-3" />
-                  Filter Dates
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-3" align="start">
-                <div className="space-y-2">
-                  <Input
-                    type="date"
-                    value={ordersStartDate}
-                    onChange={(e) => setOrdersStartDate(e.target.value)}
-                    className="h-8 text-xs"
-                    placeholder="From"
-                  />
-                  <Input
-                    type="date"
-                    value={ordersEndDate}
-                    onChange={(e) => setOrdersEndDate(e.target.value)}
-                    className="h-8 text-xs"
-                    placeholder="To"
-                  />
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full h-7 text-xs"
-                    onClick={() => {
-                      setOrdersStartDate("");
-                      setOrdersEndDate("");
-                    }}
-                  >
-                    Reset
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </CardContent>
-        </Card>
+        {user?.role === "owner" && (
+          <>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold mb-3">{filteredOrders.length}</div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full gap-2">
+                      <Filter className="h-3 w-3" />
+                      Filter Dates
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-3" align="start">
+                    <div className="space-y-2">
+                      <Input
+                        type="date"
+                        value={ordersStartDate}
+                        onChange={(e) => setOrdersStartDate(e.target.value)}
+                        className="h-8 text-xs"
+                        placeholder="From"
+                      />
+                      <Input
+                        type="date"
+                        value={ordersEndDate}
+                        onChange={(e) => setOrdersEndDate(e.target.value)}
+                        className="h-8 text-xs"
+                        placeholder="To"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full h-7 text-xs"
+                        onClick={() => {
+                          setOrdersStartDate("");
+                          setOrdersEndDate("");
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold mb-3">₡{totalSales.toLocaleString()}</div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full gap-2">
-                  <Filter className="h-3 w-3" />
-                  Filter Dates
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-3" align="start">
-                <div className="space-y-2">
-                  <Input
-                    type="date"
-                    value={salesStartDate}
-                    onChange={(e) => setSalesStartDate(e.target.value)}
-                    className="h-8 text-xs"
-                    placeholder="From"
-                  />
-                  <Input
-                    type="date"
-                    value={salesEndDate}
-                    onChange={(e) => setSalesEndDate(e.target.value)}
-                    className="h-8 text-xs"
-                    placeholder="To"
-                  />
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full h-7 text-xs"
-                    onClick={() => {
-                      setSalesStartDate("");
-                      setSalesEndDate("");
-                    }}
-                  >
-                    Reset
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold mb-3">₡{totalSales.toLocaleString()}</div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full gap-2">
+                      <Filter className="h-3 w-3" />
+                      Filter Dates
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-3" align="start">
+                    <div className="space-y-2">
+                      <Input
+                        type="date"
+                        value={salesStartDate}
+                        onChange={(e) => setSalesStartDate(e.target.value)}
+                        className="h-8 text-xs"
+                        placeholder="From"
+                      />
+                      <Input
+                        type="date"
+                        value={salesEndDate}
+                        onChange={(e) => setSalesEndDate(e.target.value)}
+                        className="h-8 text-xs"
+                        placeholder="To"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full h-7 text-xs"
+                        onClick={() => {
+                          setSalesStartDate("");
+                          setSalesEndDate("");
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold mb-3">₡{totalExpenses.toLocaleString()}</div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full gap-2">
-                  <Filter className="h-3 w-3" />
-                  Filter Dates
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-3" align="start">
-                <div className="space-y-2">
-                  <Input
-                    type="date"
-                    value={expensesStartDate}
-                    onChange={(e) => setExpensesStartDate(e.target.value)}
-                    className="h-8 text-xs"
-                    placeholder="From"
-                  />
-                  <Input
-                    type="date"
-                    value={expensesEndDate}
-                    onChange={(e) => setExpensesEndDate(e.target.value)}
-                    className="h-8 text-xs"
-                    placeholder="To"
-                  />
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full h-7 text-xs"
-                    onClick={() => {
-                      setExpensesStartDate("");
-                      setExpensesEndDate("");
-                    }}
-                  >
-                    Reset
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold mb-3">₡{totalExpenses.toLocaleString()}</div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full gap-2">
+                      <Filter className="h-3 w-3" />
+                      Filter Dates
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-3" align="start">
+                    <div className="space-y-2">
+                      <Input
+                        type="date"
+                        value={expensesStartDate}
+                        onChange={(e) => setExpensesStartDate(e.target.value)}
+                        className="h-8 text-xs"
+                        placeholder="From"
+                      />
+                      <Input
+                        type="date"
+                        value={expensesEndDate}
+                        onChange={(e) => setExpensesEndDate(e.target.value)}
+                        className="h-8 text-xs"
+                        placeholder="To"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full h-7 text-xs"
+                        onClick={() => {
+                          setExpensesStartDate("");
+                          setExpensesEndDate("");
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {user?.role === "cake_topper_provider" && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Topper Orders</CardTitle>
+              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold mb-3">{filteredOrders.length}</div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full gap-2">
+                    <Filter className="h-3 w-3" />
+                    Filter Dates
                   </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </CardContent>
-        </Card>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="start">
+                  <div className="space-y-2">
+                    <Input
+                      type="date"
+                      value={ordersStartDate}
+                      onChange={(e) => setOrdersStartDate(e.target.value)}
+                      className="h-8 text-xs"
+                      placeholder="From"
+                    />
+                    <Input
+                      type="date"
+                      value={ordersEndDate}
+                      onChange={(e) => setOrdersEndDate(e.target.value)}
+                      className="h-8 text-xs"
+                      placeholder="To"
+                    />
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full h-7 text-xs"
+                      onClick={() => {
+                        setOrdersStartDate("");
+                        setOrdersEndDate("");
+                      }}
+                    >
+                      Reset
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <Card>

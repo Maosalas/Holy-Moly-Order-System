@@ -5,11 +5,13 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Order } from "@/types/order";
 
 const ORDERS_STORAGE_KEY = "holy-moly-orders";
 
 const Orders = () => {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>(() => {
     const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
     if (!stored) return [];
@@ -111,14 +113,25 @@ const Orders = () => {
     setEditingOrder(undefined);
   };
 
+  // Filter orders based on user role
+  const visibleOrders = user?.role === "cake_topper_provider"
+    ? orders.filter(order => order.needsCakeTopper)
+    : orders;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold">Client Orders</h2>
-          <p className="text-muted-foreground mt-1">Manage all your client orders</p>
+          <h2 className="text-3xl font-bold">
+            {user?.role === "cake_topper_provider" ? "Cake Topper Orders" : "Client Orders"}
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            {user?.role === "cake_topper_provider" 
+              ? "Orders requiring cake toppers" 
+              : "Manage all your client orders"}
+          </p>
         </div>
-        {!isFormOpen && (
+        {!isFormOpen && user?.role === "owner" && (
           <Button
             onClick={() => setIsFormOpen(true)}
             size="lg"
@@ -138,9 +151,9 @@ const Orders = () => {
         />
       ) : (
         <OrderList
-          orders={orders}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
+          orders={visibleOrders}
+          onEdit={user?.role === "owner" ? handleEdit : undefined}
+          onDelete={user?.role === "owner" ? handleDeleteClick : undefined}
         />
       )}
 

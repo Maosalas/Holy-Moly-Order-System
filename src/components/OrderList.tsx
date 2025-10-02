@@ -8,8 +8,8 @@ import { OrderPreviewDialog } from "./OrderPreviewDialog";
 
 interface OrderListProps {
   orders: Order[];
-  onEdit: (order: Order) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (order: Order) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
@@ -163,22 +163,26 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
                     >
                       <MessageCircle className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(order)}
-                      title="Edit"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(order.id)}
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {onEdit && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit(order)}
+                        title="Edit"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {onDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(order.id)}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
