@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, ShoppingBag, Calendar, Phone, Image as ImageIcon, ArrowRight } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { DollarSign, ShoppingBag, Phone, Image as ImageIcon, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Order } from "@/types/order";
 
 const ORDERS_STORAGE_KEY = "holy-moly-orders";
@@ -57,10 +59,35 @@ const Dashboard = () => {
   // Calculate total sales (assuming $50 per order for now since we don't have pricing)
   const totalSales = monthOrders.length * 50;
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
   const upcomingOrders = orders
-    .filter(order => new Date(order.deliveryDate) >= new Date())
-    .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
-    .slice(0, 5);
+    .filter(order => new Date(order.deliveryDate) >= today)
+    .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
+
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  
+  // Get orders for a specific date
+  const getOrdersForDate = (date: Date) => {
+    return orders.filter(order => {
+      const orderDate = new Date(order.deliveryDate);
+      return (
+        orderDate.getDate() === date.getDate() &&
+        orderDate.getMonth() === date.getMonth() &&
+        orderDate.getFullYear() === date.getFullYear()
+      );
+    });
+  };
+
+  // Get dates that have orders
+  const datesWithOrders = orders.map(order => {
+    const date = new Date(order.deliveryDate);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  });
+
+  const selectedDateOrders = selectedDate ? getOrdersForDate(selectedDate) : [];
 
   const handleWhatsApp = (phoneNumber: string, clientName: string) => {
     const message = encodeURIComponent(`Hello ${clientName}, regarding your order...`);
@@ -105,7 +132,7 @@ const Dashboard = () => {
 
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-2xl font-semibold">Upcoming Orders</h3>
+          <h3 className="text-2xl font-semibold">Upcoming Orders Calendar</h3>
           <Button variant="ghost" onClick={() => navigate("/orders")} className="gap-2">
             View All <ArrowRight className="h-4 w-4" />
           </Button>
@@ -118,63 +145,119 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
-            {upcomingOrders.map((order) => (
-              <Card key={order.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-xl">{order.clientName}</CardTitle>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleWhatsApp(order.phoneNumber, order.clientName)}
-                          className="gap-2"
-                        >
-                          <Phone className="h-4 w-4" />
-                          WhatsApp
-                        </Button>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(order.deliveryDate).toLocaleDateString()}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Select a Date</CardTitle>
+              </CardHeader>
+              <CardContent className="flex justify-center">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  className={cn("rounded-md border pointer-events-auto")}
+                  modifiers={{
+                    hasOrder: datesWithOrders,
+                  }}
+                  modifiersStyles={{
+                    hasOrder: {
+                      fontWeight: 'bold',
+                      textDecoration: 'underline',
+                    },
+                  }}
+                  disabled={(date) => {
+                    const checkDate = new Date(date);
+                    checkDate.setHours(0, 0, 0, 0);
+                    return checkDate < today;
+                  }}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  {selectedDate 
+                    ? `Orders for ${selectedDate.toLocaleDateString()}` 
+                    : 'Select a date to view orders'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedDate && selectedDateOrders.length > 0 ? (
+                  <div className="space-y-4">
+                    {selectedDateOrders.map((order) => (
+                      <div key={order.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-semibold">{order.clientName}</h4>
+                            <p className="text-sm text-muted-foreground">{order.phoneNumber}</p>
+                          </div>
+                          {order.needsCakeTopper && (
+                            <Badge variant="secondary" className="text-xs">Topper</Badge>
+                          )}
                         </div>
-                        {order.needsCakeTopper && (
-                          <Badge variant="secondary">Cake Topper</Badge>
+                        <p className="text-sm line-clamp-2">{order.orderDetails}</p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleWhatsApp(order.phoneNumber, order.clientName)}
+                            className="gap-2"
+                          >
+                            <Phone className="h-4 w-4" />
+                            WhatsApp
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate("/orders")}
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                        {order.clientPhotos.length > 0 && (
+                          <div className="flex gap-2">
+                            {order.clientPhotos.slice(0, 3).map((photo, index) => (
+                              <img
+                                key={index}
+                                src={photo}
+                                alt={`Client idea ${index + 1}`}
+                                className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => window.open(photo, '_blank')}
+                              />
+                            ))}
+                          </div>
                         )}
                       </div>
-                    </div>
+                    ))}
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Order Details</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {order.orderDetails}
+                ) : selectedDate ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    No orders for this date
+                  </p>
+                ) : (
+                  <div className="space-y-2 py-4">
+                    <p className="text-sm text-muted-foreground">
+                      You have {upcomingOrders.length} upcoming {upcomingOrders.length === 1 ? 'order' : 'orders'}
                     </p>
-                  </div>
-                  {order.clientPhotos.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4" />
-                        Client Ideas ({order.clientPhotos.length})
-                      </h4>
-                      <div className="grid grid-cols-4 gap-2">
-                        {order.clientPhotos.slice(0, 4).map((photo, index) => (
-                          <img
-                            key={index}
-                            src={photo}
-                            alt={`Client idea ${index + 1}`}
-                            className="w-full h-20 object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => window.open(photo, '_blank')}
-                          />
-                        ))}
-                      </div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {upcomingOrders.slice(0, 5).map((order) => (
+                        <div 
+                          key={order.id} 
+                          className="text-sm p-2 rounded hover:bg-muted cursor-pointer transition-colors"
+                          onClick={() => setSelectedDate(new Date(order.deliveryDate))}
+                        >
+                          <div className="font-medium">{order.clientName}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(order.deliveryDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
