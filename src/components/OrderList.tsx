@@ -100,19 +100,12 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">
-                        {new Date(order.deliveryDate).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </div>
-                      {order.needsCakeTopper && (
-                        <Badge variant="outline" className="text-xs mt-1">
-                          Cake Topper
-                        </Badge>
-                      )}
+                    <div className="font-medium">
+                      {new Date(order.deliveryDate).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
                     </div>
                   </div>
                 </TableCell>
