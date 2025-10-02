@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, ShoppingBag, Phone, Calendar, ArrowRight, Package, Receipt } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DollarSign, ShoppingBag, Phone, Calendar, ArrowRight, Package, Receipt, Filter } from "lucide-react";
 import type { Order } from "@/types/order";
 import type { Expense } from "@/types/expense";
 
@@ -151,22 +152,32 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold mb-3">{filteredOrders.length}</div>
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={ordersStartDate}
-                onChange={(e) => setOrdersStartDate(e.target.value)}
-                className="h-8 text-xs"
-                placeholder="From"
-              />
-              <Input
-                type="date"
-                value={ordersEndDate}
-                onChange={(e) => setOrdersEndDate(e.target.value)}
-                className="h-8 text-xs"
-                placeholder="To"
-              />
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full gap-2">
+                  <Filter className="h-3 w-3" />
+                  Filter Dates
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-3" align="start">
+                <div className="space-y-2">
+                  <Input
+                    type="date"
+                    value={ordersStartDate}
+                    onChange={(e) => setOrdersStartDate(e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="From"
+                  />
+                  <Input
+                    type="date"
+                    value={ordersEndDate}
+                    onChange={(e) => setOrdersEndDate(e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="To"
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
           </CardContent>
         </Card>
 
@@ -177,22 +188,32 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold mb-3">₡{totalSales.toLocaleString()}</div>
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={salesStartDate}
-                onChange={(e) => setSalesStartDate(e.target.value)}
-                className="h-8 text-xs"
-                placeholder="From"
-              />
-              <Input
-                type="date"
-                value={salesEndDate}
-                onChange={(e) => setSalesEndDate(e.target.value)}
-                className="h-8 text-xs"
-                placeholder="To"
-              />
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full gap-2">
+                  <Filter className="h-3 w-3" />
+                  Filter Dates
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-3" align="start">
+                <div className="space-y-2">
+                  <Input
+                    type="date"
+                    value={salesStartDate}
+                    onChange={(e) => setSalesStartDate(e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="From"
+                  />
+                  <Input
+                    type="date"
+                    value={salesEndDate}
+                    onChange={(e) => setSalesEndDate(e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="To"
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
           </CardContent>
         </Card>
 
@@ -203,22 +224,32 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold mb-3">₡{totalExpenses.toLocaleString()}</div>
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={expensesStartDate}
-                onChange={(e) => setExpensesStartDate(e.target.value)}
-                className="h-8 text-xs"
-                placeholder="From"
-              />
-              <Input
-                type="date"
-                value={expensesEndDate}
-                onChange={(e) => setExpensesEndDate(e.target.value)}
-                className="h-8 text-xs"
-                placeholder="To"
-              />
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full gap-2">
+                  <Filter className="h-3 w-3" />
+                  Filter Dates
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-3" align="start">
+                <div className="space-y-2">
+                  <Input
+                    type="date"
+                    value={expensesStartDate}
+                    onChange={(e) => setExpensesStartDate(e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="From"
+                  />
+                  <Input
+                    type="date"
+                    value={expensesEndDate}
+                    onChange={(e) => setExpensesEndDate(e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="To"
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
           </CardContent>
         </Card>
       </div>
