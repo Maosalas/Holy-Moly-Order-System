@@ -82,6 +82,12 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
           {order.orderDetails}
         </p>
         
+        {order.needsCakeTopper && (
+          <div className="pt-2 border-t">
+            <TopperUploadDialog clientName={order.clientName} />
+          </div>
+        )}
+        
         <div className="space-y-2 pt-2 border-t">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Total Amount:</span>
@@ -112,12 +118,6 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
             </Badge>
           </div>
         </div>
-
-        {order.needsCakeTopper && (
-          <Badge variant="outline" className="text-xs">
-            Needs Cake Topper
-          </Badge>
-        )}
       </CardContent>
       <CardFooter className="gap-2 flex-wrap">
         <Button
@@ -129,9 +129,6 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
           <MessageCircle className="h-4 w-4" />
           WhatsApp
         </Button>
-        {order.needsCakeTopper && (
-          <TopperUploadDialog clientName={order.clientName} />
-        )}
         <Button
           variant="outline"
           size="sm"
