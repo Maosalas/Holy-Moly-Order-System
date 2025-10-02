@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, X, Plus, Trash2 } from "lucide-react";
+import { Upload, X, Plus, Trash2, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TopperUploadDialog } from "./TopperUploadDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -300,72 +300,144 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
           </div>
 
           {/* Section 2: Financial & Supplies */}
-          <div className="space-y-4 pt-4">
+          <div className="space-y-5 pt-4">
             <h3 className="text-lg font-semibold border-b pb-2">Financial & Supplies</h3>
             
             {/* Supplies Selection */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>Supplies from Inventory</Label>
-                <Select onValueChange={addSupply}>
-                  <SelectTrigger className="w-[250px]">
-                    <SelectValue placeholder="Add supply..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {supplies.map((supply) => (
-                      <SelectItem key={supply.id} value={supply.id}>
-                        {supply.name} - ₡{supply.cost.toLocaleString()}/{supply.unit}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div>
+                  <Label className="text-base font-semibold">Supplies from Inventory</Label>
+                  <p className="text-sm text-muted-foreground mt-1">Select multiple supplies to calculate costs</p>
+                </div>
               </div>
 
-              {selectedSupplies.length > 0 && (
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead>Supply</TableHead>
-                        <TableHead className="w-[120px]">Quantity</TableHead>
-                        <TableHead className="w-[100px]">Unit</TableHead>
-                        <TableHead className="w-[120px]">Cost/Unit</TableHead>
-                        <TableHead className="w-[120px]">Total</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedSupplies.map((supply) => (
-                        <TableRow key={supply.supplyId}>
-                          <TableCell className="font-medium">{supply.supplyName}</TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0.01"
-                              step="0.01"
-                              value={supply.quantity}
-                              onChange={(e) => updateSupplyQuantity(supply.supplyId, parseFloat(e.target.value) || 0)}
-                              className="h-8"
-                            />
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{supply.unit}</TableCell>
-                          <TableCell>₡{supply.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</TableCell>
-                          <TableCell className="font-semibold">₡{supply.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</TableCell>
-                          <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeSupply(supply.supplyId)}
-                              className="h-8 w-8"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </TableCell>
+              <div className="flex items-center gap-2">
+                <Select onValueChange={addSupply}>
+                  <SelectTrigger className="flex-1 h-11 bg-background border-2 hover:border-primary/50 transition-colors">
+                    <SelectValue placeholder="Choose a supply to add..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {supplies.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        No supplies available. Add supplies in the Supplies page first.
+                      </div>
+                    ) : (
+                      supplies.map((supply) => (
+                        <SelectItem 
+                          key={supply.id} 
+                          value={supply.id}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between w-full gap-4">
+                            <span className="font-medium">{supply.name}</span>
+                            <span className="text-muted-foreground text-sm">
+                              ₡{supply.cost.toLocaleString('en-US', { minimumFractionDigits: 2 })} / {supply.unit}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 shrink-0"
+                  onClick={() => {
+                    const select = document.querySelector('[role="combobox"]') as HTMLElement;
+                    select?.click();
+                  }}
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {selectedSupplies.length === 0 ? (
+                <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-3 text-muted-foreground">
+                    <div className="rounded-full bg-muted p-3">
+                      <Package className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="font-medium">No supplies added yet</p>
+                      <p className="text-sm mt-1">Select supplies from the dropdown above</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {selectedSupplies.length} {selectedSupplies.length === 1 ? 'supply' : 'supplies'} selected
+                    </span>
+                  </div>
+                  
+                  <div className="border-2 rounded-lg overflow-hidden bg-card">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableHead className="font-semibold">Supply Name</TableHead>
+                          <TableHead className="w-[130px] font-semibold">Quantity</TableHead>
+                          <TableHead className="w-[80px] font-semibold">Unit</TableHead>
+                          <TableHead className="w-[120px] font-semibold text-right">Cost/Unit</TableHead>
+                          <TableHead className="w-[120px] font-semibold text-right">Subtotal</TableHead>
+                          <TableHead className="w-[60px]"></TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedSupplies.map((supply, index) => (
+                          <TableRow key={supply.supplyId} className="hover:bg-muted/30">
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
+                                  {index + 1}
+                                </div>
+                                {supply.supplyName}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                value={supply.quantity}
+                                onChange={(e) => updateSupplyQuantity(supply.supplyId, parseFloat(e.target.value) || 0)}
+                                className="h-9 text-center"
+                              />
+                            </TableCell>
+                            <TableCell className="text-muted-foreground font-medium">{supply.unit}</TableCell>
+                            <TableCell className="text-right font-medium">
+                              ₡{supply.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-primary">
+                              ₡{supply.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeSupply(supply.supplyId)}
+                                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                                title="Remove supply"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted/30 hover:bg-muted/30 font-semibold">
+                          <TableCell colSpan={4} className="text-right">Total Cost:</TableCell>
+                          <TableCell className="text-right text-lg font-bold text-primary">
+                            ₡{costAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell></TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               )}
             </div>
