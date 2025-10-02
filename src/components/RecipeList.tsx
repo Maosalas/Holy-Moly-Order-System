@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, ChefHat } from "lucide-react";
+import { RecipePreviewDialog } from "./RecipePreviewDialog";
 
 interface RecipeListProps {
   recipes: Recipe[];
@@ -73,6 +74,7 @@ export const RecipeList = ({ recipes, onEdit, onDelete }: RecipeListProps) => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <RecipePreviewDialog recipe={recipe} />
                       <Button
                         variant="ghost"
                         size="icon"
