@@ -107,6 +107,15 @@ const Ingredients = () => {
                   Back to Recipes
                 </Button>
                 <Button
+                  onClick={() => navigate("/orders")}
+                  size="lg"
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Package className="h-5 w-5" />
+                  Client Orders
+                </Button>
+                <Button
                   onClick={() => setIsFormOpen(true)}
                   size="lg"
                   className="gap-2"

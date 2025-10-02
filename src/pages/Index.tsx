@@ -102,6 +102,15 @@ const Index = () => {
             {!isFormOpen && (
               <div className="flex gap-3">
                 <Button
+                  onClick={() => navigate("/orders")}
+                  size="lg"
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Package className="h-5 w-5" />
+                  Client Orders
+                </Button>
+                <Button
                   onClick={() => navigate("/ingredients")}
                   size="lg"
                   variant="outline"
