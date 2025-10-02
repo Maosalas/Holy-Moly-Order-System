@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Upload, ImageIcon } from "lucide-react";
 import { Recipe, RecipeIngredient, RecipeFormData } from "@/types/recipe";
 import { Ingredient } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ interface RecipeFormProps {
 
 export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [name, setName] = useState(recipe?.name || "");
+  const [image, setImage] = useState(recipe?.image || "");
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(
     recipe?.ingredients || []
   );
@@ -94,6 +95,30 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     );
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImage("");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -132,6 +157,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
 
     onSubmit({
       name: name.trim(),
+      image: image || undefined,
       ingredients: recipeIngredients,
       totalCost,
     });
@@ -157,6 +183,48 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
               placeholder="Enter recipe name"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Recipe Image</Label>
+            {image ? (
+              <div className="relative w-full h-48 border rounded-lg overflow-hidden">
+                <img
+                  src={image}
+                  alt="Recipe preview"
+                  className="w-full h-full object-cover"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2"
+                  onClick={removeImage}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-32 border-dashed relative"
+                asChild
+              >
+                <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
+                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    Click to upload image
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                </label>
+              </Button>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -244,7 +312,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
             <div className="flex justify-between items-center">
               <Label className="text-lg font-semibold">Total Cost:</Label>
               <span className="text-2xl font-bold text-primary">
-                ${totalCost.toFixed(2)}
+                ₡{totalCost.toLocaleString()}
               </span>
             </div>
           </div>

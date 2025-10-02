@@ -31,7 +31,7 @@ export const RecipeCard = ({ recipe, onEdit, onDelete }: RecipeCardProps) => {
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-primary">
-          ${recipe.totalCost.toFixed(2)}
+          ₡{recipe.totalCost.toLocaleString()}
         </div>
       </CardContent>
       <CardFooter className="gap-2">
