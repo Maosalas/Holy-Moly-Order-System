@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { OrderForm } from "@/components/OrderForm";
 import { OrderList } from "@/components/OrderList";
-import { useToast } from "@/hooks/use-toast";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import type { Order } from "@/types/order";
 
 const ORDERS_STORAGE_KEY = "holy-moly-orders";
 
 const Orders = () => {
-  const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>(() => {
     const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
@@ -17,50 +19,108 @@ const Orders = () => {
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
   }, [orders]);
 
-  const handleCreateOrder = (orderData: Omit<Order, "id" | "createdAt">) => {
-    const newOrder: Order = {
-      ...orderData,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    setOrders((prev) => [newOrder, ...prev]);
-    toast({
-      title: "Order created",
-      description: "The order has been created successfully",
-    });
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Order | undefined>();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+
+  const handleSubmit = (orderData: Omit<Order, "id" | "createdAt">) => {
+    if (editingOrder) {
+      setOrders(
+        orders.map((o) =>
+          o.id === editingOrder.id
+            ? { ...orderData, id: o.id, createdAt: o.createdAt }
+            : o
+        )
+      );
+      toast({
+        title: "Order Updated",
+        description: `Order for ${orderData.clientName} has been updated.`,
+      });
+    } else {
+      const newOrder: Order = {
+        ...orderData,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      };
+      setOrders([newOrder, ...orders]);
+      toast({
+        title: "Order Created",
+        description: `Order for ${orderData.clientName} has been created.`,
+      });
+    }
+    setIsFormOpen(false);
+    setEditingOrder(undefined);
   };
 
-  const handleUpdateOrder = (id: string, orderData: Omit<Order, "id" | "createdAt">) => {
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === id ? { ...order, ...orderData } : order
-      )
-    );
-    toast({
-      title: "Order updated",
-      description: "The order has been updated successfully",
-    });
+  const handleEdit = (order: Order) => {
+    setEditingOrder(order);
+    setIsFormOpen(true);
   };
 
-  const handleDeleteOrder = (id: string) => {
-    setOrders((prev) => prev.filter((order) => order.id !== id));
-    toast({
-      title: "Order deleted",
-      description: "The order has been deleted successfully",
-    });
+  const handleDeleteClick = (id: string) => {
+    setOrderToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (orderToDelete) {
+      const order = orders.find((o) => o.id === orderToDelete);
+      setOrders(orders.filter((o) => o.id !== orderToDelete));
+      toast({
+        title: "Order Deleted",
+        description: `Order for ${order?.clientName} has been removed.`,
+      });
+    }
+    setDeleteDialogOpen(false);
+    setOrderToDelete(null);
+  };
+
+  const handleCancel = () => {
+    setIsFormOpen(false);
+    setEditingOrder(undefined);
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div>
-        <h2 className="text-3xl font-bold">Client Orders</h2>
-        <p className="text-muted-foreground mt-1">Manage all your client orders</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold">Client Orders</h2>
+          <p className="text-muted-foreground mt-1">Manage all your client orders</p>
+        </div>
+        {!isFormOpen && (
+          <Button
+            onClick={() => setIsFormOpen(true)}
+            size="lg"
+            className="gap-2"
+          >
+            <Plus className="h-5 w-5" />
+            New Order
+          </Button>
+        )}
       </div>
-      <OrderForm onSubmit={handleCreateOrder} />
-      <OrderList
-        orders={orders}
-        onUpdate={handleUpdateOrder}
-        onDelete={handleDeleteOrder}
+
+      {isFormOpen ? (
+        <OrderForm
+          initialData={editingOrder}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+        />
+      ) : (
+        <OrderList
+          orders={orders}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
+        />
+      )}
+
+      <DeleteConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        recipeName={
+          orders.find((o) => o.id === orderToDelete)?.clientName || ""
+        }
       />
     </div>
   );
