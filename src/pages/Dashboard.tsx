@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DollarSign, ShoppingBag, Phone, Calendar, ArrowRight, Package, Receipt } from "lucide-react";
 import type { Order } from "@/types/order";
@@ -150,24 +149,22 @@ const Dashboard = () => {
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-2xl font-bold">{filteredOrders.length}</div>
-            <div className="space-y-2">
-              <Label htmlFor="orders-start" className="text-xs">Start Date</Label>
+          <CardContent>
+            <div className="text-2xl font-bold mb-3">{filteredOrders.length}</div>
+            <div className="flex gap-2">
               <Input
-                id="orders-start"
                 type="date"
                 value={ordersStartDate}
                 onChange={(e) => setOrdersStartDate(e.target.value)}
-                className="h-8"
+                className="h-8 text-xs"
+                placeholder="From"
               />
-              <Label htmlFor="orders-end" className="text-xs">End Date</Label>
               <Input
-                id="orders-end"
                 type="date"
                 value={ordersEndDate}
                 onChange={(e) => setOrdersEndDate(e.target.value)}
-                className="h-8"
+                className="h-8 text-xs"
+                placeholder="To"
               />
             </div>
           </CardContent>
@@ -178,24 +175,22 @@ const Dashboard = () => {
             <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-2xl font-bold">₡{totalSales.toLocaleString()}</div>
-            <div className="space-y-2">
-              <Label htmlFor="sales-start" className="text-xs">Start Date</Label>
+          <CardContent>
+            <div className="text-2xl font-bold mb-3">₡{totalSales.toLocaleString()}</div>
+            <div className="flex gap-2">
               <Input
-                id="sales-start"
                 type="date"
                 value={salesStartDate}
                 onChange={(e) => setSalesStartDate(e.target.value)}
-                className="h-8"
+                className="h-8 text-xs"
+                placeholder="From"
               />
-              <Label htmlFor="sales-end" className="text-xs">End Date</Label>
               <Input
-                id="sales-end"
                 type="date"
                 value={salesEndDate}
                 onChange={(e) => setSalesEndDate(e.target.value)}
-                className="h-8"
+                className="h-8 text-xs"
+                placeholder="To"
               />
             </div>
           </CardContent>
@@ -206,24 +201,22 @@ const Dashboard = () => {
             <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-2xl font-bold">₡{totalExpenses.toLocaleString()}</div>
-            <div className="space-y-2">
-              <Label htmlFor="expenses-start" className="text-xs">Start Date</Label>
+          <CardContent>
+            <div className="text-2xl font-bold mb-3">₡{totalExpenses.toLocaleString()}</div>
+            <div className="flex gap-2">
               <Input
-                id="expenses-start"
                 type="date"
                 value={expensesStartDate}
                 onChange={(e) => setExpensesStartDate(e.target.value)}
-                className="h-8"
+                className="h-8 text-xs"
+                placeholder="From"
               />
-              <Label htmlFor="expenses-end" className="text-xs">End Date</Label>
               <Input
-                id="expenses-end"
                 type="date"
                 value={expensesEndDate}
                 onChange={(e) => setExpensesEndDate(e.target.value)}
-                className="h-8"
+                className="h-8 text-xs"
+                placeholder="To"
               />
             </div>
           </CardContent>
