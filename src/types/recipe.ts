@@ -10,6 +10,7 @@ export interface RecipeIngredient {
 export interface Recipe {
   id: string;
   name: string;
+  image?: string;
   ingredients: RecipeIngredient[];
   totalCost: number;
   createdAt: Date;

@@ -1,17 +1,15 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Recipe, RecipeFormData } from "@/types/recipe";
 import { RecipeForm } from "@/components/RecipeForm";
 import { RecipeList } from "@/components/RecipeList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, ChefHat, Package } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = "holy-moly-recipes";
 
 const Index = () => {
-  const navigate = useNavigate();
   const [recipes, setRecipes] = useState<Recipe[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored).map((r: any) => ({
@@ -88,75 +86,46 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4 max-w-7xl">
-        <header className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ChefHat className="h-10 w-10 text-primary" />
-              <div>
-                <h1 className="text-4xl font-bold text-foreground">Holy Moly Recipes</h1>
-                <p className="text-muted-foreground mt-1">Manage your recipe database</p>
-              </div>
-            </div>
-            {!isFormOpen && (
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => navigate("/orders")}
-                  size="lg"
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Package className="h-5 w-5" />
-                  Client Orders
-                </Button>
-                <Button
-                  onClick={() => navigate("/ingredients")}
-                  size="lg"
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Package className="h-5 w-5" />
-                  Manage Ingredients
-                </Button>
-                <Button
-                  onClick={() => setIsFormOpen(true)}
-                  size="lg"
-                  className="gap-2"
-                >
-                  <Plus className="h-5 w-5" />
-                  New Recipe
-                </Button>
-              </div>
-            )}
-          </div>
-        </header>
-
-        <main className="space-y-8">
-          {isFormOpen ? (
-            <RecipeForm
-              recipe={editingRecipe}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-            />
-          ) : (
-            <RecipeList
-              recipes={recipes}
-              onEdit={handleEdit}
-              onDelete={handleDeleteClick}
-            />
-          )}
-        </main>
-
-        <DeleteConfirmDialog
-          isOpen={deleteDialogOpen}
-          onClose={() => setDeleteDialogOpen(false)}
-          onConfirm={handleDeleteConfirm}
-          recipeName={
-            recipes.find((r) => r.id === recipeToDelete)?.name || ""
-          }
-        />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold">Recipes</h2>
+          <p className="text-muted-foreground mt-1">Manage your recipe database</p>
+        </div>
+        {!isFormOpen && (
+          <Button
+            onClick={() => setIsFormOpen(true)}
+            size="lg"
+            className="gap-2"
+          >
+            <Plus className="h-5 w-5" />
+            New Recipe
+          </Button>
+        )}
       </div>
+
+      {isFormOpen ? (
+        <RecipeForm
+          recipe={editingRecipe}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+        />
+      ) : (
+        <RecipeList
+          recipes={recipes}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
+        />
+      )}
+
+      <DeleteConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        recipeName={
+          recipes.find((r) => r.id === recipeToDelete)?.name || ""
+        }
+      />
     </div>
   );
 };

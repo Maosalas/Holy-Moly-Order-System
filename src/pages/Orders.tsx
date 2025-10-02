@@ -1,15 +1,21 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { OrderForm } from "@/components/OrderForm";
 import { OrderList } from "@/components/OrderList";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingBag, Home, ChefHat } from "lucide-react";
 import type { Order } from "@/types/order";
+
+const ORDERS_STORAGE_KEY = "holy-moly-orders";
 
 const Orders = () => {
   const { toast } = useToast();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>(() => {
+    const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+  }, [orders]);
 
   const handleCreateOrder = (orderData: Omit<Order, "id" | "createdAt">) => {
     const newOrder: Order = {
@@ -45,42 +51,17 @@ const Orders = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="h-6 w-6" />
-              <h1 className="text-2xl font-bold">Client Orders</h1>
-            </div>
-            <nav className="flex gap-2">
-              <Button variant="ghost" asChild>
-                <Link to="/">
-                  <Home className="mr-2 h-4 w-4" />
-                  Recipes
-                </Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                <Link to="/ingredients">
-                  <ChefHat className="mr-2 h-4 w-4" />
-                  Ingredients
-                </Link>
-              </Button>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <OrderForm onSubmit={handleCreateOrder} />
-          <OrderList
-            orders={orders}
-            onUpdate={handleUpdateOrder}
-            onDelete={handleDeleteOrder}
-          />
-        </div>
-      </main>
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <h2 className="text-3xl font-bold">Client Orders</h2>
+        <p className="text-muted-foreground mt-1">Manage all your client orders</p>
+      </div>
+      <OrderForm onSubmit={handleCreateOrder} />
+      <OrderList
+        orders={orders}
+        onUpdate={handleUpdateOrder}
+        onDelete={handleDeleteOrder}
+      />
     </div>
   );
 };
