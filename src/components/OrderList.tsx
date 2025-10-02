@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Edit, Trash2, Calendar, Package } from "lucide-react";
-import { TopperUploadDialog } from "./TopperUploadDialog";
+import { OrderPreviewDialog } from "./OrderPreviewDialog";
 
 interface OrderListProps {
   orders: Order[];
@@ -161,9 +161,7 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex gap-1 justify-end items-center">
-                    {order.needsCakeTopper && (
-                      <TopperUploadDialog clientName={order.clientName} />
-                    )}
+                    <OrderPreviewDialog order={order} />
                     <Button
                       variant="ghost"
                       size="icon"
