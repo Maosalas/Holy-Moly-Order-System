@@ -11,8 +11,6 @@ interface SupplyListProps {
 }
 
 const SupplyList = ({ supplies, onEdit, onDelete }: SupplyListProps) => {
-  const totalValue = supplies.reduce((sum, supply) => sum + supply.cost, 0);
-
   if (supplies.length === 0) {
     return (
       <Card>
@@ -25,18 +23,7 @@ const SupplyList = ({ supplies, onEdit, onDelete }: SupplyListProps) => {
   }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Inventory Overview</CardTitle>
-          <CardDescription>Total supplies value</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold">₡{totalValue.toLocaleString()}</div>
-        </CardContent>
-      </Card>
-
-      <Card>
+    <Card>
         <CardHeader>
           <CardTitle>Supplies Inventory</CardTitle>
           <CardDescription>All your tracked supplies</CardDescription>
@@ -96,7 +83,6 @@ const SupplyList = ({ supplies, onEdit, onDelete }: SupplyListProps) => {
           </div>
         </CardContent>
       </Card>
-    </>
   );
 };
 
