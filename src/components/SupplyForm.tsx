@@ -15,6 +15,7 @@ interface SupplyFormProps {
 const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
   const { toast } = useToast();
   const [name, setName] = useState(initialData?.name || "");
+  const [supplierName, setSupplierName] = useState(initialData?.supplierName || "");
   const [quantity, setQuantity] = useState(initialData?.quantity?.toString() || "");
   const [unit, setUnit] = useState(initialData?.unit || "");
   const [cost, setCost] = useState(initialData?.cost?.toString() || "");
@@ -22,7 +23,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !quantity || !unit.trim() || !cost) {
+    if (!name.trim() || !supplierName.trim() || !quantity || !unit.trim() || !cost) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields",
@@ -55,6 +56,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
     const supply: Supply = {
       id: initialData?.id || crypto.randomUUID(),
       name: name.trim(),
+      supplierName: supplierName.trim(),
       quantity: parsedQuantity,
       unit: unit.trim(),
       cost: parsedCost,
@@ -65,6 +67,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
 
     if (!initialData) {
       setName("");
+      setSupplierName("");
       setQuantity("");
       setUnit("");
       setCost("");
@@ -85,6 +88,17 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Parchment Paper, Piping Bags"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="supplierName">Supplier Name *</Label>
+            <Input
+              id="supplierName"
+              value={supplierName}
+              onChange={(e) => setSupplierName(e.target.value)}
+              placeholder="e.g., Walmart, Amazon, Local Store"
               required
             />
           </div>

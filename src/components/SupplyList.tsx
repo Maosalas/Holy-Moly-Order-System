@@ -47,6 +47,7 @@ const SupplyList = ({ supplies, onEdit, onDelete }: SupplyListProps) => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="font-semibold">Supply Name</TableHead>
+                  <TableHead className="font-semibold">Supplier</TableHead>
                   <TableHead className="font-semibold">Quantity</TableHead>
                   <TableHead className="font-semibold">Unit</TableHead>
                   <TableHead className="font-semibold">Cost</TableHead>
@@ -62,6 +63,7 @@ const SupplyList = ({ supplies, onEdit, onDelete }: SupplyListProps) => {
                         <span className="font-medium">{supply.name}</span>
                       </div>
                     </TableCell>
+                    <TableCell className="text-muted-foreground">{supply.supplierName}</TableCell>
                     <TableCell className="font-semibold">{supply.quantity}</TableCell>
                     <TableCell className="text-muted-foreground">{supply.unit}</TableCell>
                     <TableCell className="font-semibold">
