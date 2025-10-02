@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ExpenseFormProps {
@@ -49,6 +50,14 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
       setAmount("");
       setCardType("visa");
     }
+  };
+
+  const handleUploadReceipt = () => {
+    window.open("https://drive.google.com/drive/my-drive", "_blank");
+    toast({
+      title: "Opening Google Drive",
+      description: "Upload your receipt to Google Drive and save the link for your records",
+    });
   };
 
   return (
@@ -107,7 +116,23 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
             </SelectContent>
           </Select>
         </div>
-      </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Upload Receipt</Label>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleUploadReceipt}
+              className="w-full gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Upload to Google Drive
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Opens Google Drive to upload your receipt
+            </p>
+          </div>
 
           <div className="flex gap-2">
             <Button type="submit" className="flex-1">
