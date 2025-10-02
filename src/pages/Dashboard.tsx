@@ -3,15 +3,28 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, ShoppingBag, Phone, Calendar, ArrowRight, Package } from "lucide-react";
+import { DollarSign, ShoppingBag, Phone, Calendar, ArrowRight, Package, Receipt } from "lucide-react";
 import type { Order } from "@/types/order";
+import type { Expense } from "@/types/expense";
 
 const ORDERS_STORAGE_KEY = "holy-moly-orders";
+const EXPENSES_STORAGE_KEY = "holy-moly-expenses";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  
+  // Date filters
+  const [ordersStartDate, setOrdersStartDate] = useState("");
+  const [ordersEndDate, setOrdersEndDate] = useState("");
+  const [salesStartDate, setSalesStartDate] = useState("");
+  const [salesEndDate, setSalesEndDate] = useState("");
+  const [expensesStartDate, setExpensesStartDate] = useState("");
+  const [expensesEndDate, setExpensesEndDate] = useState("");
 
   useEffect(() => {
     const loadOrders = () => {
@@ -32,19 +45,31 @@ const Dashboard = () => {
       }
     };
 
-    // Load orders on mount
+    const loadExpenses = () => {
+      const stored = localStorage.getItem(EXPENSES_STORAGE_KEY);
+      if (stored) {
+        setExpenses(JSON.parse(stored));
+      } else {
+        setExpenses([]);
+      }
+    };
+
+    // Load data on mount
     loadOrders();
+    loadExpenses();
 
     // Listen for visibility changes (when user switches tabs/routes)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         loadOrders();
+        loadExpenses();
       }
     };
 
     // Listen for focus (when window gets focus)
     const handleFocus = () => {
       loadOrders();
+      loadExpenses();
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -56,16 +81,33 @@ const Dashboard = () => {
     };
   }, []);
 
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  
-  const monthOrders = orders.filter(order => {
+  // Filter orders by date range
+  const filteredOrders = orders.filter(order => {
     const orderDate = new Date(order.createdAt);
-    return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+    if (ordersStartDate && new Date(ordersStartDate) > orderDate) return false;
+    if (ordersEndDate && new Date(ordersEndDate) < orderDate) return false;
+    return true;
   });
 
-  // Calculate total sales using actual order amounts
-  const totalSales = monthOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  // Filter sales by date range
+  const filteredSalesOrders = orders.filter(order => {
+    const orderDate = new Date(order.createdAt);
+    if (salesStartDate && new Date(salesStartDate) > orderDate) return false;
+    if (salesEndDate && new Date(salesEndDate) < orderDate) return false;
+    return true;
+  });
+
+  // Filter expenses by date range
+  const filteredExpenses = expenses.filter(expense => {
+    const expenseDate = new Date(expense.purchaseDate);
+    if (expensesStartDate && new Date(expensesStartDate) > expenseDate) return false;
+    if (expensesEndDate && new Date(expensesEndDate) < expenseDate) return false;
+    return true;
+  });
+
+  // Calculate totals
+  const totalSales = filteredSalesOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -99,17 +141,32 @@ const Dashboard = () => {
         <p className="text-muted-foreground mt-1">Welcome back! Here's what's happening</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orders This Month</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{monthOrders.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Total orders in {new Date().toLocaleDateString('en-US', { month: 'long' })}
-            </p>
+          <CardContent className="space-y-3">
+            <div className="text-2xl font-bold">{filteredOrders.length}</div>
+            <div className="space-y-2">
+              <Label htmlFor="orders-start" className="text-xs">Start Date</Label>
+              <Input
+                id="orders-start"
+                type="date"
+                value={ordersStartDate}
+                onChange={(e) => setOrdersStartDate(e.target.value)}
+                className="h-8"
+              />
+              <Label htmlFor="orders-end" className="text-xs">End Date</Label>
+              <Input
+                id="orders-end"
+                type="date"
+                value={ordersEndDate}
+                onChange={(e) => setOrdersEndDate(e.target.value)}
+                className="h-8"
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -118,11 +175,54 @@ const Dashboard = () => {
             <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             <div className="text-2xl font-bold">₡{totalSales.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Revenue for this month
-            </p>
+            <div className="space-y-2">
+              <Label htmlFor="sales-start" className="text-xs">Start Date</Label>
+              <Input
+                id="sales-start"
+                type="date"
+                value={salesStartDate}
+                onChange={(e) => setSalesStartDate(e.target.value)}
+                className="h-8"
+              />
+              <Label htmlFor="sales-end" className="text-xs">End Date</Label>
+              <Input
+                id="sales-end"
+                type="date"
+                value={salesEndDate}
+                onChange={(e) => setSalesEndDate(e.target.value)}
+                className="h-8"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-2xl font-bold">₡{totalExpenses.toLocaleString()}</div>
+            <div className="space-y-2">
+              <Label htmlFor="expenses-start" className="text-xs">Start Date</Label>
+              <Input
+                id="expenses-start"
+                type="date"
+                value={expensesStartDate}
+                onChange={(e) => setExpensesStartDate(e.target.value)}
+                className="h-8"
+              />
+              <Label htmlFor="expenses-end" className="text-xs">End Date</Label>
+              <Input
+                id="expenses-end"
+                type="date"
+                value={expensesEndDate}
+                onChange={(e) => setExpensesEndDate(e.target.value)}
+                className="h-8"
+              />
+            </div>
           </CardContent>
         </Card>
       </div>

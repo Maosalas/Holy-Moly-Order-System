@@ -4,18 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
 interface ExpenseFormProps {
   onSubmit: (expense: Expense) => void;
+  initialData?: Expense;
+  onCancel?: () => void;
 }
 
-const ExpenseForm = ({ onSubmit }: ExpenseFormProps) => {
+const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
   const { toast } = useToast();
-  const [supermarketName, setSupermarketName] = useState("");
-  const [purchaseDate, setPurchaseDate] = useState("");
-  const [amount, setAmount] = useState("");
-  const [cardType, setCardType] = useState<CardType>("visa");
+  const [supermarketName, setSupermarketName] = useState(initialData?.supermarketName || "");
+  const [purchaseDate, setPurchaseDate] = useState(initialData?.purchaseDate || "");
+  const [amount, setAmount] = useState(initialData?.amount?.toString() || "");
+  const [cardType, setCardType] = useState<CardType>(initialData?.cardType || "visa");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,29 +33,31 @@ const ExpenseForm = ({ onSubmit }: ExpenseFormProps) => {
     }
 
     const expense: Expense = {
-      id: Date.now().toString(),
+      id: initialData?.id || crypto.randomUUID(),
       supermarketName,
       purchaseDate,
       amount: parseFloat(amount),
       cardType,
-      createdAt: new Date().toISOString(),
+      createdAt: initialData?.createdAt || new Date().toISOString(),
     };
 
     onSubmit(expense);
     
-    setSupermarketName("");
-    setPurchaseDate("");
-    setAmount("");
-    setCardType("visa");
-    
-    toast({
-      title: "Expense added",
-      description: "Your expense has been recorded successfully",
-    });
+    if (!initialData) {
+      setSupermarketName("");
+      setPurchaseDate("");
+      setAmount("");
+      setCardType("visa");
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>{initialData ? "Edit Expense" : "New Expense"}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="supermarket">Supermarket Name *</Label>
@@ -104,8 +109,19 @@ const ExpenseForm = ({ onSubmit }: ExpenseFormProps) => {
         </div>
       </div>
 
-      <Button type="submit" className="w-full">Add Expense</Button>
-    </form>
+          <div className="flex gap-2">
+            <Button type="submit" className="flex-1">
+              {initialData ? "Update Expense" : "Add Expense"}
+            </Button>
+            {onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+            )}
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

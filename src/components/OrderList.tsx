@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Edit, Trash2, Calendar, DollarSign, Package } from "lucide-react";
+import { MessageCircle, Edit, Trash2, Calendar, Package } from "lucide-react";
+import { TopperUploadDialog } from "./TopperUploadDialog";
 
 interface OrderListProps {
   orders: Order[];
@@ -159,7 +160,10 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex gap-1 justify-end">
+                  <div className="flex gap-1 justify-end items-center">
+                    {order.needsCakeTopper && (
+                      <TopperUploadDialog clientName={order.clientName} />
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"

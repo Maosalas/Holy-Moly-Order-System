@@ -1,8 +1,9 @@
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Trash2, MessageCircle, Calendar, Package, DollarSign } from "lucide-react";
+import { Edit, Trash2, MessageCircle, Calendar, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TopperUploadDialog } from "./TopperUploadDialog";
 
 interface OrderCardProps {
   order: Order;
@@ -128,6 +129,9 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
           <MessageCircle className="h-4 w-4" />
           WhatsApp
         </Button>
+        {order.needsCakeTopper && (
+          <TopperUploadDialog clientName={order.clientName} />
+        )}
         <Button
           variant="outline"
           size="sm"

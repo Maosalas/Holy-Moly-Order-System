@@ -3,32 +3,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Upload } from "lucide-react";
-import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
-import { useState } from "react";
+import { Trash2, Upload, Edit } from "lucide-react";
 
 interface ExpenseListProps {
   expenses: Expense[];
+  onEdit: (expense: Expense) => void;
   onDelete: (id: string) => void;
 }
 
-const ExpenseList = ({ expenses, onDelete }: ExpenseListProps) => {
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
-
-  const handleDeleteClick = (id: string) => {
-    setSelectedExpenseId(id);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = () => {
-    if (selectedExpenseId) {
-      onDelete(selectedExpenseId);
-    }
-    setDeleteDialogOpen(false);
-    setSelectedExpenseId(null);
-  };
-
+const ExpenseList = ({ expenses, onEdit, onDelete }: ExpenseListProps) => {
   const handleUploadReceipt = () => {
     window.open("https://drive.google.com/drive/my-drive", "_blank");
   };
@@ -94,23 +77,30 @@ const ExpenseList = ({ expenses, onDelete }: ExpenseListProps) => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1">
                         <Button
-                          variant="outline"
-                          size="sm"
+                          variant="ghost"
+                          size="icon"
                           onClick={handleUploadReceipt}
-                          className="gap-1"
+                          title="Upload Receipt"
                         >
                           <Upload className="h-4 w-4" />
-                          Upload Receipt
                         </Button>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteClick(expense.id)}
-                          className="text-destructive hover:text-destructive"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onEdit(expense)}
+                          title="Edit"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDelete(expense.id)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>
@@ -121,14 +111,6 @@ const ExpenseList = ({ expenses, onDelete }: ExpenseListProps) => {
           </div>
         </CardContent>
       </Card>
-
-      <DeleteConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Expense"
-        description="Are you sure you want to delete this expense? This action cannot be undone."
-      />
     </>
   );
 };
