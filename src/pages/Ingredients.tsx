@@ -12,11 +12,11 @@ const Ingredients = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+   useEffect(() => {
     const fetchIngredients = async () => {
       const result = await ingredientsApi.getAll();
       if (result.data) {
-        const ingredientsData = (result.data as any).ingredients || [];
+        const ingredientsData = Array.isArray(result.data) ? result.data : [];
         setIngredients(ingredientsData.map((i: any) => ({
           ...i,
           createdAt: new Date(i.created_at),
