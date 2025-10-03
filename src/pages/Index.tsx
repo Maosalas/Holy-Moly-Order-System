@@ -64,11 +64,12 @@ const Index = () => {
         });
         return;
       }
+      const recipeData = (result.data as any).recipe || result.data;
       const newRecipe: Recipe = {
         ...data,
-        id: (result.data as any).recipe.id,
-        createdAt: new Date((result.data as any).recipe.created_at),
-        updatedAt: new Date((result.data as any).recipe.updated_at),
+        id: recipeData.id,
+        createdAt: new Date(recipeData.created_at),
+        updatedAt: new Date(recipeData.updated_at),
       };
       setRecipes([...recipes, newRecipe]);
       toast({
@@ -100,16 +101,18 @@ const Index = () => {
           description: result.error,
           variant: "destructive",
         });
+        setDeleteDialogOpen(false);
+        setRecipeToDelete(null);
         return;
       }
       setRecipes(recipes.filter((r) => r.id !== recipeToDelete));
+      setDeleteDialogOpen(false);
+      setRecipeToDelete(null);
       toast({
         title: "Recipe Deleted",
         description: `${recipe?.name} has been removed.`,
       });
     }
-    setDeleteDialogOpen(false);
-    setRecipeToDelete(null);
   };
 
   const handleCancel = () => {

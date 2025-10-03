@@ -73,10 +73,11 @@ const Orders = () => {
         });
         return;
       }
+      const orderDataResponse = (result.data as any).order || result.data;
       const newOrder: Order = {
         ...orderData,
-        id: (result.data as any).order.id,
-        createdAt: (result.data as any).order.created_at,
+        id: orderDataResponse.id,
+        createdAt: orderDataResponse.created_at,
       };
       setOrders([newOrder, ...orders]);
       toast({
@@ -108,16 +109,18 @@ const Orders = () => {
           description: result.error,
           variant: "destructive",
         });
+        setDeleteDialogOpen(false);
+        setOrderToDelete(null);
         return;
       }
       setOrders(orders.filter((o) => o.id !== orderToDelete));
+      setDeleteDialogOpen(false);
+      setOrderToDelete(null);
       toast({
         title: "Order Deleted",
         description: `Order for ${order?.clientName} has been removed.`,
       });
     }
-    setDeleteDialogOpen(false);
-    setOrderToDelete(null);
   };
 
   const handleCancel = () => {

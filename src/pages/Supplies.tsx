@@ -61,10 +61,11 @@ const Supplies = () => {
         });
         return;
       }
+      const supplyDataResponse = (result.data as any).supply || result.data;
       const newSupply = {
         ...supplyData,
-        id: (result.data as any).supply.id,
-        createdAt: (result.data as any).supply.created_at
+        id: supplyDataResponse.id,
+        createdAt: supplyDataResponse.created_at
       };
       setSupplies([newSupply, ...supplies]);
       toast({
@@ -96,16 +97,18 @@ const Supplies = () => {
           description: result.error,
           variant: "destructive",
         });
+        setDeleteDialogOpen(false);
+        setSupplyToDelete(null);
         return;
       }
       setSupplies(supplies.filter((s) => s.id !== supplyToDelete));
+      setDeleteDialogOpen(false);
+      setSupplyToDelete(null);
       toast({
         title: "Supply Deleted",
         description: `${supply?.name} has been removed.`,
       });
     }
-    setDeleteDialogOpen(false);
-    setSupplyToDelete(null);
   };
 
   const handleCancel = () => {

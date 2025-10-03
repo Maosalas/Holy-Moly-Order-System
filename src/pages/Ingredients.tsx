@@ -101,16 +101,18 @@ const Ingredients = () => {
           description: result.error,
           variant: "destructive",
         });
+        setDeleteDialogOpen(false);
+        setIngredientToDelete(null);
         return;
       }
       setIngredients(ingredients.filter((i) => i.id !== ingredientToDelete));
+      setDeleteDialogOpen(false);
+      setIngredientToDelete(null);
       toast({
         title: "Ingredient Deleted",
         description: `${ingredient?.name} has been removed.`,
       });
     }
-    setDeleteDialogOpen(false);
-    setIngredientToDelete(null);
   };
 
   const handleCancel = () => {

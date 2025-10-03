@@ -61,10 +61,11 @@ const Expenses = () => {
         });
         return;
       }
+      const expenseDataResponse = (result.data as any).expense || result.data;
       const newExpense = {
         ...expenseData,
-        id: (result.data as any).expense.id,
-        createdAt: (result.data as any).expense.created_at
+        id: expenseDataResponse.id,
+        createdAt: expenseDataResponse.created_at
       };
       setExpenses([newExpense, ...expenses]);
       toast({
@@ -96,16 +97,18 @@ const Expenses = () => {
           description: result.error,
           variant: "destructive",
         });
+        setDeleteDialogOpen(false);
+        setExpenseToDelete(null);
         return;
       }
       setExpenses(expenses.filter((e) => e.id !== expenseToDelete));
+      setDeleteDialogOpen(false);
+      setExpenseToDelete(null);
       toast({
         title: "Expense Deleted",
         description: `Expense from ${expense?.supermarketName} has been removed.`,
       });
     }
-    setDeleteDialogOpen(false);
-    setExpenseToDelete(null);
   };
 
   const handleCancel = () => {
