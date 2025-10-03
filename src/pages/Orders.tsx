@@ -18,18 +18,7 @@ const Orders = () => {
     const fetchOrders = async () => {
       const result = await ordersApi.getAll();
       if (result.data) {
-        const ordersData = Array.isArray(result.data) ? result.data : [];
-        setOrders(ordersData.map((o: any) => ({
-          ...o,
-          createdAt: o.created_at,
-          costAmount: o.cost_amount ?? 0,
-          chargeAmount: o.charge_amount ?? 0,
-          paymentMethod: o.payment_method ?? "cash",
-          downPayment: o.down_payment ?? 0,
-          selectedSupplies: o.selected_supplies ?? [],
-          suppliesNeeded: o.supplies_needed ?? "",
-          statuses: o.statuses ?? ["waiting-for-payment"],
-        })));
+        setOrders(Array.isArray(result.data) ? result.data : []);
       }
       setIsLoading(false);
     };
@@ -41,7 +30,7 @@ const Orders = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
-  const handleSubmit = async (orderData: Omit<Order, "id" | "createdAt">) => {
+  const handleSubmit = async (orderData: Omit<Order, "id" | "created_at">) => {
     if (editingOrder) {
       const result = await ordersApi.update(editingOrder.id, orderData);
       if (result.error) {
@@ -55,13 +44,13 @@ const Orders = () => {
       setOrders(
         orders.map((o) =>
           o.id === editingOrder.id
-            ? { ...orderData, id: o.id, createdAt: o.createdAt }
+            ? { ...orderData, id: o.id, created_at: o.created_at }
             : o
         )
       );
       toast({
         title: "Order Updated",
-        description: `Order for ${orderData.clientName} has been updated.`,
+        description: `Order for ${orderData.client_name} has been updated.`,
       });
     } else {
       const result = await ordersApi.create(orderData);
@@ -77,12 +66,12 @@ const Orders = () => {
       const newOrder: Order = {
         ...orderData,
         id: orderDataResponse.id,
-        createdAt: orderDataResponse.created_at,
+        created_at: orderDataResponse.created_at,
       };
       setOrders([newOrder, ...orders]);
       toast({
         title: "Order Created",
-        description: `${orderData.clientName} has been created.`,
+        description: `${orderData.client_name} has been created.`,
       });
     }
     setIsFormOpen(false);
@@ -118,7 +107,7 @@ const Orders = () => {
       setOrderToDelete(null);
       toast({
         title: "Order Deleted",
-        description: `Order for ${order?.clientName} has been removed.`,
+        description: `Order for ${order?.client_name} has been removed.`,
       });
     }
   };
@@ -130,7 +119,7 @@ const Orders = () => {
 
   // Filter orders based on user role
   const visibleOrders = user?.role === "cake_topper_provider"
-    ? orders.filter(order => order.needsCakeTopper)
+    ? orders.filter(order => order.needs_cake_topper)
     : orders;
 
   return (
@@ -167,8 +156,8 @@ const Orders = () => {
       ) : (
         <OrderList
           orders={visibleOrders}
-          onEdit={user?.role === "owner" ? handleEdit : undefined}
-          onDelete={user?.role === "owner" ? handleDeleteClick : undefined}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
         />
       )}
 
@@ -177,7 +166,7 @@ const Orders = () => {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
         title="Delete Order"
-        description={`Are you sure you want to delete the order for "${orders.find((o) => o.id === orderToDelete)?.clientName || ""}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete the order for "${orders.find((o) => o.id === orderToDelete)?.client_name || ""}"? This action cannot be undone.`}
       />
     </div>
   );
