@@ -105,6 +105,45 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     );
   };
 
+  const compressImage = (base64: string, callback: (compressed: string) => void) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Max dimensions
+      const MAX_WIDTH = 800;
+      const MAX_HEIGHT = 800;
+      
+      let width = img.width;
+      let height = img.height;
+      
+      // Calculate new dimensions maintaining aspect ratio
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      ctx?.drawImage(img, 0, 0, width, height);
+      
+      // Compress to JPEG with 0.7 quality (70%)
+      const compressed = canvas.toDataURL('image/jpeg', 0.7);
+      console.log('Image compressed from', base64.length, 'to', compressed.length, 'characters');
+      callback(compressed);
+    };
+    img.src = base64;
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -119,7 +158,10 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
       
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImage(reader.result as string);
+        // Compress the image before setting it
+        compressImage(reader.result as string, (compressed) => {
+          setImage(compressed);
+        });
       };
       reader.readAsDataURL(file);
     }
