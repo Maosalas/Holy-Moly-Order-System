@@ -54,7 +54,7 @@ const Ingredients = () => {
         title: "Ingredient Updated",
         description: `${data.name} has been successfully updated.`,
       });
-    } else {
+  } else {
       const result = await ingredientsApi.create(data);
       if (result.error) {
         toast({
@@ -64,11 +64,12 @@ const Ingredients = () => {
         });
         return;
       }
+      const ingredientData = (result.data as any).ingredient || result.data;
       const newIngredient: Ingredient = {
         ...data,
-        id: (result.data as any).ingredient.id,
-        createdAt: new Date((result.data as any).ingredient.created_at),
-        updatedAt: new Date((result.data as any).ingredient.updated_at),
+        id: ingredientData.id,
+        createdAt: new Date(ingredientData.created_at),
+        updatedAt: new Date(ingredientData.updated_at),
       };
       setIngredients([...ingredients, newIngredient]);
       toast({
