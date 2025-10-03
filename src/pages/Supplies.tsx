@@ -37,7 +37,7 @@ const Supplies = () => {
       if (result.error) {
         toast({
           title: "Error",
-          description: result.error,
+          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
           variant: "destructive",
         });
         return;
@@ -56,7 +56,7 @@ const Supplies = () => {
       if (result.error) {
         toast({
           title: "Error",
-          description: result.error,
+          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
           variant: "destructive",
         });
         return;
@@ -94,7 +94,7 @@ const Supplies = () => {
       if (result.error) {
         toast({
           title: "Error",
-          description: result.error,
+          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
           variant: "destructive",
         });
         setDeleteDialogOpen(false);
