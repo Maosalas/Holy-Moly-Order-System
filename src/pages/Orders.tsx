@@ -7,57 +7,51 @@ import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Order } from "@/types/order";
-
-const ORDERS_STORAGE_KEY = "holy-moly-orders";
+import { ordersApi } from "@/lib/api";
 
 const Orders = () => {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<Order[]>(() => {
-    const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
-    if (!stored) return [];
-    
-    const parsedOrders = JSON.parse(stored);
-    // Migrate old orders to new schema
-    return parsedOrders.map((order: any) => ({
-      ...order,
-      costAmount: order.costAmount ?? 0,
-      chargeAmount: order.chargeAmount ?? order.totalAmount ?? 0,
-      paymentMethod: order.paymentMethod ?? "cash",
-      downPayment: order.downPayment ?? 0,
-      selectedSupplies: order.selectedSupplies ?? [],
-      suppliesNeeded: order.suppliesNeeded ?? "",
-      statuses: order.statuses ?? (order.status ? [order.status] : ["waiting-for-payment"]),
-    }));
-  });
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Migrate orders in localStorage
-    const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
-    if (stored) {
-      const parsedOrders = JSON.parse(stored);
-      const migratedOrders = parsedOrders.map((order: any) => ({
-        ...order,
-        costAmount: order.costAmount ?? 0,
-        chargeAmount: order.chargeAmount ?? order.totalAmount ?? 0,
-        paymentMethod: order.paymentMethod ?? "cash",
-        downPayment: order.downPayment ?? 0,
-        selectedSupplies: order.selectedSupplies ?? [],
-        suppliesNeeded: order.suppliesNeeded ?? "",
-        statuses: order.statuses ?? (order.status ? [order.status] : ["waiting-for-payment"]),
-      }));
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(migratedOrders));
-    }
-    
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
-  }, [orders]);
+    const fetchOrders = async () => {
+      const result = await ordersApi.getAll();
+      if (result.data) {
+        const ordersData = (result.data as any).orders || [];
+        setOrders(ordersData.map((o: any) => ({
+          ...o,
+          createdAt: o.created_at,
+          costAmount: o.cost_amount ?? 0,
+          chargeAmount: o.charge_amount ?? 0,
+          paymentMethod: o.payment_method ?? "cash",
+          downPayment: o.down_payment ?? 0,
+          selectedSupplies: o.selected_supplies ?? [],
+          suppliesNeeded: o.supplies_needed ?? "",
+          statuses: o.statuses ?? ["waiting-for-payment"],
+        })));
+      }
+      setIsLoading(false);
+    };
+    fetchOrders();
+  }, []);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
-  const handleSubmit = (orderData: Omit<Order, "id" | "createdAt">) => {
+  const handleSubmit = async (orderData: Omit<Order, "id" | "createdAt">) => {
     if (editingOrder) {
+      const result = await ordersApi.update(editingOrder.id, orderData);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       setOrders(
         orders.map((o) =>
           o.id === editingOrder.id
@@ -70,15 +64,24 @@ const Orders = () => {
         description: `Order for ${orderData.clientName} has been updated.`,
       });
     } else {
+      const result = await ordersApi.create(orderData);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       const newOrder: Order = {
         ...orderData,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
+        id: (result.data as any).order.id,
+        createdAt: (result.data as any).order.created_at,
       };
       setOrders([newOrder, ...orders]);
       toast({
         title: "Order Created",
-        description: `Order for ${orderData.clientName} has been created.`,
+        description: `${orderData.clientName} has been created.`,
       });
     }
     setIsFormOpen(false);
@@ -95,9 +98,18 @@ const Orders = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (orderToDelete) {
       const order = orders.find((o) => o.id === orderToDelete);
+      const result = await ordersApi.delete(orderToDelete);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       setOrders(orders.filter((o) => o.id !== orderToDelete));
       toast({
         title: "Order Deleted",

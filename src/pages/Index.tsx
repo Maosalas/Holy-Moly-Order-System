@@ -6,29 +6,43 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-const STORAGE_KEY = "holy-moly-recipes";
+import { recipesApi } from "@/lib/api";
 
 const Index = () => {
-  const [recipes, setRecipes] = useState<Recipe[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored).map((r: any) => ({
-      ...r,
-      createdAt: new Date(r.createdAt),
-      updatedAt: new Date(r.updatedAt)
-    })) : [];
-  });
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-  }, [recipes]);
+    const fetchRecipes = async () => {
+      const result = await recipesApi.getAll();
+      if (result.data) {
+        const recipesData = (result.data as any).recipes || [];
+        setRecipes(recipesData.map((r: any) => ({
+          ...r,
+          createdAt: new Date(r.created_at),
+          updatedAt: new Date(r.updated_at)
+        })));
+      }
+      setIsLoading(false);
+    };
+    fetchRecipes();
+  }, []);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState<string | null>(null);
 
-  const handleSubmit = (data: RecipeFormData) => {
+  const handleSubmit = async (data: RecipeFormData) => {
     if (editingRecipe) {
+      const result = await recipesApi.update(editingRecipe.id, data);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       setRecipes(
         recipes.map((r) =>
           r.id === editingRecipe.id
@@ -41,11 +55,20 @@ const Index = () => {
         description: `${data.name} has been successfully updated.`,
       });
     } else {
+      const result = await recipesApi.create(data);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       const newRecipe: Recipe = {
         ...data,
-        id: crypto.randomUUID(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        id: (result.data as any).recipe.id,
+        createdAt: new Date((result.data as any).recipe.created_at),
+        updatedAt: new Date((result.data as any).recipe.updated_at),
       };
       setRecipes([...recipes, newRecipe]);
       toast({
@@ -67,9 +90,18 @@ const Index = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (recipeToDelete) {
       const recipe = recipes.find((r) => r.id === recipeToDelete);
+      const result = await recipesApi.delete(recipeToDelete);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       setRecipes(recipes.filter((r) => r.id !== recipeToDelete));
       toast({
         title: "Recipe Deleted",

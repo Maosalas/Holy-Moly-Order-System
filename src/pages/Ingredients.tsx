@@ -6,25 +6,43 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-const STORAGE_KEY = "holy-moly-ingredients";
+import { ingredientsApi } from "@/lib/api";
 
 const Ingredients = () => {
-  const [ingredients, setIngredients] = useState<Ingredient[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  });
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ingredients));
-  }, [ingredients]);
+    const fetchIngredients = async () => {
+      const result = await ingredientsApi.getAll();
+      if (result.data) {
+        const ingredientsData = (result.data as any).ingredients || [];
+        setIngredients(ingredientsData.map((i: any) => ({
+          ...i,
+          createdAt: new Date(i.created_at),
+          updatedAt: new Date(i.updated_at)
+        })));
+      }
+      setIsLoading(false);
+    };
+    fetchIngredients();
+  }, []);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ingredientToDelete, setIngredientToDelete] = useState<string | null>(null);
 
-  const handleSubmit = (data: IngredientFormData) => {
+  const handleSubmit = async (data: IngredientFormData) => {
     if (editingIngredient) {
+      const result = await ingredientsApi.update(editingIngredient.id, data);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       setIngredients(
         ingredients.map((i) =>
           i.id === editingIngredient.id
@@ -37,11 +55,20 @@ const Ingredients = () => {
         description: `${data.name} has been successfully updated.`,
       });
     } else {
+      const result = await ingredientsApi.create(data);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       const newIngredient: Ingredient = {
         ...data,
-        id: crypto.randomUUID(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        id: (result.data as any).ingredient.id,
+        createdAt: new Date((result.data as any).ingredient.created_at),
+        updatedAt: new Date((result.data as any).ingredient.updated_at),
       };
       setIngredients([...ingredients, newIngredient]);
       toast({
@@ -63,9 +90,18 @@ const Ingredients = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (ingredientToDelete) {
       const ingredient = ingredients.find((i) => i.id === ingredientToDelete);
+      const result = await ingredientsApi.delete(ingredientToDelete);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       setIngredients(ingredients.filter((i) => i.id !== ingredientToDelete));
       toast({
         title: "Ingredient Deleted",

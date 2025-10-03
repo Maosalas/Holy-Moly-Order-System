@@ -6,8 +6,7 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-const SUPPLIES_STORAGE_KEY = "holy-moly-supplies";
+import { suppliesApi } from "@/lib/api";
 
 const Supplies = () => {
   const [supplies, setSupplies] = useState<Supply[]>([]);
@@ -15,20 +14,34 @@ const Supplies = () => {
   const [editingSupply, setEditingSupply] = useState<Supply | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [supplyToDelete, setSupplyToDelete] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(SUPPLIES_STORAGE_KEY);
-    if (stored) {
-      setSupplies(JSON.parse(stored));
-    }
+    const fetchSupplies = async () => {
+      const result = await suppliesApi.getAll();
+      if (result.data) {
+        const suppliesData = (result.data as any).supplies || [];
+        setSupplies(suppliesData.map((s: any) => ({
+          ...s,
+          createdAt: s.created_at
+        })));
+      }
+      setIsLoading(false);
+    };
+    fetchSupplies();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(SUPPLIES_STORAGE_KEY, JSON.stringify(supplies));
-  }, [supplies]);
-
-  const handleSubmit = (supplyData: Supply) => {
+  const handleSubmit = async (supplyData: Supply) => {
     if (editingSupply) {
+      const result = await suppliesApi.update(editingSupply.id, supplyData);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       setSupplies(
         supplies.map((s) =>
           s.id === editingSupply.id ? { ...supplyData, id: s.id, createdAt: s.createdAt } : s
@@ -39,7 +52,21 @@ const Supplies = () => {
         description: `${supplyData.name} has been updated successfully.`,
       });
     } else {
-      setSupplies([supplyData, ...supplies]);
+      const result = await suppliesApi.create(supplyData);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+      const newSupply = {
+        ...supplyData,
+        id: (result.data as any).supply.id,
+        createdAt: (result.data as any).supply.created_at
+      };
+      setSupplies([newSupply, ...supplies]);
       toast({
         title: "Supply Added",
         description: `${supplyData.name} has been added successfully.`,
@@ -59,9 +86,18 @@ const Supplies = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (supplyToDelete) {
       const supply = supplies.find((s) => s.id === supplyToDelete);
+      const result = await suppliesApi.delete(supplyToDelete);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       setSupplies(supplies.filter((s) => s.id !== supplyToDelete));
       toast({
         title: "Supply Deleted",

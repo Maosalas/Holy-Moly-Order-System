@@ -6,8 +6,7 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-const EXPENSES_STORAGE_KEY = "holy-moly-expenses";
+import { expensesApi } from "@/lib/api";
 
 const Expenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -15,20 +14,34 @@ const Expenses = () => {
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(EXPENSES_STORAGE_KEY);
-    if (stored) {
-      setExpenses(JSON.parse(stored));
-    }
+    const fetchExpenses = async () => {
+      const result = await expensesApi.getAll();
+      if (result.data) {
+        const expensesData = (result.data as any).expenses || [];
+        setExpenses(expensesData.map((e: any) => ({
+          ...e,
+          createdAt: e.created_at
+        })));
+      }
+      setIsLoading(false);
+    };
+    fetchExpenses();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
-  }, [expenses]);
-
-  const handleSubmit = (expenseData: Expense) => {
+  const handleSubmit = async (expenseData: Expense) => {
     if (editingExpense) {
+      const result = await expensesApi.update(editingExpense.id, expenseData);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       setExpenses(
         expenses.map((e) =>
           e.id === editingExpense.id ? { ...expenseData, id: e.id, createdAt: e.createdAt } : e
@@ -39,7 +52,21 @@ const Expenses = () => {
         description: "The expense has been updated successfully.",
       });
     } else {
-      setExpenses([expenseData, ...expenses]);
+      const result = await expensesApi.create(expenseData);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+      const newExpense = {
+        ...expenseData,
+        id: (result.data as any).expense.id,
+        createdAt: (result.data as any).expense.created_at
+      };
+      setExpenses([newExpense, ...expenses]);
       toast({
         title: "Expense Added",
         description: "The expense has been recorded successfully.",
@@ -59,9 +86,18 @@ const Expenses = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (expenseToDelete) {
       const expense = expenses.find((e) => e.id === expenseToDelete);
+      const result = await expensesApi.delete(expenseToDelete);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
       setExpenses(expenses.filter((e) => e.id !== expenseToDelete));
       toast({
         title: "Expense Deleted",
