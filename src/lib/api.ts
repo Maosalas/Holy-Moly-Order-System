@@ -68,7 +68,7 @@ export const authApi = {
 
 // Ingredients API
 export const ingredientsApi = {
-  getAll: () => apiFetch("/ingredients", { method: "GET" }),
+  getAll: () => apiFetch("/ingredients/", { method: "GET" }),
   
   create: (ingredient: any) =>
     apiFetch("/ingredients", {
