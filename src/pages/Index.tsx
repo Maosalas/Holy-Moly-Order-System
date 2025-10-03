@@ -16,7 +16,7 @@ const Index = () => {
     const fetchRecipes = async () => {
       const result = await recipesApi.getAll();
       if (result.data) {
-        const recipesData = (result.data as any).recipes || [];
+        const recipesData = Array.isArray(result.data) ? result.data : [];
         setRecipes(recipesData.map((r: any) => ({
           ...r,
           createdAt: new Date(r.created_at),
