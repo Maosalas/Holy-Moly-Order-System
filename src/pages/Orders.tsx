@@ -18,7 +18,7 @@ const Orders = () => {
     const fetchOrders = async () => {
       const result = await ordersApi.getAll();
       if (result.data) {
-        const ordersData = (result.data as any).orders || [];
+        const ordersData = Array.isArray(result.data) ? result.data : [];
         setOrders(ordersData.map((o: any) => ({
           ...o,
           createdAt: o.created_at,

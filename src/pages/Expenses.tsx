@@ -20,7 +20,7 @@ const Expenses = () => {
     const fetchExpenses = async () => {
       const result = await expensesApi.getAll();
       if (result.data) {
-        const expensesData = (result.data as any).expenses || [];
+        const expensesData = Array.isArray(result.data) ? result.data : [];
         setExpenses(expensesData.map((e: any) => ({
           ...e,
           createdAt: e.created_at

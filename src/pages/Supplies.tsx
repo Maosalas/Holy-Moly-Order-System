@@ -20,7 +20,7 @@ const Supplies = () => {
     const fetchSupplies = async () => {
       const result = await suppliesApi.getAll();
       if (result.data) {
-        const suppliesData = (result.data as any).supplies || [];
+        const suppliesData = Array.isArray(result.data) ? result.data : [];
         setSupplies(suppliesData.map((s: any) => ({
           ...s,
           createdAt: s.created_at
