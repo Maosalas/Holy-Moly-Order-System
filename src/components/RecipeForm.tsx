@@ -8,6 +8,7 @@ import { Plus, X, Upload, ImageIcon } from "lucide-react";
 import { Recipe, RecipeIngredient, RecipeFormData } from "@/types/recipe";
 import { Ingredient } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
+import { ingredientsApi } from "@/lib/api";
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -24,9 +25,18 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("holy-moly-ingredients");
-    const ingredients = stored ? JSON.parse(stored) : [];
-    setAvailableIngredients(ingredients);
+    const fetchIngredients = async () => {
+      const result = await ingredientsApi.getAll();
+      if (result.data) {
+        const ingredientsData = (result.data as any).ingredients || [];
+        setAvailableIngredients(ingredientsData.map((i: any) => ({
+          ...i,
+          createdAt: new Date(i.created_at),
+          updatedAt: new Date(i.updated_at)
+        })));
+      }
+    };
+    fetchIngredients();
   }, []);
 
   const calculateTotalCost = (ingredients: RecipeIngredient[]) => {
