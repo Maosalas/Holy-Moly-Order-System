@@ -121,7 +121,7 @@ const Ingredients = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold">Ingredients</h2>
+          <h2 className="text-3xl font-bold">Ingredientes</h2>
           <p className="text-muted-foreground mt-1">Manage your ingredient inventory</p>
         </div>
         {!isFormOpen && (
