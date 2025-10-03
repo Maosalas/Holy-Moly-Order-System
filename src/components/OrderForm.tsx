@@ -13,8 +13,7 @@ import { TopperUploadDialog } from "./TopperUploadDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Order, OrderStatus, PaymentMethod, OrderSupply } from "@/types/order";
 import type { Supply } from "@/types/supply";
-
-const SUPPLIES_STORAGE_KEY = "holy-moly-supplies";
+import { suppliesApi } from "@/lib/api";
 
 interface OrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "createdAt">) => void;
@@ -38,12 +37,19 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
   const [statuses, setStatuses] = useState<OrderStatus[]>(initialData?.statuses || ["waiting-for-payment"]);
 
-  // Load supplies from localStorage
+  // Load supplies from API
   useEffect(() => {
-    const stored = localStorage.getItem(SUPPLIES_STORAGE_KEY);
-    if (stored) {
-      setSupplies(JSON.parse(stored));
-    }
+    const fetchSupplies = async () => {
+      const result = await suppliesApi.getAll();
+      if (result.data) {
+        const suppliesData = Array.isArray(result.data) ? result.data : [];
+        setSupplies(suppliesData.map((s: any) => ({
+          ...s,
+          createdAt: s.created_at
+        })));
+      }
+    };
+    fetchSupplies();
   }, []);
 
   // Calculate cost from selected supplies
