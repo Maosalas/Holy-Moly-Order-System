@@ -28,7 +28,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     const fetchIngredients = async () => {
       const result = await ingredientsApi.getAll();
       if (result.data) {
-        const ingredientsData = (result.data as any).ingredients || [];
+        const ingredientsData = Array.isArray(result.data) ? result.data : [];
         setAvailableIngredients(ingredientsData.map((i: any) => ({
           ...i,
           createdAt: new Date(i.created_at),
