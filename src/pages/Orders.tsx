@@ -146,7 +146,7 @@ const Orders = () => {
               : "Manage all your client orders"}
           </p>
         </div>
-        {!isFormOpen && user?.role === "owner" && (
+        {!isFormOpen && (
           <Button
             onClick={() => setIsFormOpen(true)}
             size="lg"
