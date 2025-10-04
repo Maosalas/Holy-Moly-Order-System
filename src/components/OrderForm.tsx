@@ -27,8 +27,12 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [clientName, setClientName] = useState(initialData?.clientName || "");
   const [phoneNumber, setPhoneNumber] = useState(initialData?.phoneNumber || "");
   const [orderDetails, setOrderDetails] = useState(initialData?.orderDetails || "");
-  const [deliveryDate, setDeliveryDate] = useState(initialData?.deliveryDate || "");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialData?.paymentMethod || "cash");
+  const [deliveryDate, setDeliveryDate] = useState<string>(
+    initialData?.deliveryDate 
+      ? new Date(initialData.deliveryDate).toISOString().slice(0, 16)
+      : ""
+  );
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialData?.paymentMethod || "Efectivo");
   const [clientPhotos, setClientPhotos] = useState<string[]>(initialData?.clientPhotos || []);
   const [selectedSupplies, setSelectedSupplies] = useState<OrderSupply[]>(initialData?.selectedSupplies || []);
   const [chargeAmount, setChargeAmount] = useState(initialData?.chargeAmount?.toString() || "");
@@ -222,7 +226,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       clientName: clientName.trim(),
       phoneNumber: phoneNumber.trim(),
       orderDetails: orderDetails.trim(),
-      deliveryDate,
+      deliveryDate: new Date(deliveryDate),
       paymentMethod,
       clientPhotos,
       costAmount,
@@ -248,7 +252,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     setPhoneNumber("");
     setOrderDetails("");
     setDeliveryDate("");
-    setPaymentMethod("cash");
+    setPaymentMethod("Efectivo");
     setClientPhotos([]);
     setSelectedSupplies([]);
     setChargeAmount("");

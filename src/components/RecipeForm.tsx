@@ -290,14 +290,15 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                 className="gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Add Ingredient
+                <span className="hidden sm:inline">Add Ingredient</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </div>
 
             <div className="space-y-3">
               {recipeIngredients.map((ingredient) => (
-                <div key={ingredient.id} className="flex gap-2 items-start">
-                  <div className="flex-1">
+                <div key={ingredient.id} className="flex flex-col sm:flex-row gap-2 items-start p-3 border rounded-lg">
+                  <div className="w-full sm:flex-1">
                     <Select
                       value={ingredient.ingredientId}
                       onValueChange={(value) =>
@@ -316,45 +317,48 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="w-28">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={ingredient.quantity || ""}
-                      onChange={(e) =>
-                        updateIngredientQuantity(
-                          ingredient.id,
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      placeholder="Qty"
-                      required
-                      disabled={!ingredient.ingredientId}
-                    />
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <div className="flex-1 sm:w-28">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={ingredient.quantity || ""}
+                        onChange={(e) =>
+                          updateIngredientQuantity(
+                            ingredient.id,
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        placeholder="Qty"
+                        required
+                        disabled={!ingredient.ingredientId}
+                      />
+                    </div>
+                    <div className="flex-1 sm:w-24">
+                      <Input
+                        value={ingredient.units}
+                        placeholder="Unit"
+                        disabled
+                      />
+                    </div>
+                    <div className="flex-1 sm:w-28">
+                      <Input
+                        value={ingredient.cost.toFixed(2)}
+                        placeholder="Cost"
+                        disabled
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => removeIngredient(ingredient.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div className="w-24">
-                    <Input
-                      value={ingredient.units}
-                      placeholder="Unit"
-                      disabled
-                    />
-                  </div>
-                  <div className="w-28">
-                    <Input
-                      value={ingredient.cost.toFixed(2)}
-                      placeholder="Cost"
-                      disabled
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeIngredient(ingredient.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
               ))}
             </div>

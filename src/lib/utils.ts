@@ -7,9 +7,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function generateICS(order: Order, action: 'create' | 'update' | 'delete') {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   };
 
   const status = action === 'delete' ? 'CANCELLED' : 'CONFIRMED';
@@ -22,7 +22,7 @@ export function generateICS(order: Order, action: 'create' | 'update' | 'delete'
     `METHOD:${method}`,
     'BEGIN:VEVENT',
     `UID:order-${order.id}@yourdomain.com`,
-    `DTSTAMP:${formatDate(new Date().toISOString())}`,
+    `DTSTAMP:${formatDate(new Date())}`,
     `DTSTART:${formatDate(order.deliveryDate)}`,
     `DTEND:${formatDate(order.deliveryDate)}`,
     `SUMMARY:Order: ${order.clientName}`,

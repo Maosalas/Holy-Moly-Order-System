@@ -124,8 +124,8 @@ const Dashboard = () => {
   const upcomingOrders = roleFilteredOrders;
   console.log(upcomingOrders);
 
-  const getTimeUntilDelivery = (deliveryDate: string) => {
-    const delivery = new Date(deliveryDate);
+  const getTimeUntilDelivery = (deliveryDate: Date | string) => {
+    const delivery = typeof deliveryDate === 'string' ? new Date(deliveryDate) : deliveryDate;
     const diffTime = delivery.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
