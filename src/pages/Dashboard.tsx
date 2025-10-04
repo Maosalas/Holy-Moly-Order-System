@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DollarSign, ShoppingBag, Phone, Calendar, ArrowRight, Package, Receipt, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { ordersApi } from "@/lib/api";
 import type { Order } from "@/types/order";
 import type { Expense } from "@/types/expense";
 
@@ -29,24 +30,13 @@ const Dashboard = () => {
   const [expensesEndDate, setExpensesEndDate] = useState("");
 
   useEffect(() => {
-    const loadOrders = () => {
-      const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
-      if (stored) {
-        const parsedOrders = JSON.parse(stored);
-        // Migrate old orders to new schema
-        const migratedOrders = parsedOrders.map((order: any) => ({
-          ...order,
-          costAmount: order.costAmount ?? 0,
-          chargeAmount: order.chargeAmount ?? order.totalAmount ?? 0,
-          paymentMethod: order.paymentMethod ?? "cash",
-          downPayment: order.downPayment ?? 0,
-          selectedSupplies: order.selectedSupplies ?? [],
-          suppliesNeeded: order.suppliesNeeded ?? "",
-          statuses: order.statuses ?? (order.status ? [order.status] : ["waiting-for-payment"]),
-        }));
-        setOrders(migratedOrders);
-      } else {
+    const loadOrders = async () => {
+      const { data, error } = await ordersApi.getAll();
+      if (error) {
+        console.error("Error loading orders:", error);
         setOrders([]);
+      } else {
+        setOrders((data as Order[]) || []);
       }
     };
 
