@@ -14,7 +14,7 @@ interface OrderListProps {
 
 export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
   const handleWhatsApp = (phoneNumber: string, clientName: string) => {
-    const message = `Hi ${clientName}! This is about your order.`;
+    const message = `Hola ${clientName}! Te hablamos de Holy Moly...`;
     const url = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
@@ -32,11 +32,11 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
 
   const getStatusLabel = (status: string) => {
     const labels = {
-      "waiting-for-payment": "Waiting",
-      "partially-paid": "Partial",
-      "payment-received": "Paid",
-      "confirmed": "Confirmed",
-      "finished": "Finished",
+      "waiting-for-payment": "Espera",
+      "partially-paid": "Parcial",
+      "payment-received": "Pagado",
+      "confirmed": "Confirmado",
+      "finished": "Terminado",
     };
     return labels[status as keyof typeof labels] || status;
   };
@@ -60,13 +60,13 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">
-            <TableHead className="font-semibold">Client</TableHead>
-            <TableHead className="font-semibold">Delivery Date</TableHead>
-            <TableHead className="font-semibold">Amount & Payment</TableHead>
-            <TableHead className="font-semibold">Payment Method</TableHead>
+            <TableHead className="font-semibold">Cliente</TableHead>
+            <TableHead className="font-semibold">Fecha de entrega</TableHead>
+            <TableHead className="font-semibold">Monto y cobro</TableHead>
+            <TableHead className="font-semibold">Método de pago</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
-            <TableHead className="font-semibold">Details</TableHead>
-            <TableHead className="text-right font-semibold">Actions</TableHead>
+            <TableHead className="font-semibold">Detalles</TableHead>
+            <TableHead className="text-right font-semibold">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

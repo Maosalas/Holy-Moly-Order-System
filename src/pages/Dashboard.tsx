@@ -90,7 +90,7 @@ const Dashboard = () => {
   const roleFilteredOrders = user?.role === "cake_topper_provider"
     ? orders.filter(order => order.needsCakeTopper)
     : orders;
-
+console.log(roleFilteredOrders);
   // Filter orders by date range
   const filteredOrders = roleFilteredOrders.filter(order => {
     const orderDate = new Date(order.createdAt);

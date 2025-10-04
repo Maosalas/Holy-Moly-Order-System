@@ -255,10 +255,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Section 1: Client Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">Client Information</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">Información del cliente</h3>
             
             <div className="space-y-2">
-              <Label htmlFor="clientName">Client Name *</Label>
+              <Label htmlFor="clientName">Nombre del cliente *</Label>
               <Input
                 id="clientName"
                 value={clientName}
@@ -269,7 +269,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number *</Label>
+              <Label htmlFor="phoneNumber">Número de teléfono *</Label>
               <Input
                 id="phoneNumber"
                 type="tel"
@@ -281,7 +281,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="orderDetails">Order Details *</Label>
+              <Label htmlFor="orderDetails">Detalles del pedido *</Label>
               <Textarea
                 id="orderDetails"
                 value={orderDetails}
@@ -293,7 +293,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="deliveryDate">Delivery Date *</Label>
+              <Label htmlFor="deliveryDate">Fecha de entrega *</Label>
               <Input
                 id="deliveryDate"
                 type="date"
@@ -304,7 +304,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paymentMethod">Payment Method</Label>
+              <Label htmlFor="paymentMethod">Método de pago</Label>
               <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
                 <SelectTrigger id="paymentMethod">
                   <SelectValue />
@@ -313,13 +313,13 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                   <SelectItem value="cash">Efectivo</SelectItem>
                   <SelectItem value="transfer">Trasnferencia</SelectItem>
                   <SelectItem value="card">Link de pago/tarjeta</SelectItem>
-                  <SelectItem value="other">SINPE</SelectItem>
+                  <SelectItem value="sinpe">SINPE</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Client Ideas / Photos</Label>
+              <Label>Fotos de referencia</Label>
               <div className="flex items-center gap-2">
                 <Button type="button" variant="outline" className="relative" asChild>
                   <label className="cursor-pointer">
@@ -362,21 +362,21 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
           {/* Section 2: Financial & Supplies */}
           <div className="space-y-5 pt-4">
-            <h3 className="text-lg font-semibold border-b pb-2">Financial & Supplies</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">Miscelaneos y Financias</h3>
             
             {/* Supplies Selection */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-base font-semibold">Supplies from Inventory</Label>
-                  <p className="text-sm text-muted-foreground mt-1">Select multiple supplies to calculate costs</p>
+                  <Label className="text-base font-semibold">Suministros</Label>
+                  <p className="text-sm text-muted-foreground mt-1">Seleccione múltiples suministros necesarios para el pedido</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <Select onValueChange={addSupply}>
                   <SelectTrigger className="flex-1 h-11 bg-background border-2 hover:border-primary/50 transition-colors">
-                    <SelectValue placeholder="Choose a supply to add..." />
+                    <SelectValue placeholder="Escoja un suministro a agregar..." />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
                     {supplies.length === 0 ? (
@@ -431,7 +431,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                 <div className="space-y-3">
                   <div className="flex items-center justify-between px-1">
                     <span className="text-sm font-medium text-muted-foreground">
-                      {selectedSupplies.length} {selectedSupplies.length === 1 ? 'supply' : 'supplies'} selected
+                      {selectedSupplies.length} {selectedSupplies.length === 1 ? 'suministro' : 'suministros'} seleccionados
                     </span>
                   </div>
                   
@@ -439,10 +439,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
-                          <TableHead className="font-semibold">Supply Name</TableHead>
-                          <TableHead className="w-[130px] font-semibold">Quantity</TableHead>
-                          <TableHead className="w-[80px] font-semibold">Unit</TableHead>
-                          <TableHead className="w-[120px] font-semibold text-right">Cost/Unit</TableHead>
+                          <TableHead className="font-semibold">Nombre</TableHead>
+                          <TableHead className="w-[130px] font-semibold">Cantidad</TableHead>
+                          <TableHead className="w-[80px] font-semibold">Unidad</TableHead>
+                          <TableHead className="w-[120px] font-semibold text-right">Costo</TableHead>
                           <TableHead className="w-[120px] font-semibold text-right">Subtotal</TableHead>
                           <TableHead className="w-[60px]"></TableHead>
                         </TableRow>
@@ -505,17 +505,17 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Cost to Make (₡)</Label>
+                <Label>Costo total (₡)</Label>
                 <div className="p-3 rounded-md bg-muted border">
                   <p className="text-lg font-semibold">
                     ₡{costAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Calculated from supplies</p>
+                  <p className="text-xs text-muted-foreground mt-1">Calculado de los suministros</p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="chargeAmount">Amount to Charge (₡) *</Label>
+                <Label htmlFor="chargeAmount">Precio a cobrar (₡) *</Label>
                 <Input
                   id="chargeAmount"
                   type="number"
@@ -530,7 +530,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
 
             <div className="space-y-2">
-              <Label>Profit (₡)</Label>
+              <Label>Ganancia (₡)</Label>
               <div className={`p-3 rounded-md ${profit >= 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'}`}>
                 <p className={`text-lg font-semibold ${profit >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
                   ₡{profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -539,7 +539,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="downPayment">Down Payment (₡)</Label>
+              <Label htmlFor="downPayment">Depósito (₡)</Label>
               <Input
                 id="downPayment"
                 type="number"
@@ -552,7 +552,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="suppliesNeeded">Additional Notes</Label>
+              <Label htmlFor="suppliesNeeded">Notas adicionales</Label>
               <Textarea
                 id="suppliesNeeded"
                 value={suppliesNeeded}
@@ -563,7 +563,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
 
             <div className="space-y-3">
-              <Label>Order Status (Select all that apply)</Label>
+              <Label>Status de orden (Select all that apply)</Label>
               <div className="space-y-2">
                 {availableStatuses.map(({ value, label }) => (
                   <div key={value} className="flex items-center space-x-2">
@@ -592,26 +592,23 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                 onCheckedChange={setNeedsCakeTopper}
               />
               <Label htmlFor="cakeTopper" className="cursor-pointer">
-                Needs Cake Topper
+                Necesita Cake Topper
               </Label>
             </div>
 
             {needsCakeTopper && (
               <div className="p-4 border rounded-lg bg-muted/50">
                 <div className="flex items-center justify-between mb-2">
-                  <Label className="text-base font-semibold">Cake Topper Details</Label>
+                  <Label className="text-base font-semibold">Detalles</Label>
                   <TopperUploadDialog clientName={clientName || "Client"} />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Click the button above to add topper reference photos and details
-                </p>
               </div>
             )}
           </div>
 
           <div className="flex gap-2 pt-4">
             <Button type="submit" className="flex-1">
-              {initialData ? "Update Order" : "Create Order"}
+              {initialData ? "Actuzaliar pedido" : "Crear Pedido"}
             </Button>
             {onCancel && (
               <Button type="button" variant="outline" onClick={onCancel}>

@@ -44,14 +44,14 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Order Preview</DialogTitle>
+          <DialogTitle className="text-2xl">Orden de {order.clientName}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
           {/* Client Photos */}
           {order.clientPhotos.length > 0 && (
             <div className="space-y-2">
-              <h3 className="font-semibold text-sm text-muted-foreground">Client Photos</h3>
+              <h3 className="font-semibold text-sm text-muted-foreground">Fotos de referencia</h3>
               <div className="grid grid-cols-2 gap-2">
                 {order.clientPhotos.map((photo, index) => (
                   <img
@@ -67,16 +67,16 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
 
           {/* Client Information */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-sm text-muted-foreground">Client Information</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground">Información del cliente</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Name</p>
+                <p className="text-sm text-muted-foreground">Nombre</p>
                 <p className="font-semibold">{order.clientName}</p>
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="text-sm text-muted-foreground">Numero de teléfono</p>
                 </div>
                 <p className="font-semibold">{order.phoneNumber}</p>
               </div>
@@ -85,18 +85,41 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
 
           {/* Order Details */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-sm text-muted-foreground">Order Details</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground">Detalles de Orden</h3>
             <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-lg">
               {order.orderDetails}
             </p>
           </div>
 
+           {/* Order Details Supplies */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-sm text-muted-foreground">Miscelaneos</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm bg-muted rounded-lg">
+                <thead>
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold">Suministro</th>
+                    <th className="px-3 py-2 text-left font-semibold">Cantidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.selectedSupplies.map((supply, idx) => (
+                    <tr key={idx} className="border-t">
+                      <td className="px-3 py-2">{supply.supplyName}</td>
+                      <td className="px-3 py-2">x{supply.quantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* Delivery Information */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-sm text-muted-foreground">Delivery Information</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground">Información de Entrega</h3>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="font-semibold">{deliveryDate.toLocaleDateString('en-US', {
+              <span className="font-semibold">{deliveryDate.toLocaleDateString('es-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -107,19 +130,18 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
 
           {/* Payment Information */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-sm text-muted-foreground">Payment Information</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground">Información de pago</h3>
             <div className="grid grid-cols-2 gap-4 bg-muted p-4 rounded-lg">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="text-sm text-muted-foreground">Monto Cobrado</p>
                 </div>
                 <p className="text-lg font-bold">₡{order.chargeAmount.toLocaleString()}</p>
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Payment Method</p>
+                  <p className="text-sm text-muted-foreground">Método de pago</p>
                 </div>
                 <Badge variant="secondary" className="capitalize">
                   {order.paymentMethod}
@@ -128,14 +150,14 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
               {order.downPayment > 0 && (
                 <>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Down Payment</p>
+                    <p className="text-sm text-muted-foreground">Depósito</p>
                     <p className="font-semibold text-green-600 dark:text-green-400">
                       ₡{order.downPayment.toLocaleString()}
                     </p>
                   </div>
                   {remainingBalance > 0 && (
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Remaining Balance</p>
+                      <p className="text-sm text-muted-foreground">Balance</p>
                       <p className="font-semibold text-orange-600 dark:text-orange-400">
                         ₡{remainingBalance.toLocaleString()}
                       </p>
@@ -148,7 +170,7 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
 
           {/* Order Status */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-sm text-muted-foreground">Order Status</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground">Status de Orden</h3>
             <div className="flex flex-wrap gap-2">
               {order.statuses.map(status => (
                 <Badge key={status} className={getStatusColor(status)}>
@@ -163,7 +185,7 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
             <div className="space-y-2 pt-4 border-t">
               <div className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-semibold text-sm text-muted-foreground">Cake Topper Required</h3>
+                <h3 className="font-semibold text-sm text-muted-foreground">Cake Topper</h3>
               </div>
               <TopperUploadDialog clientName={order.clientName} />
             </div>

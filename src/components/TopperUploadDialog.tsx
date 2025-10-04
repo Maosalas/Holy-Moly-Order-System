@@ -29,8 +29,8 @@ export const TopperUploadDialog = ({ clientName }: TopperUploadDialogProps) => {
 
   const handleSubmit = () => {
     toast({
-      title: "Topper Information Saved",
-      description: "The topper details and photos have been recorded for this order.",
+      title: "Información del topper guardada",
+      description: "Los detalles y fotos del topper han sido guardados.",
     });
     setOpen(false);
   };
@@ -40,31 +40,31 @@ export const TopperUploadDialog = ({ clientName }: TopperUploadDialogProps) => {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <FileUp className="h-4 w-4" />
-          Topper Details
+          Detalles del Topper
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Cake Topper Details - {clientName}</DialogTitle>
+          <DialogTitle>Detalles del topper - {clientName}</DialogTitle>
           <DialogDescription>
-            Upload reference photos and add details for the cake topper
+            Ingrese los detalles del topper y suba fotos de referencia para el topper del pastel.
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="topper-details">Topper Details</Label>
+            <Label htmlFor="topper-details">Detalles del topper</Label>
             <Textarea
               id="topper-details"
               value={topperDetails}
               onChange={(e) => setTopperDetails(e.target.value)}
-              placeholder="Describe the topper requirements (colors, text, theme, size, etc.)"
+              placeholder="Describa los detalles del topper aquí..."
               rows={4}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Reference Photos</Label>
+            <Label>Fotos de referencia</Label>
             <div className="flex items-center gap-2">
               <Button type="button" variant="outline" className="relative" asChild>
                 <label className="cursor-pointer">
@@ -111,7 +111,7 @@ export const TopperUploadDialog = ({ clientName }: TopperUploadDialogProps) => {
             Cancel
           </Button>
           <Button onClick={handleSubmit}>
-            Save Topper Details
+            Guardar detalles
           </Button>
         </div>
       </DialogContent>
