@@ -13,6 +13,7 @@ const Orders = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -91,6 +92,7 @@ const Orders = () => {
 
   const handleDeleteConfirm = async () => {
     if (orderToDelete) {
+      setIsDeleting(true);
       const order = orders.find((o) => o.id === orderToDelete);
       const result = await ordersApi.delete(orderToDelete);
       if (result.error) {
@@ -101,6 +103,7 @@ const Orders = () => {
         });
         setDeleteDialogOpen(false);
         setOrderToDelete(null);
+        setIsDeleting(false);
         return;
       }
       
@@ -113,6 +116,7 @@ const Orders = () => {
       setOrders(orders.filter((o) => o.id !== orderToDelete));
       setDeleteDialogOpen(false);
       setOrderToDelete(null);
+      setIsDeleting(false);
       toast({
         title: "Pedido Eliminado",
         description: `El pedido de ${order?.clientName} ha sido eliminado.`,
@@ -166,6 +170,7 @@ const Orders = () => {
           orders={visibleOrders}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          isDeleting={isDeleting}
         />
       )}
 

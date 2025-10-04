@@ -9,9 +9,10 @@ interface RecipeListProps {
   recipes: Recipe[];
   onEdit: (recipe: Recipe) => void;
   onDelete: (id: string) => void;
+  isDeleting?: boolean;
 }
 
-export const RecipeList = ({ recipes, onEdit, onDelete }: RecipeListProps) => {
+export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeListProps) => {
   if (recipes.length === 0) {
     return (
       <Card>
@@ -80,6 +81,7 @@ export const RecipeList = ({ recipes, onEdit, onDelete }: RecipeListProps) => {
                         size="icon"
                         onClick={() => onEdit(recipe)}
                         title="Edit"
+                        disabled={isDeleting}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -88,6 +90,7 @@ export const RecipeList = ({ recipes, onEdit, onDelete }: RecipeListProps) => {
                         size="icon"
                         onClick={() => onDelete(recipe.id)}
                         title="Delete"
+                        disabled={isDeleting}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>

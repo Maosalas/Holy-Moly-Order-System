@@ -8,9 +8,10 @@ interface IngredientListProps {
   ingredients: Ingredient[];
   onEdit: (ingredient: Ingredient) => void;
   onDelete: (id: string) => void;
+  isDeleting?: boolean;
 }
 
-export const IngredientList = ({ ingredients, onEdit, onDelete }: IngredientListProps) => {
+export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: IngredientListProps) => {
   if (ingredients.length === 0) {
     return (
       <Card className="shadow-lg">
@@ -54,6 +55,7 @@ export const IngredientList = ({ ingredients, onEdit, onDelete }: IngredientList
                       variant="ghost"
                       size="icon"
                       onClick={() => onEdit(ingredient)}
+                      disabled={isDeleting}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -61,6 +63,7 @@ export const IngredientList = ({ ingredients, onEdit, onDelete }: IngredientList
                       variant="ghost"
                       size="icon"
                       onClick={() => onDelete(ingredient.id)}
+                      disabled={isDeleting}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

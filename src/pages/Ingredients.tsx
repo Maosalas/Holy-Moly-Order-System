@@ -11,6 +11,7 @@ import { ingredientsApi } from "@/lib/api";
 const Ingredients = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
    useEffect(() => {
     const fetchIngredients = async () => {
@@ -93,6 +94,7 @@ const Ingredients = () => {
 
   const handleDeleteConfirm = async () => {
     if (ingredientToDelete) {
+      setIsDeleting(true);
       const ingredient = ingredients.find((i) => i.id === ingredientToDelete);
       const result = await ingredientsApi.delete(ingredientToDelete);
       if (result.error) {
@@ -103,11 +105,13 @@ const Ingredients = () => {
         });
         setDeleteDialogOpen(false);
         setIngredientToDelete(null);
+        setIsDeleting(false);
         return;
       }
       setIngredients(ingredients.filter((i) => i.id !== ingredientToDelete));
       setDeleteDialogOpen(false);
       setIngredientToDelete(null);
+      setIsDeleting(false);
       toast({
         title: "Ingrediente Eliminado",
         description: `${ingredient?.name} ha sido eliminado.`,
@@ -150,6 +154,7 @@ const Ingredients = () => {
           ingredients={ingredients}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          isDeleting={isDeleting}
         />
       )}
 

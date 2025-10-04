@@ -9,9 +9,10 @@ interface ExpenseListProps {
   expenses: Expense[];
   onEdit: (expense: Expense) => void;
   onDelete: (id: string) => void;
+  isDeleting?: boolean;
 }
 
-const ExpenseList = ({ expenses, onEdit, onDelete }: ExpenseListProps) => {
+const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProps) => {
   const getCardBadgeColor = (cardType: string) => {
     switch (cardType) {
       case "amex":
@@ -102,6 +103,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete }: ExpenseListProps) => {
                           size="icon"
                           onClick={() => onEdit(expense)}
                           title="Edit"
+                          disabled={isDeleting}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -110,6 +112,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete }: ExpenseListProps) => {
                           size="icon"
                           onClick={() => onDelete(expense.id)}
                           title="Delete"
+                          disabled={isDeleting}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

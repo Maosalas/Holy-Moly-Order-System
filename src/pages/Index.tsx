@@ -11,6 +11,7 @@ import { recipesApi } from "@/lib/api";
 const Index = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -93,6 +94,7 @@ const Index = () => {
 
   const handleDeleteConfirm = async () => {
     if (recipeToDelete) {
+      setIsDeleting(true);
       const recipe = recipes.find((r) => r.id === recipeToDelete);
       const result = await recipesApi.delete(recipeToDelete);
       if (result.error) {
@@ -103,11 +105,13 @@ const Index = () => {
         });
         setDeleteDialogOpen(false);
         setRecipeToDelete(null);
+        setIsDeleting(false);
         return;
       }
       setRecipes(recipes.filter((r) => r.id !== recipeToDelete));
       setDeleteDialogOpen(false);
       setRecipeToDelete(null);
+      setIsDeleting(false);
       toast({
         title: "Receta Eliminada",
         description: `${recipe?.name} ha sido eliminada.`,
@@ -150,6 +154,7 @@ const Index = () => {
           recipes={recipes}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          isDeleting={isDeleting}
         />
       )}
 

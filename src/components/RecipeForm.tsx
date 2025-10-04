@@ -23,6 +23,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     recipe?.ingredients || []
   );
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchIngredients = async () => {
@@ -171,8 +172,11 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     setImage("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     if (!name.trim()) {
       toast({
@@ -207,12 +211,16 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
 
     const totalCost = calculateTotalCost(recipeIngredients);
 
-    onSubmit({
-      name: name.trim(),
-      image: image || undefined,
-      ingredients: recipeIngredients,
-      totalCost,
-    });
+    try {
+      await onSubmit({
+        name: name.trim(),
+        image: image || undefined,
+        ingredients: recipeIngredients,
+        totalCost,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const totalCost = calculateTotalCost(recipeIngredients);
@@ -374,11 +382,11 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
           </div>
 
           <div className="flex gap-3 justify-end pt-4">
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit">
-              {recipe ? "Update Recipe" : "Create Recipe"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Guardando..." : (recipe ? "Update Recipe" : "Create Recipe")}
             </Button>
           </div>
         </form>

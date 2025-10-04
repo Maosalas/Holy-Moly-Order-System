@@ -21,9 +21,13 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
   const [amount, setAmount] = useState(initialData?.amount?.toString() || "");
   const [cardType, setCardType] = useState<CardType>(initialData?.cardType || "visa");
   const [receiptUrl, setReceiptUrl] = useState(initialData?.receiptUrl || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     
     if (!supermarketName || !purchaseDate || !amount) {
       toast({
@@ -44,14 +48,18 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
       createdAt: initialData?.createdAt || new Date().toISOString(),
     };
 
-    onSubmit(expense);
-    
-    if (!initialData) {
-      setSupermarketName("");
-      setPurchaseDate("");
-      setAmount("");
-      setCardType("visa");
-      setReceiptUrl("");
+    try {
+      await onSubmit(expense);
+      
+      if (!initialData) {
+        setSupermarketName("");
+        setPurchaseDate("");
+        setAmount("");
+        setCardType("visa");
+        setReceiptUrl("");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -152,11 +160,11 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
           </div>
 
           <div className="flex gap-2">
-            <Button type="submit" className="flex-1">
-              {initialData ? "Update Expense" : "Add Expense"}
+            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? "Guardando..." : (initialData ? "Update Expense" : "Add Expense")}
             </Button>
             {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel}>
+              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                 Cancel
               </Button>
             )}
