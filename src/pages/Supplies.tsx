@@ -48,8 +48,8 @@ const Supplies = () => {
         )
       );
       toast({
-        title: "Supply Updated",
-        description: `${supplyData.name} has been updated successfully.`,
+        title: "Insumo Actualizado",
+        description: `${supplyData.name} ha sido actualizado exitosamente.`,
       });
     } else {
       const result = await suppliesApi.create(supplyData);
@@ -69,8 +69,8 @@ const Supplies = () => {
       };
       setSupplies([newSupply, ...supplies]);
       toast({
-        title: "Supply Added",
-        description: `${supplyData.name} has been added successfully.`,
+        title: "Insumo Agregado",
+        description: `${supplyData.name} ha sido agregado exitosamente.`,
       });
     }
     setIsFormOpen(false);
@@ -105,8 +105,8 @@ const Supplies = () => {
       setDeleteDialogOpen(false);
       setSupplyToDelete(null);
       toast({
-        title: "Supply Deleted",
-        description: `${supply?.name} has been removed.`,
+        title: "Insumo Eliminado",
+        description: `${supply?.name} ha sido eliminado.`,
       });
     }
   };
@@ -120,13 +120,13 @@ const Supplies = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Supplies</h1>
-          <p className="text-muted-foreground">Track your baking supplies inventory and costs</p>
+          <h1 className="text-3xl font-bold tracking-tight">Insumos</h1>
+          <p className="text-muted-foreground">Rastrea tu inventario de insumos y costos</p>
         </div>
         {!isFormOpen && (
           <Button onClick={() => setIsFormOpen(true)} size="lg" className="gap-2">
             <Plus className="h-5 w-5" />
-            New Supply
+            Nuevo Insumo
           </Button>
         )}
       </div>
@@ -149,8 +149,8 @@ const Supplies = () => {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        title="Delete Supply"
-        description={`Are you sure you want to delete "${supplies.find((s) => s.id === supplyToDelete)?.name || ""}"? This action cannot be undone.`}
+        title="Eliminar Insumo"
+        description={`¿Estás seguro de que deseas eliminar "${supplies.find((s) => s.id === supplyToDelete)?.name || ""}"? Esta acción no se puede deshacer.`}
       />
     </div>
   );

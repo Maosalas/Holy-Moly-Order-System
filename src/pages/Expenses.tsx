@@ -48,8 +48,8 @@ const Expenses = () => {
         )
       );
       toast({
-        title: "Expense Updated",
-        description: "The expense has been updated successfully.",
+        title: "Gasto Actualizado",
+        description: "El gasto ha sido actualizado exitosamente.",
       });
     } else {
       const result = await expensesApi.create(expenseData);
@@ -69,8 +69,8 @@ const Expenses = () => {
       };
       setExpenses([newExpense, ...expenses]);
       toast({
-        title: "Expense Added",
-        description: "The expense has been recorded successfully.",
+        title: "Gasto Agregado",
+        description: "El gasto ha sido registrado exitosamente.",
       });
     }
     setIsFormOpen(false);
@@ -105,8 +105,8 @@ const Expenses = () => {
       setDeleteDialogOpen(false);
       setExpenseToDelete(null);
       toast({
-        title: "Expense Deleted",
-        description: `Expense from ${expense?.supermarketName} has been removed.`,
+        title: "Gasto Eliminado",
+        description: `El gasto de ${expense?.supermarketName} ha sido eliminado.`,
       });
     }
   };
@@ -120,13 +120,13 @@ const Expenses = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
-          <p className="text-muted-foreground">Track your business expenses</p>
+          <h1 className="text-3xl font-bold tracking-tight">Gastos</h1>
+          <p className="text-muted-foreground">Rastrea tus gastos del negocio</p>
         </div>
         {!isFormOpen && (
           <Button onClick={() => setIsFormOpen(true)} size="lg" className="gap-2">
             <Plus className="h-5 w-5" />
-            New Expense
+            Nuevo Gasto
           </Button>
         )}
       </div>
@@ -149,8 +149,8 @@ const Expenses = () => {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        title="Delete Expense"
-        description="Are you sure you want to delete this expense? This action cannot be undone."
+        title="Eliminar Gasto"
+        description="¿Estás seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer."
       />
     </div>
   );

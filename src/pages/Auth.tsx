@@ -40,15 +40,15 @@ const Auth = () => {
 
     if (success) {
       toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
+        title: "¡Bienvenido de vuelta!",
+        description: "Has iniciado sesión exitosamente.",
       });
       navigate("/");
     } else {
       toast({
         variant: "destructive",
-        title: "Login failed",
-        description: error || "Invalid credentials",
+        title: "Error al iniciar sesión",
+        description: error || "Credenciales inválidas",
       });
     }
   };
@@ -68,15 +68,15 @@ const Auth = () => {
 
     if (success) {
       toast({
-        title: "Account created!",
-        description: "Welcome to Holy Moly Bakery.",
+        title: "¡Cuenta creada!",
+        description: "Bienvenido a Holy Moly Bakery.",
       });
       navigate("/");
     } else {
       toast({
         variant: "destructive",
-        title: "Signup failed",
-        description: error || "Could not create account",
+        title: "Error al registrarse",
+        description: error || "No se pudo crear la cuenta",
       });
     }
   };
@@ -92,31 +92,31 @@ const Auth = () => {
           </div>
           <CardTitle className="text-2xl font-bold">Holy Moly Bakery</CardTitle>
           <CardDescription>
-            Sign in to your account or create a new one
+            Inicia sesión en tu cuenta o crea una nueva
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
+              <TabsTrigger value="signup">Registrarse</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-email">Correo Electrónico</Label>
                   <Input
                     id="login-email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="tu@ejemplo.com"
                     value={loginForm.email}
                     onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
+                  <Label htmlFor="login-password">Contraseña</Label>
                   <Input
                     id="login-password"
                     type="password"
@@ -127,7 +127,7 @@ const Auth = () => {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Logging in..." : "Login"}
+                  {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
                 </Button>
               </form>
             </TabsContent>

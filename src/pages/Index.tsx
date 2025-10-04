@@ -50,10 +50,10 @@ const Index = () => {
             : r
         )
       );
-      toast({
-        title: "Recipe Updated",
-        description: `${data.name} has been successfully updated.`,
-      });
+        toast({
+          title: "Receta Actualizada",
+          description: `${data.name} ha sido actualizada exitosamente.`,
+        });
     } else {
       const result = await recipesApi.create(data);
       if (result.error) {
@@ -73,8 +73,8 @@ const Index = () => {
       };
       setRecipes([...recipes, newRecipe]);
       toast({
-        title: "Recipe Created",
-        description: `${data.name} has been successfully added.`,
+        title: "Receta Creada",
+        description: `${data.name} ha sido agregada exitosamente.`,
       });
     }
     setIsFormOpen(false);
@@ -109,8 +109,8 @@ const Index = () => {
       setDeleteDialogOpen(false);
       setRecipeToDelete(null);
       toast({
-        title: "Recipe Deleted",
-        description: `${recipe?.name} has been removed.`,
+        title: "Receta Eliminada",
+        description: `${recipe?.name} ha sido eliminada.`,
       });
     }
   };
@@ -124,8 +124,8 @@ const Index = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold">Recipes</h2>
-          <p className="text-muted-foreground mt-1">Manage your recipe database</p>
+          <h2 className="text-3xl font-bold">Recetas</h2>
+          <p className="text-muted-foreground mt-1">Administra tu base de datos de recetas</p>
         </div>
         {!isFormOpen && (
           <Button
@@ -134,7 +134,7 @@ const Index = () => {
             className="gap-2"
           >
             <Plus className="h-5 w-5" />
-            New Recipe
+            Nueva Receta
           </Button>
         )}
       </div>
@@ -157,8 +157,8 @@ const Index = () => {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        title="Delete Recipe"
-        description={`Are you sure you want to delete "${recipes.find((r) => r.id === recipeToDelete)?.name || ""}"? This action cannot be undone.`}
+        title="Eliminar Receta"
+        description={`¿Estás seguro de que deseas eliminar "${recipes.find((r) => r.id === recipeToDelete)?.name || ""}"? Esta acción no se puede deshacer.`}
       />
     </div>
   );

@@ -50,10 +50,10 @@ const Ingredients = () => {
             : i
         )
       );
-      toast({
-        title: "Ingredient Updated",
-        description: `${data.name} has been successfully updated.`,
-      });
+        toast({
+          title: "Ingrediente Actualizado",
+          description: `${data.name} ha sido actualizado exitosamente.`,
+        });
   } else {
       const result = await ingredientsApi.create(data);
       if (result.error) {
@@ -73,8 +73,8 @@ const Ingredients = () => {
       };
       setIngredients([...ingredients, newIngredient]);
       toast({
-        title: "Ingredient Created",
-        description: `${data.name} has been successfully added.`,
+        title: "Ingrediente Creado",
+        description: `${data.name} ha sido agregado exitosamente.`,
       });
     }
     setIsFormOpen(false);
@@ -109,8 +109,8 @@ const Ingredients = () => {
       setDeleteDialogOpen(false);
       setIngredientToDelete(null);
       toast({
-        title: "Ingredient Deleted",
-        description: `${ingredient?.name} has been removed.`,
+        title: "Ingrediente Eliminado",
+        description: `${ingredient?.name} ha sido eliminado.`,
       });
     }
   };
@@ -125,7 +125,7 @@ const Ingredients = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold">Ingredientes</h2>
-          <p className="text-muted-foreground mt-1">Manage your ingredient inventory</p>
+          <p className="text-muted-foreground mt-1">Administra tu inventario de ingredientes</p>
         </div>
         {!isFormOpen && (
           <Button
@@ -134,7 +134,7 @@ const Ingredients = () => {
             className="gap-2"
           >
             <Plus className="h-5 w-5" />
-            New Ingredient
+            Nuevo Ingrediente
           </Button>
         )}
       </div>
@@ -157,8 +157,8 @@ const Ingredients = () => {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        title="Delete Ingredient"
-        description={`Are you sure you want to delete "${ingredients.find((i) => i.id === ingredientToDelete)?.name || ""}"? This action cannot be undone.`}
+        title="Eliminar Ingrediente"
+        description={`¿Estás seguro de que deseas eliminar "${ingredients.find((i) => i.id === ingredientToDelete)?.name || ""}"? Esta acción no se puede deshacer.`}
       />
     </div>
   );
