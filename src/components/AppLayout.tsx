@@ -19,10 +19,10 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: Home },
+  { title: "Orders", url: "/orders", icon: ShoppingBag },
   { title: "Recipes", url: "/recipes", icon: ChefHat },
   { title: "Ingredients", url: "/ingredients", icon: Package },
   { title: "Supplies", url: "/supplies", icon: Box },
-  { title: "Orders", url: "/orders", icon: ShoppingBag },
   { title: "Expenses", url: "/expenses", icon: Receipt },
 ];
 

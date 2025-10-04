@@ -57,11 +57,11 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const profit = (parseFloat(chargeAmount) || 0) - costAmount;
 
   const availableStatuses: { value: OrderStatus; label: string }[] = [
-    { value: "waiting-for-payment", label: "Waiting for Payment" },
-    { value: "partially-paid", label: "Partially Paid" },
-    { value: "payment-received", label: "Payment Received" },
-    { value: "confirmed", label: "Confirmed" },
-    { value: "finished", label: "Finished" },
+    { value: "waiting-for-payment", label: "Espera de pago" },
+    { value: "partially-paid", label: "Pago Parcial" },
+    { value: "payment-received", label: "Pago recibido" },
+    { value: "confirmed", label: "Confirmado" },
+    { value: "finished", label: "Terminado" },
   ];
 
   const toggleStatus = (status: OrderStatus) => {
@@ -255,10 +255,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="cash">Efectivo</SelectItem>
+                  <SelectItem value="transfer">Trasnferencia</SelectItem>
+                  <SelectItem value="card">Link de pago/tarjeta</SelectItem>
+                  <SelectItem value="other">SINPE</SelectItem>
                 </SelectContent>
               </Select>
             </div>
