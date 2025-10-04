@@ -19,11 +19,11 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: Home },
-  { title: "Orders", url: "/orders", icon: ShoppingBag },
-  { title: "Recipes", url: "/recipes", icon: ChefHat },
-  { title: "Ingredients", url: "/ingredients", icon: Package },
-  { title: "Supplies", url: "/supplies", icon: Box },
-  { title: "Expenses", url: "/expenses", icon: Receipt },
+  { title: "Pedidos", url: "/orders", icon: ShoppingBag },
+  { title: "Recetas", url: "/recipes", icon: ChefHat },
+  { title: "Ingredientes", url: "/ingredients", icon: Package },
+  { title: "Suministros", url: "/supplies", icon: Box },
+  { title: "Gastos", url: "/expenses", icon: Receipt },
 ];
 
 function AppSidebar() {

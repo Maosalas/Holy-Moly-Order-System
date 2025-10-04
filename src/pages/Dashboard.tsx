@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DollarSign, ShoppingBag, Phone, Calendar, ArrowRight, Package, Receipt, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { ordersApi } from "@/lib/api";
+import { expensesApi, ordersApi } from "@/lib/api";
 import type { Order } from "@/types/order";
 import type { Expense } from "@/types/expense";
 
@@ -40,12 +40,13 @@ const Dashboard = () => {
       }
     };
 
-    const loadExpenses = () => {
-      const stored = localStorage.getItem(EXPENSES_STORAGE_KEY);
-      if (stored) {
-        setExpenses(JSON.parse(stored));
-      } else {
+    const loadExpenses = async () => {
+      const {data, error} = await expensesApi.getAll();
+      if (error) {
+        console.error("Error loading expenses:", error);
         setExpenses([]);
+      } else {
+        setExpenses((data as Expense[]) || []);
       }
     };
 
@@ -128,14 +129,14 @@ const Dashboard = () => {
     const diffTime = delivery.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Tomorrow";
-    if (diffDays <= 7) return `In ${diffDays} days`;
-    return `In ${Math.ceil(diffDays / 7)} weeks`;
+    if (diffDays === 0) return "Hoy";
+    if (diffDays === 1) return "Mañana";
+    if (diffDays <= 7) return `En ${diffDays} días`;
+    return `En ${Math.ceil(diffDays / 7)} semanas`;
   };
 
   const handleWhatsApp = (phoneNumber: string, clientName: string) => {
-    const message = encodeURIComponent(`Hello ${clientName}, regarding your order...`);
+    const message = encodeURIComponent(`Hola ${clientName}! Te hablamos de Holy Moly...`);
     const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${message}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -146,8 +147,8 @@ const Dashboard = () => {
         <h2 className="text-3xl font-bold">Dashboard</h2>
         <p className="text-muted-foreground mt-1">
           {user?.role === "cake_topper_provider"
-            ? "Your cake topper orders overview"
-            : "Welcome back! Here's what's happening"}
+            ? "Sus cake topper pedidos se muestran aquí."
+            : "Bienvenido al panel de control de Holy Moly! Aquí puedes ver un resumen de tus pedidos y estadísticas clave."}
         </p>
       </div>
 
@@ -156,7 +157,7 @@ const Dashboard = () => {
           <>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <CardTitle className="text-sm font-medium">Pedidos Totales</CardTitle>
                 <ShoppingBag className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -165,7 +166,7 @@ const Dashboard = () => {
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="w-full gap-2">
                       <Filter className="h-3 w-3" />
-                      Filter Dates
+                      Filtrar fechas
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-3" align="start">
@@ -203,8 +204,8 @@ const Dashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Ventas totales</CardTitle>
+                <span className="h-4 w-4 text-muted-foreground flex items-center justify-center">₡</span>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold mb-3">₡{totalSales.toLocaleString()}</div>
@@ -212,7 +213,7 @@ const Dashboard = () => {
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="w-full gap-2">
                       <Filter className="h-3 w-3" />
-                      Filter Dates
+                      Filtrar fechas
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-3" align="start">
@@ -250,8 +251,8 @@ const Dashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-                <Receipt className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
+                <span className="h-4 w-4 text-muted-foreground flex items-center justify-center">₡</span>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold mb-3">₡{totalExpenses.toLocaleString()}</div>
@@ -259,7 +260,7 @@ const Dashboard = () => {
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="w-full gap-2">
                       <Filter className="h-3 w-3" />
-                      Filter Dates
+                      Filtrar fechas
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-3" align="start">
@@ -351,9 +352,9 @@ const Dashboard = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">Upcoming Orders</CardTitle>
+              <CardTitle className="text-2xl">Próximos pedidos</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                {upcomingOrders.length} {upcomingOrders.length === 1 ? 'order' : 'orders'} scheduled for delivery
+                {upcomingOrders.length} {upcomingOrders.length === 1 ? 'pedido' : 'pedidos'} programados para entrega
               </p>
             </div>
             <Button variant="ghost" onClick={() => navigate("/orders")} className="gap-2">
@@ -365,27 +366,27 @@ const Dashboard = () => {
           {upcomingOrders.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p className="text-lg font-medium">No upcoming orders</p>
-              <p className="text-sm mt-1">New orders will appear here</p>
+              <p className="text-lg font-medium">No hay pedidos próximos</p>
+              <p className="text-sm mt-1">Nuevos pedidos estarán aquí</p>
             </div>
           ) : (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Client</TableHead>
-                    <TableHead className="font-semibold">Delivery</TableHead>
-                    <TableHead className="font-semibold">Time Until</TableHead>
-                    <TableHead className="font-semibold">Amount</TableHead>
-                    <TableHead className="font-semibold">Method</TableHead>
+                    <TableHead className="font-semibold">Cliente</TableHead>
+                    <TableHead className="font-semibold">Fecha de entrega</TableHead>
+                    <TableHead className="font-semibold">Tiempo para entrega</TableHead>
+                    <TableHead className="font-semibold">Precio</TableHead>
+                    <TableHead className="font-semibold">Método de pago</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="text-right font-semibold">Actions</TableHead>
+                    <TableHead className="text-right font-semibold">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {upcomingOrders.map((order) => {
                     const timeUntil = getTimeUntilDelivery(order.deliveryDate);
-                    const isUrgent = timeUntil === "Today" || timeUntil === "Tomorrow";
+                    const isUrgent = timeUntil === "Hoy" || timeUntil === "Mañana";
                     const remainingBalance = order.chargeAmount - order.downPayment;
 
                     const getStatusColor = (status: string) => {
@@ -401,11 +402,11 @@ const Dashboard = () => {
 
                     const getStatusLabel = (status: string) => {
                       const labels = {
-                        "waiting-for-payment": "Waiting",
-                        "partially-paid": "Partial",
-                        "payment-received": "Paid",
-                        "confirmed": "Confirmed",
-                        "finished": "Finished",
+                        "waiting-for-payment": "Espera de pago",
+                        "partially-paid": "pago Parcial",
+                        "payment-received": "Pago recibido",
+                        "confirmed": "Confirmado",
+                        "finished": "Terminado",
                       };
                       return labels[status as keyof typeof labels] || status;
                     };

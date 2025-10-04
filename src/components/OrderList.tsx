@@ -117,7 +117,7 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
                     {order.downPayment > 0 && (
                       <>
                         <div className="text-xs text-green-600 dark:text-green-400">
-                          Paid: ₡{order.downPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          Pagado: ₡{order.downPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Balance: ₡{remainingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({(100-paymentProgress).toFixed(0)}%)
@@ -147,7 +147,7 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
                     </p>
                     {order.clientPhotos.length > 0 && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        {order.clientPhotos.length} photo{order.clientPhotos.length !== 1 ? 's' : ''}
+                        {order.clientPhotos.length} foto{order.clientPhotos.length !== 1 ? 's' : ''}
                       </p>
                     )}
                   </div>
