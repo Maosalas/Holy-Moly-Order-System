@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/Basic Branding-01.png";
 import {
   Sidebar,
   SidebarContent,
@@ -81,8 +82,8 @@ export function AppLayout({ children }: AppLayoutProps) {
             <div className="flex items-center">
               <SidebarTrigger />
               <div className="ml-4 flex items-center gap-2">
-                <ChefHat className="h-6 w-6 text-primary" />
-                <h1 className="text-xl font-bold">Holy Moly Recipes</h1>
+                <img src={logo} alt="Holy Moly Logo" className="h-10 w-100 object-contain" />
+                <h1 className="text-xl font-bold"></h1>
               </div>
             </div>
             <div className="flex items-center gap-3">

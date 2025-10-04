@@ -8,19 +8,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Cake } from "lucide-react";
+import logo from "@/assets/Basic Branding-01.png";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { login, signup, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  
+
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [signupForm, setSignupForm] = useState({ 
-    email: "", 
-    password: "", 
-    name: "", 
-    role: "owner" as "owner" | "cake_topper_provider" 
+  const [signupForm, setSignupForm] = useState({
+    email: "",
+    password: "",
+    name: "",
+    role: "owner" as "owner" | "cake_topper_provider"
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,7 +35,7 @@ const Auth = () => {
     setIsLoading(true);
 
     const { success, error } = await login(loginForm.email, loginForm.password);
-    
+
     setIsLoading(false);
 
     if (success) {
@@ -63,7 +63,7 @@ const Auth = () => {
       signupForm.name,
       signupForm.role
     );
-    
+
     setIsLoading(false);
 
     if (success) {
@@ -86,14 +86,8 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Cake className="h-6 w-6 text-primary" />
-            </div>
+            <img src={logo} alt="Holy Moly Logo" className="h-100 w-100 object-contain" />
           </div>
-          <CardTitle className="text-2xl font-bold">Holy Moly Bakery</CardTitle>
-          <CardDescription>
-            Inicia sesión en tu cuenta o crea una nueva
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
@@ -101,7 +95,7 @@ const Auth = () => {
               <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
               <TabsTrigger value="signup">Registrarse</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
@@ -131,7 +125,7 @@ const Auth = () => {
                 </Button>
               </form>
             </TabsContent>
-            
+
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
@@ -170,9 +164,9 @@ const Auth = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-role">Account Type</Label>
-                  <Select 
-                    value={signupForm.role} 
-                    onValueChange={(value: "owner" | "cake_topper_provider") => 
+                  <Select
+                    value={signupForm.role}
+                    onValueChange={(value: "owner" | "cake_topper_provider") =>
                       setSignupForm({ ...signupForm, role: value })
                     }
                   >
