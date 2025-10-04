@@ -55,7 +55,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     setRecipeIngredients([
       ...recipeIngredients,
       {
-        id: crypto.randomUUID(),
+        id: getUUID(),
         ingredientId: "",
         ingredientName: "",
         quantity: 0,
@@ -386,3 +386,14 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     </Card>
   );
 };
+
+function getUUID() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback: generate a simple UUID (not cryptographically secure)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
