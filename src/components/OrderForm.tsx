@@ -112,14 +112,69 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     setSelectedSupplies(prev => prev.filter(s => s.supplyId !== supplyId));
   };
 
+  const compressImage = (base64: string, callback: (compressed: string) => void) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Max dimensions
+      const MAX_WIDTH = 800;
+      const MAX_HEIGHT = 800;
+      
+      let width = img.width;
+      let height = img.height;
+      
+      // Calculate new dimensions maintaining aspect ratio
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      ctx?.drawImage(img, 0, 0, width, height);
+      
+      // Compress to JPEG with 0.7 quality (70%)
+      const compressed = canvas.toDataURL('image/jpeg', 0.7);
+      callback(compressed);
+    };
+    img.src = base64;
+  };
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newPhotos = Array.from(files).map(file => URL.createObjectURL(file));
-      setClientPhotos(prev => [...prev, ...newPhotos]);
+      Array.from(files).forEach(file => {
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          toast({
+            title: "Archivo muy grande",
+            description: "Por favor selecciona una imagen menor a 5MB",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          compressImage(reader.result as string, (compressed) => {
+            setClientPhotos(prev => [...prev, compressed]);
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+      
       toast({
-        title: "Photos uploaded",
-        description: `${files.length} photo(s) added successfully`,
+        title: "Fotos cargadas",
+        description: `${files.length} foto(s) agregada(s) exitosamente`,
       });
     }
   };
