@@ -426,7 +426,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                     )}
                   </SelectContent>
                 </Select>
-                <Button
+                {/* <Button
                   type="button"
                   variant="outline"
                   size="icon"
@@ -437,7 +437,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                   }}
                 >
                   <Plus className="h-5 w-5" />
-                </Button>
+                </Button> */}
               </div>
 
               {selectedSupplies.length === 0 ? (
