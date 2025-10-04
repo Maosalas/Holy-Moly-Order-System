@@ -20,7 +20,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  
+
   // Date filters
   const [ordersStartDate, setOrdersStartDate] = useState("");
   const [ordersEndDate, setOrdersEndDate] = useState("");
@@ -80,7 +80,6 @@ const Dashboard = () => {
   const roleFilteredOrders = user?.role === "cake_topper_provider"
     ? orders.filter(order => order.needsCakeTopper)
     : orders;
-console.log(roleFilteredOrders);
   // Filter orders by date range
   const filteredOrders = roleFilteredOrders.filter(order => {
     const orderDate = new Date(order.createdAt);
@@ -111,17 +110,24 @@ console.log(roleFilteredOrders);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
-  const upcomingOrders = roleFilteredOrders
-    .filter(order => new Date(order.deliveryDate) >= today)
-    .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
-    .slice(0, 10);
+
+  function parseLocalDate(dateString: string) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // JS months are 0-based
+  }
+
+  // const upcomingOrders = roleFilteredOrders
+  //   .filter(order => parseLocalDate(order.deliveryDate) >= today)
+  //   .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
+  //   .slice(0, 10);
+  const upcomingOrders = roleFilteredOrders;
+  console.log(upcomingOrders);
 
   const getTimeUntilDelivery = (deliveryDate: string) => {
     const delivery = new Date(deliveryDate);
     const diffTime = delivery.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Tomorrow";
     if (diffDays <= 7) return `In ${diffDays} days`;
@@ -139,8 +145,8 @@ console.log(roleFilteredOrders);
       <div>
         <h2 className="text-3xl font-bold">Dashboard</h2>
         <p className="text-muted-foreground mt-1">
-          {user?.role === "cake_topper_provider" 
-            ? "Your cake topper orders overview" 
+          {user?.role === "cake_topper_provider"
+            ? "Your cake topper orders overview"
             : "Welcome back! Here's what's happening"}
         </p>
       </div>
@@ -178,9 +184,9 @@ console.log(roleFilteredOrders);
                         className="h-8 text-xs"
                         placeholder="To"
                       />
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="w-full h-7 text-xs"
                         onClick={() => {
                           setOrdersStartDate("");
@@ -225,9 +231,9 @@ console.log(roleFilteredOrders);
                         className="h-8 text-xs"
                         placeholder="To"
                       />
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="w-full h-7 text-xs"
                         onClick={() => {
                           setSalesStartDate("");
@@ -272,9 +278,9 @@ console.log(roleFilteredOrders);
                         className="h-8 text-xs"
                         placeholder="To"
                       />
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="w-full h-7 text-xs"
                         onClick={() => {
                           setExpensesStartDate("");
@@ -322,9 +328,9 @@ console.log(roleFilteredOrders);
                       className="h-8 text-xs"
                       placeholder="To"
                     />
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="w-full h-7 text-xs"
                       onClick={() => {
                         setOrdersStartDate("");
@@ -381,7 +387,7 @@ console.log(roleFilteredOrders);
                     const timeUntil = getTimeUntilDelivery(order.deliveryDate);
                     const isUrgent = timeUntil === "Today" || timeUntil === "Tomorrow";
                     const remainingBalance = order.chargeAmount - order.downPayment;
-                    
+
                     const getStatusColor = (status: string) => {
                       const colors = {
                         "waiting-for-payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
@@ -403,18 +409,18 @@ console.log(roleFilteredOrders);
                       };
                       return labels[status as keyof typeof labels] || status;
                     };
-                    
+
                     return (
-                      <TableRow 
-                        key={order.id} 
+                      <TableRow
+                        key={order.id}
                         className="hover:bg-muted/30 transition-colors cursor-pointer"
                         onClick={() => navigate("/orders")}
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             {order.clientPhotos.length > 0 ? (
-                              <img 
-                                src={order.clientPhotos[0]} 
+                              <img
+                                src={order.clientPhotos[0]}
                                 alt={order.clientName}
                                 className="w-10 h-10 rounded-full object-cover ring-2 ring-background"
                               />
@@ -434,14 +440,14 @@ console.log(roleFilteredOrders);
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{new Date(order.deliveryDate).toLocaleDateString('en-US', { 
-                              month: 'short', 
+                            <span className="text-sm">{new Date(order.deliveryDate).toLocaleDateString('en-US', {
+                              month: 'short',
                               day: 'numeric'
                             })}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge 
+                          <Badge
                             variant={isUrgent ? "destructive" : "secondary"}
                             className="font-medium"
                           >
