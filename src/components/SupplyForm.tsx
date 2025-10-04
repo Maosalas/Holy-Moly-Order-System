@@ -19,9 +19,13 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
   const [quantity, setQuantity] = useState(initialData?.quantity?.toString() || "");
   const [unit, setUnit] = useState(initialData?.unit || "");
   const [cost, setCost] = useState(initialData?.cost?.toString() || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     if (!name.trim() || !supplierName.trim() || !quantity || !unit.trim() || !cost) {
       toast({
@@ -63,14 +67,18 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
       createdAt: initialData?.createdAt || new Date().toISOString(),
     };
 
-    onSubmit(supply);
+    try {
+      await onSubmit(supply);
 
-    if (!initialData) {
-      setName("");
-      setSupplierName("");
-      setQuantity("");
-      setUnit("");
-      setCost("");
+      if (!initialData) {
+        setName("");
+        setSupplierName("");
+        setQuantity("");
+        setUnit("");
+        setCost("");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -143,11 +151,11 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
           </div>
 
           <div className="flex gap-2">
-            <Button type="submit" className="flex-1">
-              {initialData ? "Update Supply" : "Add Supply"}
+            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? "Guardando..." : (initialData ? "Update Supply" : "Add Supply")}
             </Button>
             {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel}>
+              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                 Cancel
               </Button>
             )}

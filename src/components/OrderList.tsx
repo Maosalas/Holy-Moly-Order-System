@@ -10,9 +10,10 @@ interface OrderListProps {
   orders: Order[];
   onEdit?: (order: Order) => void;
   onDelete?: (id: string) => void;
+  isDeleting?: boolean;
 }
 
-export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
+export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListProps) => {
   const handleWhatsApp = (phoneNumber: string, clientName: string) => {
     const message = `Hola ${clientName}! Te hablamos de Holy Moly...`;
     const url = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
@@ -169,6 +170,7 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
                         size="icon"
                         onClick={() => onEdit(order)}
                         title="Edit"
+                        disabled={isDeleting}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -179,6 +181,7 @@ export const OrderList = ({ orders, onEdit, onDelete }: OrderListProps) => {
                         size="icon"
                         onClick={() => onDelete(order.id)}
                         title="Delete"
+                        disabled={isDeleting}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>

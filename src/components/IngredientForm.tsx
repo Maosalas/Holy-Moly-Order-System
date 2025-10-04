@@ -18,9 +18,13 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
   const [qtyProvider, setQtyProvider] = useState(ingredient?.qtyProvider?.toString() || "");
   const [units, setUnits] = useState(ingredient?.units || "");
   const [cost, setCost] = useState(ingredient?.cost?.toString() || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     if (!name.trim()) {
       toast({
@@ -40,13 +44,17 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
       return;
     }
 
-    onSubmit({
-      name: name.trim(),
-      provider: provider.trim(),
-      qtyProvider: parseFloat(qtyProvider),
-      units: units.trim(),
-      cost: parseFloat(cost),
-    });
+    try {
+      await onSubmit({
+        name: name.trim(),
+        provider: provider.trim(),
+        qtyProvider: parseFloat(qtyProvider),
+        units: units.trim(),
+        cost: parseFloat(cost),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -122,11 +130,11 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
           </div>
 
           <div className="flex gap-3 justify-end pt-4">
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit">
-              {ingredient ? "Update Ingredient" : "Create Ingredient"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Guardando..." : (ingredient ? "Update Ingredient" : "Create Ingredient")}
             </Button>
           </div>
         </form>

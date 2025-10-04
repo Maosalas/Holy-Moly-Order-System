@@ -15,6 +15,7 @@ const Supplies = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [supplyToDelete, setSupplyToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchSupplies = async () => {
@@ -89,6 +90,7 @@ const Supplies = () => {
 
   const handleDeleteConfirm = async () => {
     if (supplyToDelete) {
+      setIsDeleting(true);
       const supply = supplies.find((s) => s.id === supplyToDelete);
       const result = await suppliesApi.delete(supplyToDelete);
       if (result.error) {
@@ -99,11 +101,13 @@ const Supplies = () => {
         });
         setDeleteDialogOpen(false);
         setSupplyToDelete(null);
+        setIsDeleting(false);
         return;
       }
       setSupplies(supplies.filter((s) => s.id !== supplyToDelete));
       setDeleteDialogOpen(false);
       setSupplyToDelete(null);
+      setIsDeleting(false);
       toast({
         title: "Insumo Eliminado",
         description: `${supply?.name} ha sido eliminado.`,
@@ -142,6 +146,7 @@ const Supplies = () => {
           supplies={supplies}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          isDeleting={isDeleting}
         />
       )}
 

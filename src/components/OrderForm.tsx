@@ -40,6 +40,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [suppliesNeeded, setSuppliesNeeded] = useState(initialData?.suppliesNeeded || "");
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
   const [statuses, setStatuses] = useState<OrderStatus[]>(initialData?.statuses || ["waiting-for-payment"]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load supplies from API
   useEffect(() => {
@@ -190,6 +191,9 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
     const isUpdate = !!initialData;
     
     if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate || !chargeAmount) {
@@ -237,29 +241,34 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       needsCakeTopper,
       statuses: (statuses.length > 0 ? statuses : ["waiting-for-payment"]) as OrderStatus[],
     };
-    await onSubmit(orderData);
     
-    // Generate and download calendar event
-    const { downloadICS } = await import("@/lib/utils");
-    const fullOrder: Order = {
-      ...orderData,
-      id: initialData?.id || crypto.randomUUID(),
-      createdAt: initialData?.createdAt || new Date().toISOString(),
-    };
-    downloadICS(fullOrder, isUpdate ? 'update' : 'create');
+    try {
+      await onSubmit(orderData);
+      
+      // Generate and download calendar event
+      const { downloadICS } = await import("@/lib/utils");
+      const fullOrder: Order = {
+        ...orderData,
+        id: initialData?.id || crypto.randomUUID(),
+        createdAt: initialData?.createdAt || new Date().toISOString(),
+      };
+      downloadICS(fullOrder, isUpdate ? 'update' : 'create');
 
-    setClientName("");
-    setPhoneNumber("");
-    setOrderDetails("");
-    setDeliveryDate("");
-    setPaymentMethod("Efectivo");
-    setClientPhotos([]);
-    setSelectedSupplies([]);
-    setChargeAmount("");
-    setDownPayment("0");
-    setSuppliesNeeded("");
-    setNeedsCakeTopper(false);
-    setStatuses(["waiting-for-payment"]);
+      setClientName("");
+      setPhoneNumber("");
+      setOrderDetails("");
+      setDeliveryDate("");
+      setPaymentMethod("Efectivo");
+      setClientPhotos([]);
+      setSelectedSupplies([]);
+      setChargeAmount("");
+      setDownPayment("0");
+      setSuppliesNeeded("");
+      setNeedsCakeTopper(false);
+      setStatuses(["waiting-for-payment"]);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -623,11 +632,11 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" className="flex-1">
-              {initialData ? "Actuzaliar pedido" : "Crear Pedido"}
+            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? "Guardando..." : (initialData ? "Actuzaliar pedido" : "Crear Pedido")}
             </Button>
             {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel}>
+              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                 Cancel
               </Button>
             )}

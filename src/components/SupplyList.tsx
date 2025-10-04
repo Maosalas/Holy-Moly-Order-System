@@ -8,9 +8,10 @@ interface SupplyListProps {
   supplies: Supply[];
   onEdit: (supply: Supply) => void;
   onDelete: (id: string) => void;
+  isDeleting?: boolean;
 }
 
-const SupplyList = ({ supplies, onEdit, onDelete }: SupplyListProps) => {
+const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps) => {
   if (supplies.length === 0) {
     return (
       <Card>
@@ -63,6 +64,7 @@ const SupplyList = ({ supplies, onEdit, onDelete }: SupplyListProps) => {
                           size="icon"
                           onClick={() => onEdit(supply)}
                           title="Edit"
+                          disabled={isDeleting}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -71,6 +73,7 @@ const SupplyList = ({ supplies, onEdit, onDelete }: SupplyListProps) => {
                           size="icon"
                           onClick={() => onDelete(supply.id)}
                           title="Delete"
+                          disabled={isDeleting}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

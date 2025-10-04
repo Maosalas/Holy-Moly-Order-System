@@ -15,6 +15,7 @@ const Expenses = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -89,6 +90,7 @@ const Expenses = () => {
 
   const handleDeleteConfirm = async () => {
     if (expenseToDelete) {
+      setIsDeleting(true);
       const expense = expenses.find((e) => e.id === expenseToDelete);
       const result = await expensesApi.delete(expenseToDelete);
       if (result.error) {
@@ -99,11 +101,13 @@ const Expenses = () => {
         });
         setDeleteDialogOpen(false);
         setExpenseToDelete(null);
+        setIsDeleting(false);
         return;
       }
       setExpenses(expenses.filter((e) => e.id !== expenseToDelete));
       setDeleteDialogOpen(false);
       setExpenseToDelete(null);
+      setIsDeleting(false);
       toast({
         title: "Gasto Eliminado",
         description: `El gasto de ${expense?.supermarketName} ha sido eliminado.`,
@@ -142,6 +146,7 @@ const Expenses = () => {
           expenses={expenses}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          isDeleting={isDeleting}
         />
       )}
 
