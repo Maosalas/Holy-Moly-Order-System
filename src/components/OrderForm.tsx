@@ -233,7 +233,6 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       needsCakeTopper,
       statuses: (statuses.length > 0 ? statuses : ["waiting-for-payment"]) as OrderStatus[],
     };
-
     await onSubmit(orderData);
     
     // Generate and download calendar event
@@ -309,7 +308,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
               <Label htmlFor="deliveryDate">Fecha de entrega *</Label>
               <Input
                 id="deliveryDate"
-                type="date"
+                type="datetime-local"
                 value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
                 required
@@ -323,10 +322,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">Efectivo</SelectItem>
-                  <SelectItem value="transfer">Trasnferencia</SelectItem>
-                  <SelectItem value="card">Link de pago/tarjeta</SelectItem>
-                  <SelectItem value="sinpe">SINPE</SelectItem>
+                  <SelectItem value="Efectivo">Efectivo</SelectItem>
+                  <SelectItem value="Transferencia">Trasnferencia</SelectItem>
+                  <SelectItem value="Link de pago/tarjeta">Link de pago/tarjeta</SelectItem>
+                  <SelectItem value="SINPE">SINPE</SelectItem>
                 </SelectContent>
               </Select>
             </div>

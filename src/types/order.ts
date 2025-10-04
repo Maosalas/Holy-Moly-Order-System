@@ -5,7 +5,7 @@ export type OrderStatus =
   | "confirmed"
   | "finished";
 
-export type PaymentMethod = "cash" | "transfer" | "card" | "sinpe";
+export type PaymentMethod = "Efectivo" | "Transferencia" | "Link de pago/tarjeta" | "SINPE";
 
 export interface OrderSupply {
   supplyId: string;

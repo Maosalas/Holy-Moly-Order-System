@@ -79,6 +79,7 @@ const Orders = () => {
   };
 
   const handleEdit = (order: Order) => {
+    console.log("Editing order:", order);
     setEditingOrder(order);
     setIsFormOpen(true);
   };
