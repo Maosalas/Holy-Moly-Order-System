@@ -102,6 +102,13 @@ const Orders = () => {
         setOrderToDelete(null);
         return;
       }
+      
+      // Download calendar cancellation event
+      if (order) {
+        const { downloadICS } = await import("@/lib/utils");
+        downloadICS(order, 'delete');
+      }
+      
       setOrders(orders.filter((o) => o.id !== orderToDelete));
       setDeleteDialogOpen(false);
       setOrderToDelete(null);

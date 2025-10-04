@@ -183,8 +183,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     setClientPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const isUpdate = !!initialData;
     
     if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate || !chargeAmount) {
       toast({
@@ -216,7 +218,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       return;
     }
 
-    onSubmit({
+    const orderData = {
       clientName: clientName.trim(),
       phoneNumber: phoneNumber.trim(),
       orderDetails: orderDetails.trim(),
@@ -229,8 +231,19 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       selectedSupplies,
       suppliesNeeded: suppliesNeeded.trim(),
       needsCakeTopper,
-      statuses: statuses.length > 0 ? statuses : ["waiting-for-payment"],
-    });
+      statuses: (statuses.length > 0 ? statuses : ["waiting-for-payment"]) as OrderStatus[],
+    };
+
+    await onSubmit(orderData);
+    
+    // Generate and download calendar event
+    const { downloadICS } = await import("@/lib/utils");
+    const fullOrder: Order = {
+      ...orderData,
+      id: initialData?.id || crypto.randomUUID(),
+      createdAt: initialData?.createdAt || new Date().toISOString(),
+    };
+    downloadICS(fullOrder, isUpdate ? 'update' : 'create');
 
     setClientName("");
     setPhoneNumber("");
