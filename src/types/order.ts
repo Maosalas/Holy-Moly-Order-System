@@ -5,7 +5,7 @@ export type OrderStatus =
   | "confirmed"
   | "finished";
 
-export type PaymentMethod = "cash" | "transfer" | "card" | "other";
+export type PaymentMethod = "cash" | "transfer" | "card" | "sinpe";
 
 export interface OrderSupply {
   supplyId: string;
@@ -21,7 +21,7 @@ export interface Order {
   clientName: string;
   phoneNumber: string;
   orderDetails: string;
-  deliveryDate: string;
+  deliveryDate: Date;
   clientPhotos: string[];
   needsCakeTopper: boolean;
   costAmount: number;
