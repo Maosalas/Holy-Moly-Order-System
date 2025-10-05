@@ -26,7 +26,6 @@ const menuItems = [
   { title: "Ingredientes", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
   { title: "Gastos", url: "/expenses", icon: Receipt },
-  { title: "Cotizador", url: "/cotizador", icon: Calculator },
 ];
 
 function AppSidebar() {
