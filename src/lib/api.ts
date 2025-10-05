@@ -180,3 +180,31 @@ export const expensesApi = {
       method: "DELETE",
     }),
 };
+
+// Quotations API
+export const quotationsApi = {
+  getAll: () => apiFetch("/quotations", { method: "GET" }),
+  
+  create: (quotation: any) =>
+    apiFetch("/quotations", {
+      method: "POST",
+      body: JSON.stringify(quotation),
+    }),
+
+  update: (id: string, quotation: any) =>
+    apiFetch(`/quotations/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(quotation),
+    }),
+
+  delete: (id: string) =>
+    apiFetch(`/quotations/${id}`, {
+      method: "DELETE",
+    }),
+  
+  // Get size multipliers for fillings
+  getFillingMultipliers: () => apiFetch("/quotations/filling-multipliers", { method: "GET" }),
+  
+  // Get size multipliers for coverings
+  getCoveringMultipliers: () => apiFetch("/quotations/covering-multipliers", { method: "GET" }),
+};

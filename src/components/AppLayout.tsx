@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User } from "lucide-react";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/Basic Branding-01.png";
@@ -21,6 +21,7 @@ import {
 const menuItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Pedidos", url: "/orders", icon: ShoppingBag },
+  { title: "Cotizador", url: "/quotations", icon: Calculator },
   { title: "Recetas", url: "/recipes", icon: ChefHat },
   { title: "Ingredientes", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
