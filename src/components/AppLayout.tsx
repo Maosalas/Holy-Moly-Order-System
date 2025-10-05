@@ -21,6 +21,7 @@ import {
 const menuItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Pedidos", url: "/orders", icon: ShoppingBag },
+  { title: "Cotizador", url: "/quotations", icon: Calculator },
   { title: "Recetas", url: "/recipes", icon: ChefHat },
   { title: "Ingredientes", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
