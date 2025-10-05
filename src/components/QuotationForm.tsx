@@ -23,7 +23,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   const [notes, setNotes] = useState(quotation?.notes || "");
   const [selectedRecipes, setSelectedRecipes] = useState<QuotationRecipe[]>(quotation?.recipes || []);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [recipeMultipliers, setRecipeMultipliers] = useState<Record<string, Array<{size: string, multiplier: number}>>>({});
+  const [recipeMultipliers, setRecipeMultipliers] = useState<Record<string, Array<{ size: string, multiplier: number }>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -42,26 +42,26 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     } else {
       const loadedRecipes = (data as Recipe[]) || [];
       setRecipes(loadedRecipes);
-      
+
       // Load multipliers for relleno and cubierta recipes
-      const multipliersToLoad = loadedRecipes.filter(r => 
+      const multipliersToLoad = loadedRecipes.filter(r =>
         r.name.toLowerCase().includes('relleno') || r.name.toLowerCase().includes('cubierta')
       );
-      
+
       const multiplierPromises = multipliersToLoad.map(async (recipe) => {
         const isRelleno = recipe.name.toLowerCase().includes('relleno');
-        const result = isRelleno 
+        const result = isRelleno
           ? await quotationsApi.getFillingMultipliers(recipe.id)
           : await quotationsApi.getCoveringMultipliers(recipe.id);
-        
+
         if (result.data && Array.isArray(result.data)) {
           return { recipeId: recipe.id, multipliers: result.data };
         }
         return null;
       });
-      
+
       const results = await Promise.all(multiplierPromises);
-      const newRecipeMultipliers: Record<string, Array<{size: string, multiplier: number}>> = {};
+      const newRecipeMultipliers: Record<string, Array<{ size: string, multiplier: number }>> = {};
       results.forEach(result => {
         if (result) {
           newRecipeMultipliers[result.recipeId] = result.multipliers;
@@ -131,9 +131,9 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     queque: recipes.filter(r => r.name.toLowerCase().includes('queque')),
     relleno: recipes.filter(r => r.name.toLowerCase().includes('relleno')),
     cubierta: recipes.filter(r => r.name.toLowerCase().includes('cubierta')),
-    unidad: recipes.filter(r => !r.name.toLowerCase().includes('queque') && 
-                                 !r.name.toLowerCase().includes('relleno') && 
-                                 !r.name.toLowerCase().includes('cubierta')),
+    unidad: recipes.filter(r => !r.name.toLowerCase().includes('queque') &&
+      !r.name.toLowerCase().includes('relleno') &&
+      !r.name.toLowerCase().includes('cubierta')),
   };
 
   return (
@@ -166,7 +166,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
 
       <div className="space-y-4">
         <Label>Recetas Seleccionadas</Label>
-        
+
         {['queque', 'relleno', 'cubierta', 'unidad'].map((type) => (
           <Card key={type}>
             <CardContent className="pt-6">

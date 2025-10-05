@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, X, Upload, ImageIcon } from "lucide-react";
-import { Recipe, RecipeIngredient, RecipeFormData } from "@/types/recipe";
+import { Recipe, RecipeIngredient, RecipeFormData, Category } from "@/types/recipe";
 import { Ingredient } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
 import { ingredientsApi } from "@/lib/api";
@@ -18,6 +18,7 @@ interface RecipeFormProps {
 
 export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [name, setName] = useState(recipe?.name || "");
+  const [category, setCategory] = useState(recipe?.category || "queque");
   const [image, setImage] = useState(recipe?.image || "");
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(
     recipe?.ingredients || []
@@ -78,12 +79,12 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
       recipeIngredients.map((ing) =>
         ing.id === id
           ? {
-              ...ing,
-              ingredientId: selectedIngredient.id,
-              ingredientName: selectedIngredient.name,
-              units: selectedIngredient.units,
-              cost: 0, // Will be calculated when quantity is set
-            }
+            ...ing,
+            ingredientId: selectedIngredient.id,
+            ingredientName: selectedIngredient.name,
+            units: selectedIngredient.units,
+            cost: 0, // Will be calculated when quantity is set
+          }
           : ing
       )
     );
@@ -95,10 +96,10 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         if (ing.id === id) {
           const baseIngredient = availableIngredients.find((i) => i.id === ing.ingredientId);
           if (!baseIngredient) return ing;
-          
+
           // Calculate cost: (quantity / qtyProvider) * cost
           const cost = (quantity / baseIngredient.qtyProvider) * baseIngredient.cost;
-          
+
           return { ...ing, quantity, cost };
         }
         return ing;
@@ -111,14 +112,14 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      
+
       // Max dimensions
       const MAX_WIDTH = 800;
       const MAX_HEIGHT = 800;
-      
+
       let width = img.width;
       let height = img.height;
-      
+
       // Calculate new dimensions maintaining aspect ratio
       if (width > height) {
         if (width > MAX_WIDTH) {
@@ -131,12 +132,12 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
           height = MAX_HEIGHT;
         }
       }
-      
+
       canvas.width = width;
       canvas.height = height;
-      
+
       ctx?.drawImage(img, 0, 0, width, height);
-      
+
       // Compress to JPEG with 0.7 quality (70%)
       const compressed = canvas.toDataURL('image/jpeg', 0.7);
       console.log('Image compressed from', base64.length, 'to', compressed.length, 'characters');
@@ -156,7 +157,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         });
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         // Compress the image before setting it
@@ -174,7 +175,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -217,6 +218,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         image: image || undefined,
         ingredients: recipeIngredients,
         totalCost,
+        category: category
       });
     } finally {
       setIsSubmitting(false);
@@ -244,7 +246,20 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
               required
             />
           </div>
-
+          <div className="space-y-2">
+            <Label htmlFor="category">Categoria</Label>
+            <Select value={category} onValueChange={(value) => setCategory(value as Category)}>
+              <SelectTrigger id="category">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="queque">Queque</SelectItem>
+                <SelectItem value="relleno">Relleno</SelectItem>
+                <SelectItem value="cubierta">Cubierta</SelectItem>
+                <SelectItem value="unidad">Unidad</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label>Recipe Image</Label>
             {image ? (
@@ -400,7 +415,7 @@ function getUUID() {
     return crypto.randomUUID();
   }
   // Fallback: generate a simple UUID (not cryptographically secure)
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });

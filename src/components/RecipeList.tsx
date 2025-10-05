@@ -35,10 +35,11 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="font-semibold">Recipe</TableHead>
-                <TableHead className="font-semibold">Ingredients</TableHead>
-                <TableHead className="font-semibold">Total Cost</TableHead>
-                <TableHead className="text-right font-semibold">Actions</TableHead>
+                <TableHead className="font-semibold">Receta</TableHead>
+                <TableHead className="font-semibold">Ingredientes</TableHead>
+                <TableHead className="font-semibold">Costo Total</TableHead>
+                <TableHead className="font-semibold">Categoria</TableHead>
+                <TableHead className="text-right font-semibold">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -71,6 +72,11 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                   <TableCell>
                     <span className="font-bold text-primary text-lg">
                       ₡{recipe.totalCost.toLocaleString()}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium ml-1">
+                      {recipe.category}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">

@@ -19,9 +19,9 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Recipe Preview</DialogTitle>
+          <DialogTitle className="text-2xl">Receta {recipe.name}</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Recipe Image */}
           <div className="space-y-2">
@@ -41,9 +41,15 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
           </div>
 
           {/* Recipe Name */}
-          <div className="space-y-2">
-            <h3 className="font-semibold text-sm text-muted-foreground">Recipe Name</h3>
-            <p className="text-2xl font-bold">{recipe.name}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm text-muted-foreground">Nombre</h3>
+              <p className="text-2xl font-bold">{recipe.name}</p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm text-muted-foreground">Categoria</h3>
+              <p className="text-2xl font-bold">{recipe.category ?? "Sin categoria"}</p>
+            </div>
           </div>
 
           {/* Ingredients List */}
@@ -73,9 +79,9 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
                         {ingredient.units}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
-                        ₡{ingredient.cost.toLocaleString('en-US', { 
-                          minimumFractionDigits: 2, 
-                          maximumFractionDigits: 2 
+                        ₡{ingredient.cost.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
                         })}
                       </TableCell>
                     </TableRow>
@@ -90,9 +96,9 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
             <div className="flex items-center justify-between bg-muted p-4 rounded-lg">
               <h3 className="font-semibold text-lg">Total Recipe Cost</h3>
               <span className="text-3xl font-bold text-primary">
-                ₡{recipe.totalCost.toLocaleString('en-US', { 
-                  minimumFractionDigits: 2, 
-                  maximumFractionDigits: 2 
+                ₡{recipe.totalCost.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
                 })}
               </span>
             </div>
