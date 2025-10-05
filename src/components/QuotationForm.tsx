@@ -23,7 +23,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   const [notes, setNotes] = useState(quotation?.notes || "");
   const [selectedRecipes, setSelectedRecipes] = useState<QuotationRecipe[]>(quotation?.recipes || []);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [recipeMultipliers, setRecipeMultipliers] = useState<Record<string, Record<string, number>>>({});
+  const [recipeMultipliers, setRecipeMultipliers] = useState<Record<string, Array<{size: string, multiplier: number}>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -54,14 +54,14 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
           ? await quotationsApi.getFillingMultipliers(recipe.id)
           : await quotationsApi.getCoveringMultipliers(recipe.id);
         
-        if (result.data) {
-          return { recipeId: recipe.id, multipliers: result.data as Record<string, number> };
+        if (result.data && Array.isArray(result.data)) {
+          return { recipeId: recipe.id, multipliers: result.data };
         }
         return null;
       });
       
       const results = await Promise.all(multiplierPromises);
-      const newRecipeMultipliers: Record<string, Record<string, number>> = {};
+      const newRecipeMultipliers: Record<string, Array<{size: string, multiplier: number}>> = {};
       results.forEach(result => {
         if (result) {
           newRecipeMultipliers[result.recipeId] = result.multipliers;
@@ -77,8 +77,11 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
 
     let quantity = 1;
     const multipliers = recipeMultipliers[recipeId];
-    if (multipliers && multipliers[size]) {
-      quantity = multipliers[size];
+    if (multipliers && Array.isArray(multipliers)) {
+      const sizeMultiplier = multipliers.find(m => m.size === size);
+      if (sizeMultiplier) {
+        quantity = sizeMultiplier.multiplier;
+      }
     }
 
     const newRecipe: QuotationRecipe = {

@@ -221,12 +221,19 @@ CREATE INDEX idx_quotation_recipes_quotation_id ON quotation_recipes(quotation_i
 CREATE TABLE filling_multipliers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
-  size VARCHAR(50) NOT NULL CHECK (size IN ('pequeño', 'mediano', 'grande')),
+  size VARCHAR(50) NOT NULL,
   multiplier DECIMAL(10,2) NOT NULL,
   UNIQUE(recipe_id, size)
 );
 
 CREATE INDEX idx_filling_multipliers_recipe_id ON filling_multipliers(recipe_id);
+
+-- Example data:
+-- | recipe_id (Relleno Chocolate) | size     | multiplier |
+-- | uuid-1                        | pequeño  | 1.0        |
+-- | uuid-1                        | mediano  | 2.0        |
+-- | uuid-1                        | grande   | 3.0        |
+-- | uuid-1                        | mini     | 0.5        |
 ```
 
 ### Covering Multipliers Table
@@ -234,12 +241,19 @@ CREATE INDEX idx_filling_multipliers_recipe_id ON filling_multipliers(recipe_id)
 CREATE TABLE covering_multipliers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
-  size VARCHAR(50) NOT NULL CHECK (size IN ('pequeño', 'mediano', 'grande')),
+  size VARCHAR(50) NOT NULL,
   multiplier DECIMAL(10,2) NOT NULL,
   UNIQUE(recipe_id, size)
 );
 
 CREATE INDEX idx_covering_multipliers_recipe_id ON covering_multipliers(recipe_id);
+
+-- Example data:
+-- | recipe_id (Cubierta Buttercream) | size     | multiplier |
+-- | uuid-2                           | pequeño  | 1.0        |
+-- | uuid-2                           | mediano  | 1.5        |
+-- | uuid-2                           | grande   | 2.0        |
+-- | uuid-2                           | mini     | 0.75       |
 ```
 
 ---
@@ -816,11 +830,36 @@ Get size multipliers for a specific filling recipe (relleno).
 
 **Response (200):**
 ```json
-{
-  "pequeño": 1.0,
-  "mediano": 2.0,
-  "grande": 3.0
-}
+[
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Relleno Chocolate",
+    "size": "pequeño",
+    "multiplier": 1.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Relleno Chocolate",
+    "size": "mediano",
+    "multiplier": 2.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Relleno Chocolate",
+    "size": "grande",
+    "multiplier": 3.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Relleno Chocolate",
+    "size": "mini",
+    "multiplier": 0.5
+  }
+]
 ```
 
 **Response (404):** If no multipliers found for recipe
@@ -834,15 +873,56 @@ Create or update filling multipliers for a recipe.
 ```json
 {
   "recipeId": "uuid",
-  "multipliers": {
-    "pequeño": 1.0,
-    "mediano": 2.0,
-    "grande": 3.0
-  }
+  "multipliers": [
+    {
+      "size": "pequeño",
+      "multiplier": 1.0
+    },
+    {
+      "size": "mediano",
+      "multiplier": 2.0
+    },
+    {
+      "size": "grande",
+      "multiplier": 3.0
+    },
+    {
+      "size": "mini",
+      "multiplier": 0.5
+    }
+  ]
 }
 ```
 
-**Response (200):** Created/updated multipliers
+**Response (200):**
+```json
+[
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "pequeño",
+    "multiplier": 1.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "mediano",
+    "multiplier": 2.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "grande",
+    "multiplier": 3.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "mini",
+    "multiplier": 0.5
+  }
+]
+```
 
 #### GET /api/quotations/covering-multipliers/:recipeId
 Get size multipliers for a specific covering recipe (cubierta).
@@ -851,11 +931,36 @@ Get size multipliers for a specific covering recipe (cubierta).
 
 **Response (200):**
 ```json
-{
-  "pequeño": 1.0,
-  "mediano": 1.5,
-  "grande": 2.0
-}
+[
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Cubierta Buttercream",
+    "size": "pequeño",
+    "multiplier": 1.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Cubierta Buttercream",
+    "size": "mediano",
+    "multiplier": 1.5
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Cubierta Buttercream",
+    "size": "grande",
+    "multiplier": 2.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Cubierta Buttercream",
+    "size": "mini",
+    "multiplier": 0.75
+  }
+]
 ```
 
 **Response (404):** If no multipliers found for recipe
@@ -869,15 +974,56 @@ Create or update covering multipliers for a recipe.
 ```json
 {
   "recipeId": "uuid",
-  "multipliers": {
-    "pequeño": 1.0,
-    "mediano": 1.5,
-    "grande": 2.0
-  }
+  "multipliers": [
+    {
+      "size": "pequeño",
+      "multiplier": 1.0
+    },
+    {
+      "size": "mediano",
+      "multiplier": 1.5
+    },
+    {
+      "size": "grande",
+      "multiplier": 2.0
+    },
+    {
+      "size": "mini",
+      "multiplier": 0.75
+    }
+  ]
 }
 ```
 
-**Response (200):** Created/updated multipliers
+**Response (200):**
+```json
+[
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "pequeño",
+    "multiplier": 1.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "mediano",
+    "multiplier": 1.5
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "grande",
+    "multiplier": 2.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "mini",
+    "multiplier": 0.75
+  }
+]
+```
 
 ---
 

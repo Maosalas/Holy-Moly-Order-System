@@ -203,20 +203,20 @@ export const quotationsApi = {
     }),
   
   // Get size multipliers for fillings by recipe ID
-  getFillingMultipliers: (recipeId: string) => apiFetch(`/quotations/filling-multipliers/${recipeId}`, { method: "GET" }),
+  getFillingMultipliers: (recipeId: string) => apiFetch<Array<{id: string, recipeId: string, size: string, multiplier: number}>>(`/quotations/filling-multipliers/${recipeId}`, { method: "GET" }),
   
   // Get size multipliers for coverings by recipe ID
-  getCoveringMultipliers: (recipeId: string) => apiFetch(`/quotations/covering-multipliers/${recipeId}`, { method: "GET" }),
+  getCoveringMultipliers: (recipeId: string) => apiFetch<Array<{id: string, recipeId: string, size: string, multiplier: number}>>(`/quotations/covering-multipliers/${recipeId}`, { method: "GET" }),
   
   // Save size multipliers for fillings
-  saveFillingMultipliers: (recipeId: string, multipliers: Record<string, number>) => 
+  saveFillingMultipliers: (recipeId: string, multipliers: Array<{size: string, multiplier: number}>) => 
     apiFetch("/quotations/filling-multipliers", {
       method: "POST",
       body: JSON.stringify({ recipeId, multipliers }),
     }),
   
   // Save size multipliers for coverings
-  saveCoveringMultipliers: (recipeId: string, multipliers: Record<string, number>) => 
+  saveCoveringMultipliers: (recipeId: string, multipliers: Array<{size: string, multiplier: number}>) => 
     apiFetch("/quotations/covering-multipliers", {
       method: "POST",
       body: JSON.stringify({ recipeId, multipliers }),
