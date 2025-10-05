@@ -202,9 +202,23 @@ export const quotationsApi = {
       method: "DELETE",
     }),
   
-  // Get size multipliers for fillings
-  getFillingMultipliers: () => apiFetch("/quotations/filling-multipliers", { method: "GET" }),
+  // Get size multipliers for fillings by recipe ID
+  getFillingMultipliers: (recipeId: string) => apiFetch(`/quotations/filling-multipliers/${recipeId}`, { method: "GET" }),
   
-  // Get size multipliers for coverings
-  getCoveringMultipliers: () => apiFetch("/quotations/covering-multipliers", { method: "GET" }),
+  // Get size multipliers for coverings by recipe ID
+  getCoveringMultipliers: (recipeId: string) => apiFetch(`/quotations/covering-multipliers/${recipeId}`, { method: "GET" }),
+  
+  // Save size multipliers for fillings
+  saveFillingMultipliers: (recipeId: string, multipliers: Record<string, number>) => 
+    apiFetch("/quotations/filling-multipliers", {
+      method: "POST",
+      body: JSON.stringify({ recipeId, multipliers }),
+    }),
+  
+  // Save size multipliers for coverings
+  saveCoveringMultipliers: (recipeId: string, multipliers: Record<string, number>) => 
+    apiFetch("/quotations/covering-multipliers", {
+      method: "POST",
+      body: JSON.stringify({ recipeId, multipliers }),
+    }),
 };

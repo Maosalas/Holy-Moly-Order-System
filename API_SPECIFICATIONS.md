@@ -220,32 +220,26 @@ CREATE INDEX idx_quotation_recipes_quotation_id ON quotation_recipes(quotation_i
 ```sql
 CREATE TABLE filling_multipliers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
   size VARCHAR(50) NOT NULL CHECK (size IN ('pequeño', 'mediano', 'grande')),
   multiplier DECIMAL(10,2) NOT NULL,
-  UNIQUE(size)
+  UNIQUE(recipe_id, size)
 );
 
--- Insert default values
-INSERT INTO filling_multipliers (size, multiplier) VALUES
-  ('pequeño', 1.0),
-  ('mediano', 2.0),
-  ('grande', 3.0);
+CREATE INDEX idx_filling_multipliers_recipe_id ON filling_multipliers(recipe_id);
 ```
 
 ### Covering Multipliers Table
 ```sql
 CREATE TABLE covering_multipliers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
   size VARCHAR(50) NOT NULL CHECK (size IN ('pequeño', 'mediano', 'grande')),
   multiplier DECIMAL(10,2) NOT NULL,
-  UNIQUE(size)
+  UNIQUE(recipe_id, size)
 );
 
--- Insert default values
-INSERT INTO covering_multipliers (size, multiplier) VALUES
-  ('pequeño', 1.0),
-  ('mediano', 1.5),
-  ('grande', 2.0);
+CREATE INDEX idx_covering_multipliers_recipe_id ON covering_multipliers(recipe_id);
 ```
 
 ---
@@ -815,8 +809,8 @@ Delete a quotation.
 
 **Response (204):** No content
 
-#### GET /api/quotations/filling-multipliers
-Get size multipliers for fillings (rellenos).
+#### GET /api/quotations/filling-multipliers/:recipeId
+Get size multipliers for a specific filling recipe (relleno).
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -829,8 +823,29 @@ Get size multipliers for fillings (rellenos).
 }
 ```
 
-#### GET /api/quotations/covering-multipliers
-Get size multipliers for coverings (cubiertas).
+**Response (404):** If no multipliers found for recipe
+
+#### POST /api/quotations/filling-multipliers
+Create or update filling multipliers for a recipe.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "recipeId": "uuid",
+  "multipliers": {
+    "pequeño": 1.0,
+    "mediano": 2.0,
+    "grande": 3.0
+  }
+}
+```
+
+**Response (200):** Created/updated multipliers
+
+#### GET /api/quotations/covering-multipliers/:recipeId
+Get size multipliers for a specific covering recipe (cubierta).
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -842,6 +857,27 @@ Get size multipliers for coverings (cubiertas).
   "grande": 2.0
 }
 ```
+
+**Response (404):** If no multipliers found for recipe
+
+#### POST /api/quotations/covering-multipliers
+Create or update covering multipliers for a recipe.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "recipeId": "uuid",
+  "multipliers": {
+    "pequeño": 1.0,
+    "mediano": 1.5,
+    "grande": 2.0
+  }
+}
+```
+
+**Response (200):** Created/updated multipliers
 
 ---
 

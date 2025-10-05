@@ -23,14 +23,12 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   const [notes, setNotes] = useState(quotation?.notes || "");
   const [selectedRecipes, setSelectedRecipes] = useState<QuotationRecipe[]>(quotation?.recipes || []);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [fillingMultipliers, setFillingMultipliers] = useState<any>({});
-  const [coveringMultipliers, setCoveringMultipliers] = useState<any>({});
+  const [recipeMultipliers, setRecipeMultipliers] = useState<Record<string, Record<string, number>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     loadRecipes();
-    loadMultipliers();
   }, []);
 
   const loadRecipes = async () => {
@@ -42,21 +40,34 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
         variant: "destructive",
       });
     } else {
-      setRecipes((data as Recipe[]) || []);
-    }
-  };
-
-  const loadMultipliers = async () => {
-    const [fillingRes, coveringRes] = await Promise.all([
-      quotationsApi.getFillingMultipliers(),
-      quotationsApi.getCoveringMultipliers()
-    ]);
-
-    if (!fillingRes.error && fillingRes.data) {
-      setFillingMultipliers(fillingRes.data);
-    }
-    if (!coveringRes.error && coveringRes.data) {
-      setCoveringMultipliers(coveringRes.data);
+      const loadedRecipes = (data as Recipe[]) || [];
+      setRecipes(loadedRecipes);
+      
+      // Load multipliers for relleno and cubierta recipes
+      const multipliersToLoad = loadedRecipes.filter(r => 
+        r.name.toLowerCase().includes('relleno') || r.name.toLowerCase().includes('cubierta')
+      );
+      
+      const multiplierPromises = multipliersToLoad.map(async (recipe) => {
+        const isRelleno = recipe.name.toLowerCase().includes('relleno');
+        const result = isRelleno 
+          ? await quotationsApi.getFillingMultipliers(recipe.id)
+          : await quotationsApi.getCoveringMultipliers(recipe.id);
+        
+        if (result.data) {
+          return { recipeId: recipe.id, multipliers: result.data as Record<string, number> };
+        }
+        return null;
+      });
+      
+      const results = await Promise.all(multiplierPromises);
+      const newRecipeMultipliers: Record<string, Record<string, number>> = {};
+      results.forEach(result => {
+        if (result) {
+          newRecipeMultipliers[result.recipeId] = result.multipliers;
+        }
+      });
+      setRecipeMultipliers(newRecipeMultipliers);
     }
   };
 
@@ -65,10 +76,9 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     if (!recipe) return;
 
     let quantity = 1;
-    if (recipeType === 'relleno' && fillingMultipliers[size]) {
-      quantity = fillingMultipliers[size];
-    } else if (recipeType === 'cubierta' && coveringMultipliers[size]) {
-      quantity = coveringMultipliers[size];
+    const multipliers = recipeMultipliers[recipeId];
+    if (multipliers && multipliers[size]) {
+      quantity = multipliers[size];
     }
 
     const newRecipe: QuotationRecipe = {
