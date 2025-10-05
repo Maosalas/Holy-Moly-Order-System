@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, ExternalLink } from "lucide-react";
+import { ExpensePreviewDialog } from "./ExpensePreviewDialog";
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -28,8 +29,8 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
     return (
       <Card>
         <CardHeader>
-          <CardTitle>No expenses yet</CardTitle>
-          <CardDescription>Start tracking your business expenses</CardDescription>
+          <CardTitle>No hay gastos</CardTitle>
+          <CardDescription>Empieza a rastrear tus gastos</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -39,20 +40,19 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Expense History</CardTitle>
-          <CardDescription>All your recorded expenses</CardDescription>
+          <CardTitle>Historial de gastos</CardTitle>
+          <CardDescription>Todos tus gastos</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
               <TableRow>
-                <TableHead className="font-semibold">Supermarket</TableHead>
-                <TableHead className="font-semibold">Date</TableHead>
-                <TableHead className="font-semibold">Amount</TableHead>
-                <TableHead className="font-semibold">Card</TableHead>
-                <TableHead className="font-semibold">Receipt</TableHead>
-                <TableHead className="text-right font-semibold">Actions</TableHead>
+                <TableHead className="font-semibold">Comercio</TableHead>
+                <TableHead className="font-semibold">Fecha</TableHead>
+                <TableHead className="font-semibold">Monto</TableHead>
+                <TableHead className="font-semibold">Tarjeta</TableHead>
+                <TableHead className="text-right font-semibold">Acciones</TableHead>
               </TableRow>
               </TableHeader>
               <TableBody>
@@ -74,30 +74,9 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
                         {expense.cardType.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {expense.receiptUrl ? (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          asChild
-                          className="h-auto p-0"
-                        >
-                          <a
-                            href={expense.receiptUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1"
-                          >
-                            View Receipt
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No receipt</span>
-                      )}
-                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        <ExpensePreviewDialog expense={expense} />
                         <Button
                           variant="ghost"
                           size="icon"
