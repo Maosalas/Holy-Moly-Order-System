@@ -65,7 +65,7 @@ export const ExpensePreviewDialog = ({ expense, setExpandedPhoto }: ExpensePrevi
                     {/* Client Photos */}
                     {expense.receiptUrl && (
                         <div className="space-y-2">
-                            <h3 className="font-semibold text-sm text-muted-foreground">Fotos de referencia</h3>
+                            <h3 className="font-semibold text-sm text-muted-foreground">Foto del recibo</h3>
                             <div className="grid grid-cols-2 gap-2">
                                 {Array.isArray(expense.receiptUrl)
                                     ? expense.receiptUrl.map((photo, index) => (

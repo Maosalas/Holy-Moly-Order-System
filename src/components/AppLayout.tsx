@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User } from "lucide-react";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/Basic Branding-01.png";
@@ -25,6 +25,7 @@ const menuItems = [
   { title: "Ingredientes", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
   { title: "Gastos", url: "/expenses", icon: Receipt },
+  { title: "Cotizador", url: "/cotizador", icon: Calculator },
 ];
 
 function AppSidebar() {
@@ -56,6 +57,7 @@ function AppSidebar() {
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  
                 );
               })}
             </SidebarMenu>

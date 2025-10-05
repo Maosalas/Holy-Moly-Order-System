@@ -26,11 +26,11 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
 
   const getStatusLabel = (status: string) => {
     const labels = {
-      "waiting-for-payment": "Waiting",
-      "partially-paid": "Partial",
-      "payment-received": "Paid",
-      "confirmed": "Confirmed",
-      "finished": "Finished",
+      "waiting-for-payment": "En espera",
+      "partially-paid": "Pago Parcial",
+      "payment-received": "Pagado",
+      "confirmed": "Confirmado",
+      "finished": "Terminado",
     };
     return labels[status as keyof typeof labels] || status;
   };
