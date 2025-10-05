@@ -190,7 +190,7 @@ CREATE TABLE quotations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   client_name VARCHAR(255) NOT NULL,
-  size VARCHAR(50) NOT NULL CHECK (size IN ('pequeño', 'mediano', 'grande')),
+  size VARCHAR(50) NOT NULL,
   total_cost DECIMAL(10,2) NOT NULL,
   notes TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
