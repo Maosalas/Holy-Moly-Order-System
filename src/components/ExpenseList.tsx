@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, ExternalLink } from "lucide-react";
 import { ExpensePreviewDialog } from "./ExpensePreviewDialog";
+import { useState } from "react";
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -14,6 +15,8 @@ interface ExpenseListProps {
 }
 
 const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProps) => {
+  const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+
   const getCardBadgeColor = (cardType: string) => {
     switch (cardType) {
       case "amex":
@@ -76,7 +79,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <ExpensePreviewDialog expense={expense} />
+                        <ExpensePreviewDialog expense={expense} setExpandedPhoto={setExpandedPhoto} />
                         <Button
                           variant="ghost"
                           size="icon"
@@ -104,6 +107,27 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
           </div>
         </CardContent>
       </Card>
+      {expandedPhoto && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-90"
+          onClick={() => setExpandedPhoto(null)}
+        >
+          <img
+            src={expandedPhoto}
+            alt="Expanded"
+            className="max-h-screen max-w-screen rounded-lg shadow-lg"
+            style={{ objectFit: "contain" }}
+            onClick={e => e.stopPropagation()}
+          />
+          <button
+            className="absolute top-4 right-4 text-white text-2xl"
+            onClick={() => setExpandedPhoto(null)}
+            aria-label="Cerrar"
+          >
+            &times;
+          </button>
+        </div>
+      )}
     </>
   );
 };
