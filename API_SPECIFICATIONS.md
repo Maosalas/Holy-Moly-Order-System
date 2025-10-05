@@ -182,6 +182,72 @@ CREATE INDEX idx_expenses_user_id ON expenses(user_id);
 CREATE INDEX idx_expenses_purchase_date ON expenses(purchase_date);
 ```
 
+### Quotations Table
+```sql
+CREATE TYPE recipe_type AS ENUM ('queque', 'relleno', 'cubierta', 'unidad');
+
+CREATE TABLE quotations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  client_name VARCHAR(255) NOT NULL,
+  size VARCHAR(50) NOT NULL CHECK (size IN ('pequeño', 'mediano', 'grande')),
+  total_cost DECIMAL(10,2) NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_quotations_user_id ON quotations(user_id);
+```
+
+### Quotation Recipes Table (Junction Table)
+```sql
+CREATE TABLE quotation_recipes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quotation_id UUID REFERENCES quotations(id) ON DELETE CASCADE NOT NULL,
+  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
+  recipe_name VARCHAR(255) NOT NULL,
+  recipe_type recipe_type NOT NULL,
+  unit_cost DECIMAL(10,2) NOT NULL,
+  quantity DECIMAL(10,2) NOT NULL,
+  total_cost DECIMAL(10,2) NOT NULL
+);
+
+CREATE INDEX idx_quotation_recipes_quotation_id ON quotation_recipes(quotation_id);
+```
+
+### Filling Multipliers Table
+```sql
+CREATE TABLE filling_multipliers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  size VARCHAR(50) NOT NULL CHECK (size IN ('pequeño', 'mediano', 'grande')),
+  multiplier DECIMAL(10,2) NOT NULL,
+  UNIQUE(size)
+);
+
+-- Insert default values
+INSERT INTO filling_multipliers (size, multiplier) VALUES
+  ('pequeño', 1.0),
+  ('mediano', 2.0),
+  ('grande', 3.0);
+```
+
+### Covering Multipliers Table
+```sql
+CREATE TABLE covering_multipliers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  size VARCHAR(50) NOT NULL CHECK (size IN ('pequeño', 'mediano', 'grande')),
+  multiplier DECIMAL(10,2) NOT NULL,
+  UNIQUE(size)
+);
+
+-- Insert default values
+INSERT INTO covering_multipliers (size, multiplier) VALUES
+  ('pequeño', 1.0),
+  ('mediano', 1.5),
+  ('grande', 2.0);
+```
+
 ---
 
 ## API Endpoints
@@ -663,6 +729,119 @@ Delete an expense.
 **Headers:** `Authorization: Bearer {token}`
 
 **Response (204):** No content
+
+---
+
+### Quotations
+
+#### GET /api/quotations
+Get all quotations for authenticated user.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+```json
+[
+  {
+    "id": "uuid",
+    "clientName": "María González",
+    "size": "mediano",
+    "recipes": [
+      {
+        "recipeId": "uuid",
+        "recipeName": "Queque de Vainilla",
+        "recipeType": "queque",
+        "unitCost": 5000.00,
+        "quantity": 1,
+        "totalCost": 5000.00
+      },
+      {
+        "recipeId": "uuid",
+        "recipeName": "Relleno de Fresa",
+        "recipeType": "relleno",
+        "unitCost": 2000.00,
+        "quantity": 2,
+        "totalCost": 4000.00
+      }
+    ],
+    "totalCost": 9000.00,
+    "notes": "Cliente prefiere bajo azúcar",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+#### POST /api/quotations
+Create a new quotation.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "clientName": "María González",
+  "size": "mediano",
+  "recipes": [
+    {
+      "recipeId": "uuid",
+      "recipeName": "Queque de Vainilla",
+      "recipeType": "queque",
+      "unitCost": 5000.00,
+      "quantity": 1,
+      "totalCost": 5000.00
+    }
+  ],
+  "totalCost": 9000.00,
+  "notes": "Cliente prefiere bajo azúcar"
+}
+```
+
+**Response (201):** Created quotation object
+
+#### PUT /api/quotations/:id
+Update a quotation.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:** Same as POST
+
+**Response (200):** Updated quotation object
+
+#### DELETE /api/quotations/:id
+Delete a quotation.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (204):** No content
+
+#### GET /api/quotations/filling-multipliers
+Get size multipliers for fillings (rellenos).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+```json
+{
+  "pequeño": 1.0,
+  "mediano": 2.0,
+  "grande": 3.0
+}
+```
+
+#### GET /api/quotations/covering-multipliers
+Get size multipliers for coverings (cubiertas).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+```json
+{
+  "pequeño": 1.0,
+  "mediano": 1.5,
+  "grande": 2.0
+}
+```
 
 ---
 
