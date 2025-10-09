@@ -28,7 +28,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [phoneNumber, setPhoneNumber] = useState(initialData?.phoneNumber || "");
   const [orderDetails, setOrderDetails] = useState(initialData?.orderDetails || "");
   const [deliveryDate, setDeliveryDate] = useState<string>(
-    initialData?.deliveryDate 
+    initialData?.deliveryDate
       ? new Date(initialData.deliveryDate).toISOString().slice(0, 16)
       : ""
   );
@@ -36,6 +36,9 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [clientPhotos, setClientPhotos] = useState<string[]>(initialData?.clientPhotos || []);
   const [selectedSupplies, setSelectedSupplies] = useState<OrderSupply[]>(initialData?.selectedSupplies || []);
   const [chargeAmount, setChargeAmount] = useState(initialData?.chargeAmount?.toString() || "");
+
+  const [costoAmount, setCostoAmount] = useState("");
+
   const [downPayment, setDownPayment] = useState(initialData?.downPayment?.toString() || "0");
   const [suppliesNeeded, setSuppliesNeeded] = useState(initialData?.suppliesNeeded || "");
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
@@ -59,7 +62,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
   // Calculate cost from selected supplies
   const costAmount = selectedSupplies.reduce((sum, item) => sum + item.totalCost, 0);
-  const profit = (parseFloat(chargeAmount) || 0) - costAmount;
+  const profit = (parseFloat(chargeAmount) || 0) - costAmount - parseFloat(costoAmount);
 
   const availableStatuses: { value: OrderStatus; label: string }[] = [
     { value: "waiting-for-payment", label: "Espera de pago" },
@@ -70,7 +73,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   ];
 
   const toggleStatus = (status: OrderStatus) => {
-    setStatuses(prev => 
+    setStatuses(prev =>
       prev.includes(status)
         ? prev.filter(s => s !== status)
         : [...prev, status]
@@ -84,8 +87,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     const alreadyAdded = selectedSupplies.find(s => s.supplyId === supplyId);
     if (alreadyAdded) {
       toast({
-        title: "Supply already added",
-        description: `${supply.name} is already in the list`,
+        title: "Suministro ya fue agregado",
+        description: `${supply.name} ya esta en la lista de suministros seleccionados.`,
         variant: "destructive",
       });
       return;
@@ -122,14 +125,14 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      
+
       // Max dimensions
       const MAX_WIDTH = 800;
       const MAX_HEIGHT = 800;
-      
+
       let width = img.width;
       let height = img.height;
-      
+
       // Calculate new dimensions maintaining aspect ratio
       if (width > height) {
         if (width > MAX_WIDTH) {
@@ -142,12 +145,12 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
           height = MAX_HEIGHT;
         }
       }
-      
+
       canvas.width = width;
       canvas.height = height;
-      
+
       ctx?.drawImage(img, 0, 0, width, height);
-      
+
       // Compress to JPEG with 0.7 quality (70%)
       const compressed = canvas.toDataURL('image/jpeg', 0.7);
       callback(compressed);
@@ -167,7 +170,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
           });
           return;
         }
-        
+
         const reader = new FileReader();
         reader.onloadend = () => {
           compressImage(reader.result as string, (compressed) => {
@@ -176,7 +179,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
         };
         reader.readAsDataURL(file);
       });
-      
+
       toast({
         title: "Fotos cargadas",
         description: `${files.length} foto(s) agregada(s) exitosamente`,
@@ -190,16 +193,16 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isSubmitting) return;
     setIsSubmitting(true);
-    
+
     const isUpdate = !!initialData;
-    
+
     if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate || !chargeAmount) {
       toast({
-        title: "Missing information",
-        description: "Please fill in all required fields",
+        title: "Información incompleta",
+        description: "Por favor complete todos los campos obligatorios marcados con *",
         variant: "destructive",
       });
       return;
@@ -210,8 +213,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
     if (isNaN(charge) || charge <= 0) {
       toast({
-        title: "Invalid amount",
-        description: "Please enter a valid charge amount",
+        title: "Monto a cobrar inválido",
+        description: "Por favor ingrese un monto válido mayor a 0",
         variant: "destructive",
       });
       return;
@@ -219,8 +222,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
     if (downPmt > charge) {
       toast({
-        title: "Invalid down payment",
-        description: "Down payment cannot exceed charge amount",
+        title: "Monto de depósito inválido",
+        description: "Monto de deposito no puede ser mayor al monto a cobrar",
         variant: "destructive",
       });
       return;
@@ -241,10 +244,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       needsCakeTopper,
       statuses: (statuses.length > 0 ? statuses : ["waiting-for-payment"]) as OrderStatus[],
     };
-    
+
     try {
       await onSubmit(orderData);
-      
+
       // Generate and download calendar event
       const { downloadICS } = await import("@/lib/utils");
       const fullOrder: Order = {
@@ -274,14 +277,14 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{initialData ? "Edit Order" : "New Order"}</CardTitle>
+        <CardTitle>{initialData ? "Actulizar pedido" : "Nuevo pedido"}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Section 1: Client Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold border-b pb-2">Información del cliente</h3>
-            
+
             <div className="space-y-2">
               <Label htmlFor="clientName">Nombre del cliente *</Label>
               <Input
@@ -300,7 +303,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                 type="tel"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="e.g., +1234567890"
+                placeholder="e.g., +506 1234 5678"
                 required
               />
             </div>
@@ -311,7 +314,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                 id="orderDetails"
                 value={orderDetails}
                 onChange={(e) => setOrderDetails(e.target.value)}
-                placeholder="Describe the order details..."
+                placeholder="Describe el pedido del cliente..."
                 rows={4}
                 required
               />
@@ -388,7 +391,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
           {/* Section 2: Financial & Supplies */}
           <div className="space-y-5 pt-4">
             <h3 className="text-lg font-semibold border-b pb-2">Miscelaneos y Financias</h3>
-            
+
             {/* Supplies Selection */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -410,8 +413,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                       </div>
                     ) : (
                       supplies.map((supply) => (
-                        <SelectItem 
-                          key={supply.id} 
+                        <SelectItem
+                          key={supply.id}
                           value={supply.id}
                           className="cursor-pointer"
                         >
@@ -447,8 +450,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                       <Package className="h-6 w-6" />
                     </div>
                     <div>
-                      <p className="font-medium">No supplies added yet</p>
-                      <p className="text-sm mt-1">Select supplies from the dropdown above</p>
+                      <p className="font-medium">No hay suministros por mostrar</p>
+                      <p className="text-sm mt-1">Seleccione los suministros del dropdown</p>
                     </div>
                   </div>
                 </div>
@@ -459,7 +462,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                       {selectedSupplies.length} {selectedSupplies.length === 1 ? 'suministro' : 'suministros'} seleccionados
                     </span>
                   </div>
-                  
+
                   <div className="border-2 rounded-lg overflow-hidden bg-card">
                     <Table>
                       <TableHeader>
@@ -528,17 +531,29 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Costo total (₡)</Label>
+                <Label>Costo total (₡) <small className="text-red">Monto calculado de los suministros</small></Label>
                 <div className="p-3 rounded-md bg-muted border">
                   <p className="text-lg font-semibold">
                     ₡{costAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Calculado de los suministros</p>
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="costoAmount">Precio costo (₡) * <small className="text-red">Monto calculado en excel</small> </Label>
+                <Input
+                  id="costoAmount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={costoAmount}
+                  onChange={(e) => setCostoAmount(e.target.value)}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="chargeAmount">Precio a cobrar (₡) *</Label>
                 <Input
@@ -552,6 +567,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                   required
                 />
               </div>
+
             </div>
 
             <div className="space-y-2">
@@ -609,7 +625,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
           {/* Section 3: Cake Topper */}
           <div className="space-y-4 pt-4">
             <h3 className="text-lg font-semibold border-b pb-2">Cake Topper</h3>
-            
+
             <div className="flex items-center space-x-2">
               <Switch
                 id="cakeTopper"
@@ -643,6 +659,6 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
           </div>
         </form>
       </CardContent>
-    </Card>
+    </Card >
   );
 };
