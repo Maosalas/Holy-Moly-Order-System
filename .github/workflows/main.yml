@@ -1,0 +1,46 @@
+name: Frontend Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy & build on server
+      env:
+        DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}   # e.g. 172.235.129.129
+        DEPLOY_USER:   ${{ secrets.DEPLOY_USER }}     # e.g. deploy
+        DEPLOY_KEY:    ${{ secrets.DEPLOY_KEY }}      # private key content
+        DEPLOY_PATH:   /var/www/holy_dashboard
+      run: |
+        echo "$DEPLOY_KEY" > deploy_key
+        chmod 600 deploy_key
+
+        ssh -i deploy_key -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER "
+          mkdir -p $DEPLOY_PATH && chown -R $DEPLOY_USER:$DEPLOY_USER $DEPLOY_PATH
+        "
+
+        # Upload only needed files
+        rsync -avz -e "ssh -i deploy_key -o StrictHostKeyChecking=no" \
+          --delete \
+          --exclude '.git' \
+          --exclude 'node_modules' \
+          --exclude '.github' \
+          . $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH/
+
+        # Build & start container
+        ssh -i deploy_key -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER "
+          set -e
+          cd $DEPLOY_PATH
+          docker network create web || true
+          docker compose build --no-cache
+          docker compose up -d
+        "
+
+        rm -f deploy_key
