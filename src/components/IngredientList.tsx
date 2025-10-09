@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pencil, Trash2 } from "lucide-react";
+import { usePagination } from "@/hooks/use-pagination";
+import { PaginationControls } from "./PaginationControls";
 
 interface IngredientListProps {
   ingredients: Ingredient[];
@@ -12,6 +14,15 @@ interface IngredientListProps {
 }
 
 export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: IngredientListProps) => {
+  const {
+    paginatedItems,
+    currentPage,
+    totalPages,
+    goToPage,
+    hasNextPage,
+    hasPreviousPage,
+  } = usePagination({ items: ingredients, itemsPerPage: 10 });
+
   if (ingredients.length === 0) {
     return (
       <Card className="shadow-lg">
@@ -25,24 +36,25 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
   }
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle>Ingredients Database</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Provider</TableHead>
-              <TableHead>Qty from Provider</TableHead>
-              <TableHead>Units</TableHead>
-              <TableHead>Cost</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {ingredients.map((ingredient) => (
+    <>
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle>Ingredients Database</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Provider</TableHead>
+                <TableHead>Qty from Provider</TableHead>
+                <TableHead>Units</TableHead>
+                <TableHead>Cost</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedItems.map((ingredient) => (
               <TableRow key={ingredient.id}>
                 <TableCell className="font-medium">{ingredient.name}</TableCell>
                 <TableCell>{ingredient.provider}</TableCell>
@@ -75,5 +87,13 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
         </Table>
       </CardContent>
     </Card>
+    <PaginationControls
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={goToPage}
+      hasNextPage={hasNextPage}
+      hasPreviousPage={hasPreviousPage}
+    />
+    </>
   );
 };

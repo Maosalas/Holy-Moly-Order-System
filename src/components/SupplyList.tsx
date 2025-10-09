@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Trash2, Package } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePagination } from "@/hooks/use-pagination";
+import { PaginationControls } from "./PaginationControls";
 
 interface SupplyListProps {
   supplies: Supply[];
@@ -14,6 +16,14 @@ interface SupplyListProps {
 
 const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps) => {
   const isMobile = useIsMobile();
+  const {
+    paginatedItems,
+    currentPage,
+    totalPages,
+    goToPage,
+    hasNextPage,
+    hasPreviousPage,
+  } = usePagination({ items: supplies, itemsPerPage: 10 });
 
   if (supplies.length === 0) {
     return (
@@ -28,8 +38,9 @@ const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps)
 
   if (isMobile) {
     return (
-      <div className="space-y-3">
-        {supplies.map((supply) => (
+      <>
+        <div className="space-y-3">
+          {paginatedItems.map((supply) => (
           <Card key={supply.id}>
             <CardContent className="p-4">
               <div className="space-y-3">
@@ -80,11 +91,20 @@ const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps)
           </Card>
         ))}
       </div>
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        hasNextPage={hasNextPage}
+        hasPreviousPage={hasPreviousPage}
+      />
+      </>
     );
   }
 
   return (
-    <Card>
+    <>
+      <Card>
         <CardHeader>
           <CardTitle>Supplies Inventory</CardTitle>
           <CardDescription>All your tracked supplies</CardDescription>
@@ -103,7 +123,7 @@ const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps)
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {supplies.map((supply) => (
+                {paginatedItems.map((supply) => (
                   <TableRow key={supply.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -146,6 +166,14 @@ const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps)
           </div>
         </CardContent>
       </Card>
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        hasNextPage={hasNextPage}
+        hasPreviousPage={hasPreviousPage}
+      />
+    </>
   );
 };
 
