@@ -77,32 +77,31 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full max-w-full overflow-x-hidden">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b bg-card flex items-center px-4 sticky top-0 z-10 justify-between">
-            <div className="flex items-center">
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="h-14 border-b bg-card flex items-center px-2 sm:px-4 sticky top-0 z-10 justify-between gap-2">
+            <div className="flex items-center min-w-0">
               <SidebarTrigger />
-              <div className="ml-4 flex items-center gap-2">
-                <img src={logo} alt="Holy Moly Logo" className="h-10 w-100 object-contain" />
-                <h1 className="text-xl font-bold"></h1>
+              <div className="ml-2 sm:ml-4 flex items-center gap-2 min-w-0">
+                <img src={logo} alt="Holy Moly Logo" className="h-8 sm:h-10 w-auto object-contain" />
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-1 sm:gap-3 min-w-0">
+              <div className="hidden sm:flex items-center gap-2 text-sm">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{user?.name}</span>
+                <span className="font-medium truncate">{user?.name}</span>
                 <span className="text-xs text-muted-foreground capitalize">
-                  ({user?.role === "cake_topper_provider" ? "Topper Provider" : "Owner"})
+                  ({user?.role === "cake_topper_provider" ? "Topper" : "Owner"})
                 </span>
               </div>
-              <Button variant="outline" size="sm" onClick={logout} className="gap-2">
+              <Button variant="outline" size="sm" onClick={logout} className="gap-1 sm:gap-2">
                 <LogOut className="h-4 w-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </header>
-          <main className="flex-1 p-6 bg-background overflow-auto">
+          <main className="flex-1 p-3 sm:p-6 bg-background overflow-auto">
             {children}
           </main>
         </div>

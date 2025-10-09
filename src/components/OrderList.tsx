@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Edit, Trash2, Calendar, Package } from "lucide-react";
 import { OrderPreviewDialog } from "./OrderPreviewDialog";
+import { usePagination } from "@/hooks/use-pagination";
+import { PaginationControls } from "./PaginationControls";
 
 interface OrderListProps {
   orders: Order[];
@@ -14,6 +16,15 @@ interface OrderListProps {
 }
 
 export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListProps) => {
+  const {
+    paginatedItems,
+    currentPage,
+    totalPages,
+    goToPage,
+    hasNextPage,
+    hasPreviousPage,
+  } = usePagination({ items: orders, itemsPerPage: 10 });
+
   const handleWhatsApp = (phoneNumber: string, clientName: string) => {
     const message = `Hola ${clientName}! Te hablamos de Holy Moly...`;
     const url = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
@@ -57,21 +68,22 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50 hover:bg-muted/50">
-            <TableHead className="font-semibold">Cliente</TableHead>
-            <TableHead className="font-semibold">Fecha de entrega</TableHead>
-            <TableHead className="font-semibold">Monto y cobro</TableHead>
-            <TableHead className="font-semibold">Método de pago</TableHead>
-            <TableHead className="font-semibold">Status</TableHead>
-            <TableHead className="font-semibold">Detalles</TableHead>
-            <TableHead className="text-right font-semibold">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.map((order) => {
+    <>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="font-semibold">Cliente</TableHead>
+              <TableHead className="font-semibold">Fecha de entrega</TableHead>
+              <TableHead className="font-semibold">Monto y cobro</TableHead>
+              <TableHead className="font-semibold">Método de pago</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold">Detalles</TableHead>
+              <TableHead className="text-right font-semibold">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedItems.map((order) => {
             const remainingBalance = order.chargeAmount - order.downPayment;
             const paymentProgress = (order.downPayment / order.chargeAmount) * 100;
 
@@ -194,5 +206,13 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
         </TableBody>
       </Table>
     </div>
+    <PaginationControls
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={goToPage}
+      hasNextPage={hasNextPage}
+      hasPreviousPage={hasPreviousPage}
+    />
+    </>
   );
 };

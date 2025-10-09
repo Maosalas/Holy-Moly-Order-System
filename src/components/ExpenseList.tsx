@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, ExternalLink } from "lucide-react";
 import { ExpensePreviewDialog } from "./ExpensePreviewDialog";
 import { useState } from "react";
+import { usePagination } from "@/hooks/use-pagination";
+import { PaginationControls } from "./PaginationControls";
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -16,6 +18,14 @@ interface ExpenseListProps {
 
 const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProps) => {
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+  const {
+    paginatedItems,
+    currentPage,
+    totalPages,
+    goToPage,
+    hasNextPage,
+    hasPreviousPage,
+  } = usePagination({ items: expenses, itemsPerPage: 10 });
 
   const getCardBadgeColor = (cardType: string) => {
     switch (cardType) {
@@ -59,7 +69,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
               </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses.map((expense) => (
+                {paginatedItems.map((expense) => (
                   <TableRow key={expense.id}>
                     <TableCell className="font-medium">{expense.supermarketName}</TableCell>
                     <TableCell>
@@ -107,6 +117,13 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
           </div>
         </CardContent>
       </Card>
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        hasNextPage={hasNextPage}
+        hasPreviousPage={hasPreviousPage}
+      />
       {expandedPhoto && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-90"
