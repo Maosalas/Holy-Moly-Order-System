@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: holymoly-frontend
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.holymoly.rule=Host(`holymoly.networksalas.com`)"
+      - "traefik.http.routers.holymoly.entrypoints=websecure"
+      - "traefik.http.routers.holymoly.tls=true"
+      - "traefik.http.routers.holymoly.tls.certresolver=cf"
+      - "traefik.http.services.holymoly.loadbalancer.server.port=8080"
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true
