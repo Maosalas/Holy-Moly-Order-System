@@ -4,6 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, ChefHat } from "lucide-react";
 import { RecipePreviewDialog } from "./RecipePreviewDialog";
+import { usePagination } from "@/hooks/use-pagination";
+import { PaginationControls } from "./PaginationControls";
 
 interface RecipeListProps {
   recipes: Recipe[];
@@ -13,6 +15,15 @@ interface RecipeListProps {
 }
 
 export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeListProps) => {
+  const {
+    paginatedItems,
+    currentPage,
+    totalPages,
+    goToPage,
+    hasNextPage,
+    hasPreviousPage,
+  } = usePagination({ items: recipes, itemsPerPage: 10 });
+
   if (recipes.length === 0) {
     return (
       <Card>
@@ -25,25 +36,26 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recipe Collection</CardTitle>
-        <CardDescription>All your saved recipes</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-semibold">Receta</TableHead>
-                <TableHead className="font-semibold">Ingredientes</TableHead>
-                <TableHead className="font-semibold">Costo Total</TableHead>
-                <TableHead className="font-semibold">Categoria</TableHead>
-                <TableHead className="text-right font-semibold">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recipes.map((recipe) => (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recipe Collection</CardTitle>
+          <CardDescription>All your saved recipes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-semibold">Receta</TableHead>
+                  <TableHead className="font-semibold">Ingredientes</TableHead>
+                  <TableHead className="font-semibold">Costo Total</TableHead>
+                  <TableHead className="font-semibold">Categoria</TableHead>
+                  <TableHead className="text-right font-semibold">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((recipe) => (
                 <TableRow key={recipe.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -109,5 +121,13 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
         </div>
       </CardContent>
     </Card>
+    <PaginationControls
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={goToPage}
+      hasNextPage={hasNextPage}
+      hasPreviousPage={hasPreviousPage}
+    />
+    </>
   );
 };

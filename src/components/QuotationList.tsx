@@ -6,6 +6,8 @@ import { Edit, Trash2, Eye, Calendar } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { QuotationPreviewDialog } from "@/components/QuotationPreviewDialog";
 import type { Quotation } from "@/types/quotation";
+import { usePagination } from "@/hooks/use-pagination";
+import { PaginationControls } from "./PaginationControls";
 
 interface QuotationListProps {
   quotations: Quotation[];
@@ -16,6 +18,14 @@ interface QuotationListProps {
 export function QuotationList({ quotations, onEdit, onDelete }: QuotationListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [previewQuotation, setPreviewQuotation] = useState<Quotation | null>(null);
+  const {
+    paginatedItems,
+    currentPage,
+    totalPages,
+    goToPage,
+    hasNextPage,
+    hasPreviousPage,
+  } = usePagination({ items: quotations, itemsPerPage: 10 });
 
   const getSizeBadgeColor = (size: string) => {
     const colors = {
@@ -41,7 +51,7 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {quotations.map((quotation) => (
+        {paginatedItems.map((quotation) => (
           <Card key={quotation.id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
@@ -106,6 +116,14 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
           </Card>
         ))}
       </div>
+
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        hasNextPage={hasNextPage}
+        hasPreviousPage={hasPreviousPage}
+      />
 
       <DeleteConfirmDialog
         open={deleteId !== null}
