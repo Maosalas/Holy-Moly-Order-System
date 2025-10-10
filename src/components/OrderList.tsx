@@ -1,9 +1,11 @@
 import { Order } from "@/types/order";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Edit, Trash2, Calendar, Package } from "lucide-react";
+import { MessageCircle, Edit, Trash2, Calendar, Package, Search } from "lucide-react";
+import { useState, useMemo } from "react";
 import { OrderPreviewDialog } from "./OrderPreviewDialog";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
@@ -16,6 +18,19 @@ interface OrderListProps {
 }
 
 export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListProps) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery.trim()) return orders;
+    const query = searchQuery.toLowerCase();
+    return orders.filter(order =>
+      order.clientName.toLowerCase().includes(query) ||
+      order.phoneNumber.includes(query) ||
+      order.orderDetails.toLowerCase().includes(query) ||
+      order.paymentMethod.toLowerCase().includes(query)
+    );
+  }, [orders, searchQuery]);
+
   const {
     paginatedItems,
     currentPage,
@@ -23,7 +38,7 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
     goToPage,
     hasNextPage,
     hasPreviousPage,
-  } = usePagination({ items: orders, itemsPerPage: 10 });
+  } = usePagination({ items: filteredOrders, itemsPerPage: 10 });
 
   const handleWhatsApp = (phoneNumber: string, clientName: string) => {
     const message = `Hola ${clientName}! Te hablamos de Holy Moly...`;
@@ -69,6 +84,17 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
 
   return (
     <>
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por cliente, teléfono o detalles..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>

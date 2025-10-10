@@ -1,8 +1,10 @@
 import { Supply } from "@/types/supply";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Trash2, Package } from "lucide-react";
+import { Edit, Trash2, Package, Search } from "lucide-react";
+import { useState, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
@@ -16,6 +18,18 @@ interface SupplyListProps {
 
 const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps) => {
   const isMobile = useIsMobile();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredSupplies = useMemo(() => {
+    if (!searchQuery.trim()) return supplies;
+    const query = searchQuery.toLowerCase();
+    return supplies.filter(supply =>
+      supply.name.toLowerCase().includes(query) ||
+      supply.supplierName.toLowerCase().includes(query) ||
+      supply.unit.toLowerCase().includes(query)
+    );
+  }, [supplies, searchQuery]);
+
   const {
     paginatedItems,
     currentPage,
@@ -23,7 +37,7 @@ const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps)
     goToPage,
     hasNextPage,
     hasPreviousPage,
-  } = usePagination({ items: supplies, itemsPerPage: 10 });
+  } = usePagination({ items: filteredSupplies, itemsPerPage: 10 });
 
   if (supplies.length === 0) {
     return (
@@ -39,6 +53,17 @@ const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps)
   if (isMobile) {
     return (
       <>
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar suministros..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
         <div className="space-y-3">
           {paginatedItems.map((supply) => (
             <Card key={supply.id}>
@@ -110,6 +135,17 @@ const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps)
           <CardDescription>Todos tus suministros y costos</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar suministros..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
           <div className="rounded-md border">
             <Table>
               <TableHeader>

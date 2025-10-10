@@ -1,8 +1,10 @@
 import { Ingredient } from "@/types/ingredient";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Search } from "lucide-react";
+import { useState, useMemo } from "react";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
 
@@ -14,6 +16,17 @@ interface IngredientListProps {
 }
 
 export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: IngredientListProps) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredIngredients = useMemo(() => {
+    if (!searchQuery.trim()) return ingredients;
+    const query = searchQuery.toLowerCase();
+    return ingredients.filter(ingredient =>
+      ingredient.name.toLowerCase().includes(query) ||
+      ingredient.provider.toLowerCase().includes(query)
+    );
+  }, [ingredients, searchQuery]);
+
   const {
     paginatedItems,
     currentPage,
@@ -21,7 +34,7 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
     goToPage,
     hasNextPage,
     hasPreviousPage,
-  } = usePagination({ items: ingredients, itemsPerPage: 10 });
+  } = usePagination({ items: filteredIngredients, itemsPerPage: 10 });
 
   if (ingredients.length === 0) {
     return (
@@ -42,6 +55,17 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
           <CardTitle>Base de datos de ingredientes</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre o proveedor..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>

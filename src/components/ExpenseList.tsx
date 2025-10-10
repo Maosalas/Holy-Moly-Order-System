@@ -3,9 +3,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Trash2, Edit, Search } from "lucide-react";
 import { ExpensePreviewDialog } from "./ExpensePreviewDialog";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
 
@@ -18,6 +19,18 @@ interface ExpenseListProps {
 
 const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProps) => {
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredExpenses = useMemo(() => {
+    if (!searchQuery.trim()) return expenses;
+    const query = searchQuery.toLowerCase();
+    return expenses.filter(expense =>
+      expense.supermarketName.toLowerCase().includes(query) ||
+      expense.cardType.toLowerCase().includes(query) ||
+      expense.amount.toString().includes(query)
+    );
+  }, [expenses, searchQuery]);
+
   const {
     paginatedItems,
     currentPage,
@@ -25,7 +38,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
     goToPage,
     hasNextPage,
     hasPreviousPage,
-  } = usePagination({ items: expenses, itemsPerPage: 10 });
+  } = usePagination({ items: filteredExpenses, itemsPerPage: 10 });
 
   const getCardBadgeColor = (cardType: string) => {
     switch (cardType) {
@@ -57,6 +70,17 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
           <CardDescription>Todos tus gastos</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por comercio, tarjeta o monto..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
