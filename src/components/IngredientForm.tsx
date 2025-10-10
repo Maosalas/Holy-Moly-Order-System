@@ -28,8 +28,8 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
 
     if (!name.trim()) {
       toast({
-        title: "Validation Error",
-        description: "Ingredient name is required",
+        title: "Error de validación",
+        description: "Nombre del ingrediente es obligatorio",
         variant: "destructive",
       });
       return;
@@ -37,8 +37,8 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
 
     if (!provider.trim() || !qtyProvider || !units.trim() || !cost) {
       toast({
-        title: "Validation Error",
-        description: "All fields are required",
+        title: "Error de validación",
+        description: "Todos los campos son obligatorios",
         variant: "destructive",
       });
       return;
@@ -61,36 +61,36 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
       <CardHeader>
         <CardTitle className="text-2xl">
-          {ingredient ? "Edit Ingredient" : "Add New Ingredient"}
+          {ingredient ? "Editar ingrediente" : "Agregar nuevo ingrediente"}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="name">Ingredient Name *</Label>
+            <Label htmlFor="name">Nombre *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter ingredient name"
+              placeholder="Ingrese el nombre del ingrediente"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="provider">Provider *</Label>
+            <Label htmlFor="provider">Provedor *</Label>
             <Input
               id="provider"
               value={provider}
               onChange={(e) => setProvider(e.target.value)}
-              placeholder="Enter provider name"
+              placeholder="ingrese el nombre del proveedor"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="qtyProvider">Quantity from Provider *</Label>
+              <Label htmlFor="qtyProvider">Cantidad*</Label>
               <Input
                 id="qtyProvider"
                 type="number"
@@ -104,19 +104,19 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="units">Units *</Label>
+              <Label htmlFor="units">Unidades *</Label>
               <Input
                 id="units"
                 value={units}
                 onChange={(e) => setUnits(e.target.value)}
-                placeholder="e.g., kg, L, units"
+                placeholder="e.g., kg, unidad, gr"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cost">Cost *</Label>
+            <Label htmlFor="cost">Costo *</Label>
             <Input
               id="cost"
               type="number"
@@ -134,7 +134,7 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Guardando..." : (ingredient ? "Update Ingredient" : "Create Ingredient")}
+              {isSubmitting ? "Guardando..." : (ingredient ? "Actualizar ingrediente" : "Crear ingrediente")}
             </Button>
           </div>
         </form>
