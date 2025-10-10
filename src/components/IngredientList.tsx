@@ -39,61 +39,59 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
     <>
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle>Ingredients Database</CardTitle>
+          <CardTitle>Base de datos de ingredientes</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Provider</TableHead>
-                <TableHead>Qty from Provider</TableHead>
-                <TableHead>Units</TableHead>
-                <TableHead>Cost</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Provedor</TableHead>
+                <TableHead>Cantidad</TableHead>
+                <TableHead>Costo</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedItems.map((ingredient) => (
-              <TableRow key={ingredient.id}>
-                <TableCell className="font-medium">{ingredient.name}</TableCell>
-                <TableCell>{ingredient.provider}</TableCell>
-                <TableCell>{ingredient.qtyProvider}</TableCell>
-                <TableCell>{ingredient.units}</TableCell>
-                <TableCell>${ingredient.cost.toFixed(2)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(ingredient)}
-                      disabled={isDeleting}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(ingredient.id)}
-                      disabled={isDeleting}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-    <PaginationControls
-      currentPage={currentPage}
-      totalPages={totalPages}
-      onPageChange={goToPage}
-      hasNextPage={hasNextPage}
-      hasPreviousPage={hasPreviousPage}
-    />
+                <TableRow key={ingredient.id}>
+                  <TableCell className="font-medium">{ingredient.name}</TableCell>
+                  <TableCell>{ingredient.provider}</TableCell>
+                  <TableCell>{ingredient.qtyProvider.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} <small className="font-bold">{ingredient.units}</small></TableCell>
+                  <TableCell>₡{ingredient.cost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit(ingredient)}
+                        disabled={isDeleting}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(ingredient.id)}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        hasNextPage={hasNextPage}
+        hasPreviousPage={hasPreviousPage}
+      />
     </>
   );
 };

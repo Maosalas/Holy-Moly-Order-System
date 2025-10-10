@@ -48,8 +48,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const addIngredient = () => {
     if (availableIngredients.length === 0) {
       toast({
-        title: "No Ingredients Available",
-        description: "Please add ingredients first in the Ingredients page",
+        title: "No hay ingredientes disponibles",
+        description: "Por favor ingrese ingredientes antes de agregar a la receta.",
         variant: "destructive",
       });
       return;
@@ -257,6 +257,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                 <SelectItem value="relleno">Relleno</SelectItem>
                 <SelectItem value="cubierta">Cubierta</SelectItem>
                 <SelectItem value="unidad">Unidad</SelectItem>
+                <SelectItem value="otro">Otro</SelectItem>
               </SelectContent>
             </Select>
           </div>
