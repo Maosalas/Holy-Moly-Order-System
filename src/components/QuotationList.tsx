@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Eye, Calendar } from "lucide-react";
+import { Edit, Trash2, Eye, Calendar, Search } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { QuotationPreviewDialog } from "@/components/QuotationPreviewDialog";
 import type { Quotation } from "@/types/quotation";
@@ -18,6 +19,18 @@ interface QuotationListProps {
 export function QuotationList({ quotations, onEdit, onDelete }: QuotationListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [previewQuotation, setPreviewQuotation] = useState<Quotation | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredQuotations = useMemo(() => {
+    if (!searchQuery.trim()) return quotations;
+    const query = searchQuery.toLowerCase();
+    return quotations.filter(quotation =>
+      quotation.clientName.toLowerCase().includes(query) ||
+      quotation.size.toLowerCase().includes(query) ||
+      (quotation.notes && quotation.notes.toLowerCase().includes(query))
+    );
+  }, [quotations, searchQuery]);
+
   const {
     paginatedItems,
     currentPage,
@@ -25,7 +38,7 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
     goToPage,
     hasNextPage,
     hasPreviousPage,
-  } = usePagination({ items: quotations, itemsPerPage: 10 });
+  } = usePagination({ items: filteredQuotations, itemsPerPage: 10 });
 
   const getSizeBadgeColor = (size: string) => {
     const colors = {
@@ -50,6 +63,17 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
 
   return (
     <>
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por cliente, tamaño o notas..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {paginatedItems.map((quotation) => (
           <Card key={quotation.id} className="hover:shadow-lg transition-shadow">

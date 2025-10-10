@@ -1,8 +1,10 @@
 import { Recipe } from "@/types/recipe";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, ChefHat } from "lucide-react";
+import { Edit, Trash2, ChefHat, Search } from "lucide-react";
+import { useState, useMemo } from "react";
 import { RecipePreviewDialog } from "./RecipePreviewDialog";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
@@ -15,6 +17,17 @@ interface RecipeListProps {
 }
 
 export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeListProps) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredRecipes = useMemo(() => {
+    if (!searchQuery.trim()) return recipes;
+    const query = searchQuery.toLowerCase();
+    return recipes.filter(recipe =>
+      recipe.name.toLowerCase().includes(query) ||
+      recipe.category.toLowerCase().includes(query)
+    );
+  }, [recipes, searchQuery]);
+
   const {
     paginatedItems,
     currentPage,
@@ -22,7 +35,7 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
     goToPage,
     hasNextPage,
     hasPreviousPage,
-  } = usePagination({ items: recipes, itemsPerPage: 10 });
+  } = usePagination({ items: filteredRecipes, itemsPerPage: 10 });
 
   if (recipes.length === 0) {
     return (
@@ -43,6 +56,17 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
           <CardDescription>All your saved recipes</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre o categoría..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
