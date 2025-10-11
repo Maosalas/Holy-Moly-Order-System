@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, Upload, ImageIcon } from "lucide-react";
+import { Plus, X, Upload, ImageIcon, Check, ChevronsUpDown, Tag } from "lucide-react";
 import { Recipe, RecipeIngredient, RecipeFormData, Category } from "@/types/recipe";
 import { Ingredient } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
 import { ingredientsApi } from "@/lib/api";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -248,18 +250,52 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
-            <Select value={category} onValueChange={(value) => setCategory(value as Category)}>
-              <SelectTrigger id="category">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="queque">Queque</SelectItem>
-                <SelectItem value="relleno">Relleno</SelectItem>
-                <SelectItem value="cubierta">Cubierta</SelectItem>
-                <SelectItem value="unidad">Unidad</SelectItem>
-                <SelectItem value="otro">Otro</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <Tag className="h-4 w-4" />
+                    {category === "queque" ? "Queque" : category === "relleno" ? "Relleno" : category === "cubierta" ? "Cubierta" : category === "unidad" ? "Unidad" : "Otro"}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search category..." />
+                  <CommandList>
+                    <CommandEmpty>No category found.</CommandEmpty>
+                    <CommandGroup>
+                      {[
+                        { value: "queque", label: "Queque" },
+                        { value: "relleno", label: "Relleno" },
+                        { value: "cubierta", label: "Cubierta" },
+                        { value: "unidad", label: "Unidad" },
+                        { value: "otro", label: "Otro" },
+                      ].map((cat) => (
+                        <CommandItem
+                          key={cat.value}
+                          value={cat.value}
+                          onSelect={() => setCategory(cat.value as Category)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              category === cat.value ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {cat.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="space-y-2">
             <Label>Recipe Image</Label>
@@ -323,23 +359,45 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
               {recipeIngredients.map((ingredient) => (
                 <div key={ingredient.id} className="flex flex-col sm:flex-row gap-2 items-start p-3 border rounded-lg">
                   <div className="w-full sm:flex-1">
-                    <Select
-                      value={ingredient.ingredientId}
-                      onValueChange={(value) =>
-                        updateIngredientSelection(ingredient.id, value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select ingredient" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableIngredients.map((ing) => (
-                          <SelectItem key={ing.id} value={ing.id}>
-                            {ing.name} ({ing.units})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between"
+                        >
+                          {ingredient.ingredientId
+                            ? availableIngredients.find((ing) => ing.id === ingredient.ingredientId)?.name + " (" + availableIngredients.find((ing) => ing.id === ingredient.ingredientId)?.units + ")"
+                            : "Select ingredient"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search ingredient..." />
+                          <CommandList>
+                            <CommandEmpty>No ingredient found.</CommandEmpty>
+                            <CommandGroup>
+                              {availableIngredients.map((ing) => (
+                                <CommandItem
+                                  key={ing.id}
+                                  value={ing.name}
+                                  onSelect={() => updateIngredientSelection(ingredient.id, ing.id)}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      ingredient.ingredientId === ing.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {ing.name} ({ing.units})
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto">
                     <div className="flex-1 sm:w-28">

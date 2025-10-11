@@ -3,13 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { recipesApi, quotationsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import type { Quotation, QuotationRecipe } from "@/types/quotation";
 import type { Recipe } from "@/types/recipe";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Ruler, Check, ChevronsUpDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 interface QuotationFormProps {
   quotation?: Quotation;
@@ -151,16 +153,50 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
 
         <div className="space-y-2">
           <Label htmlFor="size">Tamaño</Label>
-          <Select value={size} onValueChange={(value: any) => setSize(value)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pequeño">Pequeño</SelectItem>
-              <SelectItem value="mediano">Mediano</SelectItem>
-              <SelectItem value="grande">Grande</SelectItem>
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="w-full justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <Ruler className="h-4 w-4" />
+                  {size === "pequeño" ? "Pequeño" : size === "mediano" ? "Mediano" : "Grande"}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search size..." />
+                <CommandList>
+                  <CommandEmpty>No size found.</CommandEmpty>
+                  <CommandGroup>
+                    {[
+                      { value: "pequeño", label: "Pequeño" },
+                      { value: "mediano", label: "Mediano" },
+                      { value: "grande", label: "Grande" },
+                    ].map((s) => (
+                      <CommandItem
+                        key={s.value}
+                        value={s.value}
+                        onSelect={() => setSize(s.value as any)}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            size === s.value ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {s.label}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -172,18 +208,40 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-semibold capitalize">{type}</h4>
-                <Select onValueChange={(value) => addRecipe(value, type as any)}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder={`Agregar ${type}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {recipesByType[type as keyof typeof recipesByType].map((recipe) => (
-                      <SelectItem key={recipe.id} value={recipe.id}>
-                        {recipe.name} (₡{recipe.totalCost})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-[200px] justify-between"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        Agregar {type}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder={`Search ${type}...`} />
+                      <CommandList>
+                        <CommandEmpty>No recipe found.</CommandEmpty>
+                        <CommandGroup>
+                          {recipesByType[type as keyof typeof recipesByType].map((recipe) => (
+                            <CommandItem
+                              key={recipe.id}
+                              value={recipe.name}
+                              onSelect={() => addRecipe(recipe.id, type as any)}
+                            >
+                              {recipe.name} (₡{recipe.totalCost})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {selectedRecipes
