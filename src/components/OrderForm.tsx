@@ -64,7 +64,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
   // Calculate cost from selected supplies
   const costAmount = selectedSupplies.reduce((sum, item) => sum + item.totalCost, 0);
-  const profit = (parseFloat(chargeAmount) || 0) - costAmount - parseFloat(costoAmount);
+  const profit = (parseFloat(chargeAmount) || 0) - costAmount - (parseFloat(costoAmount) || 0);
 
   const availableStatuses: { value: OrderStatus; label: string }[] = [
     { value: "waiting-for-payment", label: "Espera de pago" },
