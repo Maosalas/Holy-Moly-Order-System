@@ -9,6 +9,7 @@ import { Recipe, RecipeIngredient, RecipeFormData, Category } from "@/types/reci
 import { Ingredient } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
 import { ingredientsApi } from "@/lib/api";
+import { Textarea } from "./ui/textarea";
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -19,6 +20,7 @@ interface RecipeFormProps {
 export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [name, setName] = useState(recipe?.name || "");
   const [category, setCategory] = useState(recipe?.category || "queque");
+  const [notes, setNotes] = useState(recipe?.notes || "");
   const [image, setImage] = useState(recipe?.image || "");
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(
     recipe?.ingredients || []
@@ -218,7 +220,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         image: image || undefined,
         ingredients: recipeIngredients,
         totalCost,
-        category: category
+        category: category,
+        notes: notes,
       });
     } finally {
       setIsSubmitting(false);
@@ -260,6 +263,16 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                 <SelectItem value="otro">Otro</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notas adicionales</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ingrese notas adicionales sobre la receta"
+              rows={2}
+            />
           </div>
           <div className="space-y-2">
             <Label>Recipe Image</Label>

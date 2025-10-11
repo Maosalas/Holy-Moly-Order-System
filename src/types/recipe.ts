@@ -17,6 +17,7 @@ export interface Recipe {
   category: string;
   createdAt: Date;
   updatedAt: Date;
+  notes: string;
 }
 
 export type RecipeFormData = Omit<Recipe, 'id' | 'createdAt' | 'updatedAt'>;
