@@ -11,7 +11,7 @@ import { ingredientsApi } from "@/lib/api";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-
+import { Textarea } from "./ui/textarea";
 interface RecipeFormProps {
   recipe?: Recipe;
   onSubmit: (data: RecipeFormData) => void;
@@ -21,6 +21,7 @@ interface RecipeFormProps {
 export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [name, setName] = useState(recipe?.name || "");
   const [category, setCategory] = useState(recipe?.category || "queque");
+  const [notes, setNotes] = useState(recipe?.notes || "");
   const [image, setImage] = useState(recipe?.image || "");
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(
     recipe?.ingredients || []
@@ -220,7 +221,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         image: image || undefined,
         ingredients: recipeIngredients,
         totalCost,
-        category: category
+        category: category,
+        notes: notes,
       });
     } finally {
       setIsSubmitting(false);
@@ -296,6 +298,16 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                 </Command>
               </PopoverContent>
             </Popover>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notas adicionales</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ingrese notas adicionales sobre la receta"
+              rows={2}
+            />
           </div>
           <div className="space-y-2">
             <Label>Recipe Image</Label>

@@ -51,6 +51,10 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
               <p className="text-2xl font-bold">{recipe.category ?? "Sin categoria"}</p>
             </div>
           </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold text-sm text-muted-foreground">Notas</h3>
+            <p className="whitespace-pre-wrap">{recipe.notes || "No hay notas"}</p>
+          </div>
 
           {/* Ingredients List */}
           <div className="space-y-3">
