@@ -5,15 +5,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, X, Plus, Trash2, Package } from "lucide-react";
+import { Upload, X, Plus, Trash2, Package, Check, ChevronsUpDown, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TopperUploadDialog } from "./TopperUploadDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import type { Order, OrderStatus, PaymentMethod, OrderSupply } from "@/types/order";
 import type { Supply } from "@/types/supply";
 import { suppliesApi } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 interface OrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "createdAt">) => void;
@@ -62,7 +64,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
   // Calculate cost from selected supplies
   const costAmount = selectedSupplies.reduce((sum, item) => sum + item.totalCost, 0);
-  const profit = (parseFloat(chargeAmount) || 0) - costAmount - parseFloat(costoAmount);
+  const profit = (parseFloat(chargeAmount) || 0) - costAmount - (parseFloat(costoAmount) || 0);
 
   const availableStatuses: { value: OrderStatus; label: string }[] = [
     { value: "waiting-for-payment", label: "Espera de pago" },
@@ -333,17 +335,51 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
             <div className="space-y-2">
               <Label htmlFor="paymentMethod">Método de pago</Label>
-              <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
-                <SelectTrigger id="paymentMethod">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Efectivo">Efectivo</SelectItem>
-                  <SelectItem value="Transferencia">Trasnferencia</SelectItem>
-                  <SelectItem value="Link de pago/tarjeta">Link de pago/tarjeta</SelectItem>
-                  <SelectItem value="SINPE">SINPE</SelectItem>
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4" />
+                      {paymentMethod}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search payment method..." />
+                    <CommandList>
+                      <CommandEmpty>No payment method found.</CommandEmpty>
+                      <CommandGroup>
+                        {[
+                          "Efectivo",
+                          "Transferencia",
+                          "Link de pago/tarjeta",
+                          "SINPE"
+                        ].map((method) => (
+                          <CommandItem
+                            key={method}
+                            value={method}
+                            onSelect={() => setPaymentMethod(method as PaymentMethod)}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                paymentMethod === method ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {method}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
@@ -402,33 +438,50 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
               </div>
 
               <div className="flex items-center gap-2">
-                <Select onValueChange={addSupply}>
-                  <SelectTrigger className="flex-1 h-11 bg-background border-2 hover:border-primary/50 transition-colors">
-                    <SelectValue placeholder="Escoja un suministro a agregar..." />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {supplies.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        No supplies available. Add supplies in the Supplies page first.
-                      </div>
-                    ) : (
-                      supplies.map((supply) => (
-                        <SelectItem
-                          key={supply.id}
-                          value={supply.id}
-                          className="cursor-pointer"
-                        >
-                          <div className="flex items-center justify-between w-full gap-4">
-                            <span className="font-medium">{supply.name}</span>
-                            <span className="text-muted-foreground text-sm">
-                              ₡{supply.cost.toLocaleString('en-US', { minimumFractionDigits: 2 })} / {supply.unit}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="flex-1 h-11 bg-background border-2 hover:border-primary/50 transition-colors justify-between"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        Escoja un suministro a agregar...
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search supplies..." />
+                      <CommandList>
+                        <CommandEmpty>
+                          {supplies.length === 0 
+                            ? "No supplies available. Add supplies in the Supplies page first."
+                            : "No supply found."}
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {supplies.map((supply) => (
+                            <CommandItem
+                              key={supply.id}
+                              value={supply.name}
+                              onSelect={() => addSupply(supply.id)}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex items-center justify-between w-full gap-4">
+                                <span className="font-medium">{supply.name}</span>
+                                <span className="text-muted-foreground text-sm">
+                                  ₡{supply.cost.toLocaleString('en-US', { minimumFractionDigits: 2 })} / {supply.unit}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {/* <Button
                   type="button"
                   variant="outline"

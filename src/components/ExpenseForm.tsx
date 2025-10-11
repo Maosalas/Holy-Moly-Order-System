@@ -3,10 +3,12 @@ import { Expense, CardType } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload , X} from "lucide-react";
+import { Upload , X, CreditCard, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 interface ExpenseFormProps {
   onSubmit: (expense: Expense) => void;
@@ -181,16 +183,49 @@ const removePhoto = (index: number) => {
 
             <div className="space-y-2">
               <Label htmlFor="card">Card Type *</Label>
-              <Select value={cardType} onValueChange={(value) => setCardType(value as CardType)}>
-                <SelectTrigger id="card">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="visa">Visa</SelectItem>
-                  <SelectItem value="amex">Amex</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      {cardType === "visa" ? "Visa" : cardType === "amex" ? "Amex" : "Other"}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search card type..." />
+                    <CommandList>
+                      <CommandEmpty>No card type found.</CommandEmpty>
+                      <CommandGroup>
+                        {[
+                          { value: "visa", label: "Visa" },
+                          { value: "amex", label: "Amex" },
+                          { value: "other", label: "Other" },
+                        ].map((card) => (
+                          <CommandItem
+                            key={card.value}
+                            value={card.value}
+                            onSelect={() => setCardType(card.value as CardType)}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                cardType === card.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {card.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           <div className="space-y-2">
