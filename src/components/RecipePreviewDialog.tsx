@@ -51,11 +51,16 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
               <p className="text-2xl font-bold">{recipe.category ?? "Sin categoria"}</p>
             </div>
           </div>
-          <div className="space-y-2">
-            <h3 className="font-semibold text-sm text-muted-foreground">Notas</h3>
-            <p className="whitespace-pre-wrap">{recipe.notes || "No hay notas"}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm text-muted-foreground">Notas</h3>
+              <p className="whitespace-pre-wrap">{recipe.notes || "No hay notas"}</p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm text-muted-foreground">Link/recurso</h3>
+              <p className="whitespace-pre-wrap"><a className="whitespace-pre-wrap" href={recipe.url}>{recipe.url || "No hay link/recurso"}</a></p>
+            </div>
           </div>
-
           {/* Ingredients List */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -96,17 +101,48 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
           </div>
 
           {/* Total Cost */}
-          <div className="space-y-2 pt-4 border-t">
-            <div className="flex items-center justify-between bg-muted p-4 rounded-lg">
-              <h3 className="font-semibold text-lg">Total Recipe Cost</h3>
-              <span className="text-3xl font-bold text-primary">
-                ₡{recipe.totalCost.toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </span>
+          {recipe.category === "unidad" ? (
+            <div className="grid grid-rows-2 grid-cols-1 space-y-2 pt-4">
+
+              <div className="bg-muted p-4 rounded-lg">
+
+                <div className="grid grid-cols-2 grid-rows-1 gap-4 ">
+
+                  <h3 className="font-semibold text-lg">Costo total</h3>
+                  <span className="text-3xl font-bold text-primary justify-self-end">
+                    ₡{recipe.totalCost.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
+                  </span>
+
+                </div>
+
+                <div className="grid grid-cols-2 grid-rows-1 gap-4">
+                  <h3 className="font-semibold text-lg">Total por unidad</h3>
+                  <span className="text-3xl font-bold text-primary justify-self-end">
+                    ₡{recipe.totalCost.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
+                  </span>
+                </div>
+
+              </div>
             </div>
-          </div>
+          ) :
+            <div className="space-y-2 pt-4 border-t">
+              <div className="flex items-center justify-between bg-muted p-4 rounded-lg">
+                <h3 className="font-semibold text-lg">Costo total</h3>
+                <span className="text-3xl font-bold text-primary">
+                  ₡{recipe.totalCost.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </span>
+              </div>
+            </div>
+          }
         </div>
       </DialogContent>
     </Dialog>

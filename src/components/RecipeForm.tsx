@@ -22,6 +22,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [name, setName] = useState(recipe?.name || "");
   const [category, setCategory] = useState(recipe?.category || "queque");
   const [notes, setNotes] = useState(recipe?.notes || "");
+  const [url, setUrl] = useState(recipe?.url || "");
   const [image, setImage] = useState(recipe?.image || "");
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(
     recipe?.ingredients || []
@@ -223,6 +224,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         totalCost,
         category: category,
         notes: notes,
+        url: url,
       });
     } finally {
       setIsSubmitting(false);
@@ -250,54 +252,66 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="category">Categoria</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className="w-full justify-between"
-                >
-                  <span className="flex items-center gap-2">
-                    <Tag className="h-4 w-4" />
-                    {category === "queque" ? "Queque" : category === "relleno" ? "Relleno" : category === "cubierta" ? "Cubierta" : category === "unidad" ? "Unidad" : "Otro"}
-                  </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search category..." />
-                  <CommandList>
-                    <CommandEmpty>No category found.</CommandEmpty>
-                    <CommandGroup>
-                      {[
-                        { value: "queque", label: "Queque" },
-                        { value: "relleno", label: "Relleno" },
-                        { value: "cubierta", label: "Cubierta" },
-                        { value: "unidad", label: "Unidad" },
-                        { value: "otro", label: "Otro" },
-                      ].map((cat) => (
-                        <CommandItem
-                          key={cat.value}
-                          value={cat.value}
-                          onSelect={() => setCategory(cat.value as Category)}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              category === cat.value ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {cat.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      {category === "queque" ? "Queque" : category === "relleno" ? "Relleno" : category === "cubierta" ? "Cubierta" : category === "unidad" ? "Unidad" : "Otro"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search category..." />
+                    <CommandList>
+                      <CommandEmpty>No category found.</CommandEmpty>
+                      <CommandGroup>
+                        {[
+                          { value: "queque", label: "Queque" },
+                          { value: "relleno", label: "Relleno" },
+                          { value: "cubierta", label: "Cubierta" },
+                          { value: "unidad", label: "Unidad" },
+                          { value: "otro", label: "Otro" },
+                        ].map((cat) => (
+                          <CommandItem
+                            key={cat.value}
+                            value={cat.value}
+                            onSelect={() => setCategory(cat.value as Category)}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                category === cat.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {cat.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="url">Link/recurso <small>(Opcional)</small></Label>
+              <Input
+                id="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="Ingrese el link o recurso"
+                required
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Notas adicionales</Label>
