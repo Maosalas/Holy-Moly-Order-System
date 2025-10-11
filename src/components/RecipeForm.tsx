@@ -11,7 +11,7 @@ import { ingredientsApi } from "@/lib/api";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-
+import { Textarea } from "./ui/textarea";
 interface RecipeFormProps {
   recipe?: Recipe;
   onSubmit: (data: RecipeFormData) => void;
@@ -298,6 +298,16 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                 </Command>
               </PopoverContent>
             </Popover>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notas adicionales</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ingrese notas adicionales sobre la receta"
+              rows={2}
+            />
           </div>
           <div className="space-y-2">
             <Label>Recipe Image</Label>
