@@ -235,7 +235,12 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   };
 
   const totalCost = calculateTotalCost(recipeIngredients);
-  const totalUnitCost = unidades && unidades > 0 ? totalCost / unidades : 0;
+  const totalUnitCost =
+    unidades && unidades > 0
+      ? Math.round((totalCost / unidades) * 1000) / 1000
+      : 0;
+
+
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
       <CardHeader>
@@ -327,7 +332,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Ingrese el link o recurso"
-                type="url"
+
               />
             </div>
           </div>

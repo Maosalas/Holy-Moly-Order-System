@@ -1,5 +1,5 @@
-const API_BASE_URL = "https://api-holymoly.networksalas.com/api";
-// const API_BASE_URL = "http://localhost:3000/api"; // For local development
+// const API_BASE_URL = "https://api-holymoly.networksalas.com/api";
+const API_BASE_URL = "http://localhost:3000/api"; // For local development
 
 interface ApiResponse<T> {
   data?: T;
@@ -20,7 +20,7 @@ async function apiFetch<T>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   const token = getAuthToken();
-  
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -32,7 +32,6 @@ async function apiFetch<T>(
       ...options,
       headers,
     });
-
     // Handle 204 No Content (common for DELETE requests)
     if (response.status === 204) {
       return { data: {} as T };
@@ -75,7 +74,7 @@ export const authApi = {
 // Ingredients API
 export const ingredientsApi = {
   getAll: () => apiFetch("/ingredients", { method: "GET" }),
-  
+
   create: (ingredient: any) =>
     apiFetch("/ingredients", {
       method: "POST",
@@ -97,7 +96,7 @@ export const ingredientsApi = {
 // Recipes API
 export const recipesApi = {
   getAll: () => apiFetch("/recipes", { method: "GET" }),
-  
+
   create: (recipe: any) =>
     apiFetch("/recipes", {
       method: "POST",
@@ -108,7 +107,8 @@ export const recipesApi = {
     apiFetch(`/recipes/${id}`, {
       method: "PUT",
       body: JSON.stringify(recipe),
-    }),
+    }
+    ),
 
   delete: (id: string) =>
     apiFetch(`/recipes/${id}`, {
@@ -119,7 +119,7 @@ export const recipesApi = {
 // Supplies API
 export const suppliesApi = {
   getAll: () => apiFetch("/supplies", { method: "GET" }),
-  
+
   create: (supply: any) =>
     apiFetch("/supplies", {
       method: "POST",
@@ -141,7 +141,7 @@ export const suppliesApi = {
 // Orders API
 export const ordersApi = {
   getAll: () => apiFetch("/orders", { method: "GET" }),
-  
+
   create: (order: any) =>
     apiFetch("/orders", {
       method: "POST",
@@ -163,7 +163,7 @@ export const ordersApi = {
 // Expenses API
 export const expensesApi = {
   getAll: () => apiFetch("/expenses", { method: "GET" }),
-  
+
   create: (expense: any) =>
     apiFetch("/expenses", {
       method: "POST",
@@ -185,7 +185,7 @@ export const expensesApi = {
 // Quotations API
 export const quotationsApi = {
   getAll: () => apiFetch("/quotations", { method: "GET" }),
-  
+
   create: (quotation: any) =>
     apiFetch("/quotations", {
       method: "POST",
@@ -202,22 +202,22 @@ export const quotationsApi = {
     apiFetch(`/quotations/${id}`, {
       method: "DELETE",
     }),
-  
+
   // Get size multipliers for fillings by recipe ID
-  getFillingMultipliers: (recipeId: string) => apiFetch<Array<{id: string, recipeId: string, size: string, multiplier: number}>>(`/quotations/filling-multipliers/${recipeId}`, { method: "GET" }),
-  
+  getFillingMultipliers: (recipeId: string) => apiFetch<Array<{ id: string, recipeId: string, size: string, multiplier: number }>>(`/quotations/filling-multipliers/${recipeId}`, { method: "GET" }),
+
   // Get size multipliers for coverings by recipe ID
-  getCoveringMultipliers: (recipeId: string) => apiFetch<Array<{id: string, recipeId: string, size: string, multiplier: number}>>(`/quotations/covering-multipliers/${recipeId}`, { method: "GET" }),
-  
+  getCoveringMultipliers: (recipeId: string) => apiFetch<Array<{ id: string, recipeId: string, size: string, multiplier: number }>>(`/quotations/covering-multipliers/${recipeId}`, { method: "GET" }),
+
   // Save size multipliers for fillings
-  saveFillingMultipliers: (recipeId: string, multipliers: Array<{size: string, multiplier: number}>) => 
+  saveFillingMultipliers: (recipeId: string, multipliers: Array<{ size: string, multiplier: number }>) =>
     apiFetch("/quotations/filling-multipliers", {
       method: "POST",
       body: JSON.stringify({ recipeId, multipliers }),
     }),
-  
+
   // Save size multipliers for coverings
-  saveCoveringMultipliers: (recipeId: string, multipliers: Array<{size: string, multiplier: number}>) => 
+  saveCoveringMultipliers: (recipeId: string, multipliers: Array<{ size: string, multiplier: number }>) =>
     apiFetch("/quotations/covering-multipliers", {
       method: "POST",
       body: JSON.stringify({ recipeId, multipliers }),

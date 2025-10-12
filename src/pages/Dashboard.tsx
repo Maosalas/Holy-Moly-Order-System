@@ -41,7 +41,7 @@ const Dashboard = () => {
     };
 
     const loadExpenses = async () => {
-      const {data, error} = await expensesApi.getAll();
+      const { data, error } = await expensesApi.getAll();
       if (error) {
         console.error("Error loading expenses:", error);
         setExpenses([]);
@@ -117,12 +117,9 @@ const Dashboard = () => {
     return new Date(year, month - 1, day); // JS months are 0-based
   }
 
-  // const upcomingOrders = roleFilteredOrders
-  //   .filter(order => parseLocalDate(order.deliveryDate) >= today)
-  //   .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
-  //   .slice(0, 10);
-  const upcomingOrders = roleFilteredOrders;
-  console.log(upcomingOrders);
+  const upcomingOrders = roleFilteredOrders
+    .filter(order => !order.statuses.includes("finished"))
+
 
   const getTimeUntilDelivery = (deliveryDate: Date | string) => {
     const delivery = typeof deliveryDate === 'string' ? new Date(deliveryDate) : deliveryDate;
@@ -354,11 +351,11 @@ const Dashboard = () => {
             <div>
               <CardTitle className="text-2xl">Próximos pedidos</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                {upcomingOrders.length} {upcomingOrders.length === 1 ? 'pedido' : 'pedidos'} programados para entrega
+                {upcomingOrders.length} {upcomingOrders.length === 1 ? 'pedido programado' : 'pedidos programados'}  para entrega
               </p>
             </div>
             <Button variant="ghost" onClick={() => navigate("/orders")} className="gap-2">
-              View All <ArrowRight className="h-4 w-4" />
+              Ver todos <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
