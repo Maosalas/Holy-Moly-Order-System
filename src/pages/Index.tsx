@@ -16,6 +16,7 @@ const Index = () => {
   useEffect(() => {
     const fetchRecipes = async () => {
       const result = await recipesApi.getAll();
+      console.log(result);
       if (result.data) {
         const recipesData = Array.isArray(result.data) ? result.data : [];
         setRecipes(recipesData.map((r: any) => ({
