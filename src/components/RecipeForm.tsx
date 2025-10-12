@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, X, Upload, ImageIcon, Check, ChevronsUpDown, Tag } from "lucide-react";
+import { Plus, X, Upload, ImageIcon, Check, ChevronsUpDown, Tag, Divide } from "lucide-react";
 import { Recipe, RecipeIngredient, RecipeFormData, Category } from "@/types/recipe";
 import { Ingredient } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
@@ -22,6 +22,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [name, setName] = useState(recipe?.name || "");
   const [category, setCategory] = useState(recipe?.category || "queque");
   const [notes, setNotes] = useState(recipe?.notes || "");
+  const [url, setUrl] = useState(recipe?.url || "");
+  const [unidades, setUnidades] = useState(recipe?.units || 0);
   const [image, setImage] = useState(recipe?.image || "");
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(
     recipe?.ingredients || []
@@ -223,6 +225,9 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         totalCost,
         category: category,
         notes: notes,
+        url: url,
+        units: unidades,
+        unitCost: totalUnitCost || undefined,
       });
     } finally {
       setIsSubmitting(false);
@@ -230,7 +235,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   };
 
   const totalCost = calculateTotalCost(recipeIngredients);
-
+  const totalUnitCost = unidades && unidades > 0 ? totalCost / unidades : 0;
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
       <CardHeader>
@@ -250,54 +255,81 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="category">Categoria</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className="w-full justify-between"
-                >
-                  <span className="flex items-center gap-2">
-                    <Tag className="h-4 w-4" />
-                    {category === "queque" ? "Queque" : category === "relleno" ? "Relleno" : category === "cubierta" ? "Cubierta" : category === "unidad" ? "Unidad" : "Otro"}
-                  </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search category..." />
-                  <CommandList>
-                    <CommandEmpty>No category found.</CommandEmpty>
-                    <CommandGroup>
-                      {[
-                        { value: "queque", label: "Queque" },
-                        { value: "relleno", label: "Relleno" },
-                        { value: "cubierta", label: "Cubierta" },
-                        { value: "unidad", label: "Unidad" },
-                        { value: "otro", label: "Otro" },
-                      ].map((cat) => (
-                        <CommandItem
-                          key={cat.value}
-                          value={cat.value}
-                          onSelect={() => setCategory(cat.value as Category)}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              category === cat.value ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {cat.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      {category === "queque" ? "Queque" : category === "relleno" ? "Relleno" : category === "cubierta" ? "Cubierta" : category === "unidad" ? "Unidad" : "Otro"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search category..." />
+                    <CommandList>
+                      <CommandEmpty>No category found.</CommandEmpty>
+                      <CommandGroup>
+                        {[
+                          { value: "queque", label: "Queque" },
+                          { value: "relleno", label: "Relleno" },
+                          { value: "cubierta", label: "Cubierta" },
+                          { value: "unidad", label: "Unidad" },
+                          { value: "otro", label: "Otro" },
+                        ].map((cat) => (
+                          <CommandItem
+                            key={cat.value}
+                            value={cat.value}
+                            onSelect={() => setCategory(cat.value as Category)}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                category === cat.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {cat.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            {category === "unidad" && (
+              <div className="space-y-2">
+                <Label htmlFor="unidad">Cantidad de unidades</Label>
+                <Input
+                  id="unidad"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={unidades}
+                  onChange={(e) => setUnidades(Number(e.target.value))}
+                  placeholder="Ingrese la cantidad de unidades"
+                  required
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="url">Link/recurso <small>(Opcional)</small></Label>
+              <Input
+                id="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="Ingrese el link o recurso"
+                type="url"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Notas adicionales</Label>
@@ -459,12 +491,24 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
           </div>
 
           <div className="space-y-2 p-4 bg-muted rounded-lg">
-            <div className="flex justify-between items-center">
-              <Label className="text-lg font-semibold">Total Cost:</Label>
+            {recipe.category === "unidad" ? (
+              <><div className="flex justify-between items-center">
+                <Label className="text-lg font-semibold">Costo total:</Label>
+                <span className="text-2xl font-bold text-primary">
+                  ₡{totalCost.toLocaleString()}
+                </span>
+              </div><div className="flex justify-between items-center">
+                  <Label className="text-lg font-semibold">Costo por unidad:</Label>
+                  <span className="text-2xl font-bold text-primary">
+                    ₡{totalUnitCost.toLocaleString()}
+                  </span>
+                </div></>
+            ) : <div className="flex justify-between items-center">
+              <Label className="text-lg font-semibold">Costo total:</Label>
               <span className="text-2xl font-bold text-primary">
                 ₡{totalCost.toLocaleString()}
               </span>
-            </div>
+            </div>}
           </div>
 
           <div className="flex gap-3 justify-end pt-4">
@@ -476,8 +520,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </CardContent >
+    </Card >
   );
 };
 

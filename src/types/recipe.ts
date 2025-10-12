@@ -18,6 +18,9 @@ export interface Recipe {
   createdAt: Date;
   updatedAt: Date;
   notes: string;
+  url: string;
+  units?: number;
+  unitCost?: number;
 }
 
 export type RecipeFormData = Omit<Recipe, 'id' | 'createdAt' | 'updatedAt'>;
