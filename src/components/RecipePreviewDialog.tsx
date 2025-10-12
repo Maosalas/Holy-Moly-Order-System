@@ -121,10 +121,10 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
                 <div className="grid grid-cols-2 grid-rows-1 gap-4">
                   <h3 className="font-semibold text-lg">Total por unidad</h3>
                   <span className="text-3xl font-bold text-primary justify-self-end">
-                    ₡{recipe.totalCost.toLocaleString('en-US', {
+                    {recipe.unitCost === undefined ? <Badge className="ml-2">No definido</Badge> : `₡${recipe.unitCost.toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2
-                    })}
+                    })}`}
                   </span>
                 </div>
 
