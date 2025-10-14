@@ -96,7 +96,7 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
             <CardContent>
               <div className="space-y-3">
                 <div className="text-sm text-muted-foreground">
-                  {quotation.recipes.length} receta(s) incluida(s)
+                  {quotation.recipes.length} receta(s) | {quotation.selectedSupplies?.length || 0} suministro(s)
                 </div>
                 
                 <div className="flex items-center justify-between p-3 bg-muted rounded-lg">

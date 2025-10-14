@@ -7,11 +7,21 @@ export interface QuotationRecipe {
   totalCost: number;
 }
 
+export interface QuotationSupply {
+  supplyId: string;
+  supplyName: string;
+  quantity: number;
+  unit: string;
+  costPerUnit: number;
+  totalCost: number;
+}
+
 export interface Quotation {
   id: string;
   clientName: string;
   size: 'pequeño' | 'mediano' | 'grande';
   recipes: QuotationRecipe[];
+  selectedSupplies: QuotationSupply[];
   totalCost: number;
   notes?: string;
   createdAt: Date;

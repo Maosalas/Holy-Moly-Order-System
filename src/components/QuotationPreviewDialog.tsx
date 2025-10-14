@@ -86,6 +86,26 @@ export function QuotationPreviewDialog({
             )}
           </div>
 
+          {quotation.selectedSupplies && quotation.selectedSupplies.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <h4 className="font-semibold">Suministros Incluidos</h4>
+                {quotation.selectedSupplies.map((supply, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div className="flex-1">
+                      <span className="font-medium">{supply.supplyName}</span>
+                      <div className="text-sm text-muted-foreground">
+                        ₡{supply.costPerUnit.toFixed(2)} / {supply.unit} × {supply.quantity}
+                      </div>
+                    </div>
+                    <span className="font-semibold">₡{supply.totalCost.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           {quotation.notes && (
             <>
               <Separator />

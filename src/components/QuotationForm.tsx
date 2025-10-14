@@ -4,11 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { recipesApi, quotationsApi } from "@/lib/api";
+import { recipesApi, quotationsApi, suppliesApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import type { Quotation, QuotationRecipe } from "@/types/quotation";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import type { Quotation, QuotationRecipe, QuotationSupply } from "@/types/quotation";
 import type { Recipe } from "@/types/recipe";
-import { Loader2, Plus, Trash2, Ruler, Check, ChevronsUpDown } from "lucide-react";
+import type { Supply } from "@/types/supply";
+import { Loader2, Plus, Trash2, Ruler, Check, ChevronsUpDown, Package } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -24,13 +26,16 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   const [size, setSize] = useState<'pequeño' | 'mediano' | 'grande'>(quotation?.size || 'pequeño');
   const [notes, setNotes] = useState(quotation?.notes || "");
   const [selectedRecipes, setSelectedRecipes] = useState<QuotationRecipe[]>(quotation?.recipes || []);
+  const [selectedSupplies, setSelectedSupplies] = useState<QuotationSupply[]>(quotation?.selectedSupplies || []);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [supplies, setSupplies] = useState<Supply[]>([]);
   const [recipeMultipliers, setRecipeMultipliers] = useState<Record<string, Array<{ size: string, multiplier: number }>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     loadRecipes();
+    loadSupplies();
   }, []);
 
   const loadRecipes = async () => {
@@ -73,6 +78,17 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     }
   };
 
+  const loadSupplies = async () => {
+    const result = await suppliesApi.getAll();
+    if (result.data) {
+      const suppliesData = Array.isArray(result.data) ? result.data : [];
+      setSupplies(suppliesData.map((s: any) => ({
+        ...s,
+        createdAt: s.created_at
+      })));
+    }
+  };
+
   const addRecipe = (recipeId: string, recipeType: 'queque' | 'relleno' | 'cubierta' | 'unidad') => {
     const recipe = recipes.find(r => r.id === recipeId);
     if (!recipe) return;
@@ -109,8 +125,50 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     setSelectedRecipes(updated);
   };
 
+  const addSupply = (supplyId: string) => {
+    const supply = supplies.find(s => s.id === supplyId);
+    if (!supply) return;
+
+    const alreadyAdded = selectedSupplies.find(s => s.supplyId === supplyId);
+    if (alreadyAdded) {
+      toast({
+        title: "Suministro ya fue agregado",
+        description: `${supply.name} ya esta en la lista de suministros seleccionados.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newSupply: QuotationSupply = {
+      supplyId: supply.id,
+      supplyName: supply.name,
+      quantity: 1,
+      unit: supply.unit,
+      costPerUnit: supply.cost,
+      totalCost: supply.cost,
+    };
+
+    setSelectedSupplies([...selectedSupplies, newSupply]);
+  };
+
+  const updateSupplyQuantity = (supplyId: string, quantity: number) => {
+    setSelectedSupplies(prev =>
+      prev.map(s =>
+        s.supplyId === supplyId
+          ? { ...s, quantity, totalCost: s.costPerUnit * quantity }
+          : s
+      )
+    );
+  };
+
+  const removeSupply = (supplyId: string) => {
+    setSelectedSupplies(prev => prev.filter(s => s.supplyId !== supplyId));
+  };
+
   const calculateTotal = () => {
-    return selectedRecipes.reduce((sum, r) => sum + r.totalCost, 0);
+    const recipesTotal = selectedRecipes.reduce((sum, r) => sum + r.totalCost, 0);
+    const suppliesTotal = selectedSupplies.reduce((sum, s) => sum + s.totalCost, 0);
+    return recipesTotal + suppliesTotal;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,6 +179,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       clientName,
       size,
       recipes: selectedRecipes,
+      selectedSupplies,
       totalCost: calculateTotal(),
       notes,
     };
@@ -274,6 +333,119 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Supplies Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-base font-semibold">Suministros</Label>
+            <p className="text-sm text-muted-foreground mt-1">Seleccione múltiples suministros necesarios</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                role="combobox"
+                className="flex-1 h-11 bg-background border-2 hover:border-primary/50 transition-colors justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Escoja un suministro a agregar...
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search supplies..." />
+                <CommandList>
+                  <CommandEmpty>
+                    {supplies.length === 0 
+                      ? "No supplies available. Add supplies in the Supplies page first."
+                      : "No supply found."}
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {supplies.map((supply) => (
+                      <CommandItem
+                        key={supply.id}
+                        value={supply.name}
+                        onSelect={() => addSupply(supply.id)}
+                        className="cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between w-full gap-4">
+                          <span className="font-medium">{supply.name}</span>
+                          <span className="text-muted-foreground text-sm">
+                            ₡{supply.cost.toFixed(2)} / {supply.unit}
+                          </span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {selectedSupplies.length > 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Suministro</TableHead>
+                    <TableHead className="text-center">Cantidad</TableHead>
+                    <TableHead className="text-right">Costo por Unidad</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedSupplies.map((supply) => (
+                    <TableRow key={supply.supplyId}>
+                      <TableCell className="font-medium">
+                        {supply.supplyName}
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={supply.quantity}
+                          onChange={(e) =>
+                            updateSupplyQuantity(supply.supplyId, parseFloat(e.target.value) || 0)
+                          }
+                          className="w-24 mx-auto text-center"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        ₡{supply.costPerUnit.toFixed(2)} / {supply.unit}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        ₡{supply.totalCost.toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeSupply(supply.supplyId)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <div className="space-y-2">
