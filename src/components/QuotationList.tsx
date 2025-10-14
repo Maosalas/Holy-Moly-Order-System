@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Eye, Calendar, Search } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Edit, Trash2, Eye, Calendar, Search, Calculator } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { QuotationPreviewDialog } from "@/components/QuotationPreviewDialog";
 import type { Quotation } from "@/types/quotation";
@@ -51,11 +52,13 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
 
   if (quotations.length === 0) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-center text-muted-foreground">
-            No hay cotizaciones aún. Crea una nueva cotización para comenzar.
-          </p>
+      <Card className="w-full">
+        <CardContent className="py-16">
+          <div className="text-center text-muted-foreground">
+            <Calculator className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p className="text-lg">No hay cotizaciones aún</p>
+            <p className="text-sm mt-2">Crea una nueva cotización para comenzar</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -74,71 +77,94 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
           />
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {paginatedItems.map((quotation) => (
-          <Card key={quotation.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg">{quotation.clientName}</CardTitle>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge className={getSizeBadgeColor(quotation.size)}>
-                      {quotation.size}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(quotation.createdAt).toLocaleDateString()}
-                    </span>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="font-semibold">Cliente</TableHead>
+              <TableHead className="font-semibold">Tamaño</TableHead>
+              <TableHead className="font-semibold">Fecha</TableHead>
+              <TableHead className="font-semibold">Recetas</TableHead>
+              <TableHead className="font-semibold">Suministros</TableHead>
+              <TableHead className="font-semibold">Costo Total</TableHead>
+              <TableHead className="text-right font-semibold">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedItems.map((quotation) => (
+              <TableRow key={quotation.id} className="hover:bg-muted/30">
+                <TableCell>
+                  <div className="font-semibold">{quotation.clientName}</div>
+                  {quotation.notes && (
+                    <div className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">
+                      {quotation.notes}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge className={getSizeBadgeColor(quotation.size)}>
+                    {quotation.size}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div className="text-sm">
+                      {new Date(quotation.createdAt).toLocaleDateString('es-ES', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </div>
                   </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="text-sm text-muted-foreground">
-                  {quotation.recipes.length} receta(s) | {quotation.selectedSupplies?.length || 0} suministro(s)
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <span className="font-medium">Costo Total:</span>
-                  <span className="text-xl font-bold">₡{quotation.totalCost.toFixed(2)}</span>
-                </div>
-
-                {quotation.notes && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {quotation.notes}
-                  </p>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPreviewQuotation(quotation)}
-                    className="flex-1"
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Ver
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(quotation)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDeleteId(quotation.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    {quotation.recipes.length} receta(s)
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    {quotation.selectedSupplies?.length || 0} suministro(s)
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="font-semibold">
+                    ₡{quotation.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex gap-1 justify-end items-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setPreviewQuotation(quotation)}
+                      title="Ver detalles"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEdit(quotation)}
+                      title="Editar"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteId(quotation.id)}
+                      title="Eliminar"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       <PaginationControls

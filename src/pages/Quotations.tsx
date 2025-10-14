@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Calculator } from "lucide-react";
 import { QuotationForm } from "@/components/QuotationForm";
@@ -108,37 +107,30 @@ const Quotations = () => {
             Calcula el costo de productos basado en recetas y tamaños
           </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nueva Cotización
-        </Button>
+        {!isFormOpen && (
+          <Button onClick={() => setIsFormOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nueva Cotización
+          </Button>
+        )}
       </div>
 
-      {isFormOpen && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {editingQuotation ? "Editar Cotización" : "Nueva Cotización"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <QuotationForm
-              quotation={editingQuotation}
-              onSubmit={editingQuotation 
-                ? (data) => handleUpdate(editingQuotation.id, data)
-                : handleCreate
-              }
-              onCancel={handleCloseForm}
-            />
-          </CardContent>
-        </Card>
+      {isFormOpen ? (
+        <QuotationForm
+          quotation={editingQuotation}
+          onSubmit={editingQuotation 
+            ? (data) => handleUpdate(editingQuotation.id, data)
+            : handleCreate
+          }
+          onCancel={handleCloseForm}
+        />
+      ) : (
+        <QuotationList
+          quotations={quotations}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       )}
-
-      <QuotationList
-        quotations={quotations}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
     </div>
   );
 };
