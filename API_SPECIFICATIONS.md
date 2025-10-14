@@ -216,6 +216,22 @@ CREATE TABLE quotation_recipes (
 CREATE INDEX idx_quotation_recipes_quotation_id ON quotation_recipes(quotation_id);
 ```
 
+### Quotation Supplies Table (Junction Table)
+```sql
+CREATE TABLE quotation_supplies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quotation_id UUID REFERENCES quotations(id) ON DELETE CASCADE NOT NULL,
+  supply_id UUID REFERENCES supplies(id) ON DELETE SET NULL,
+  supply_name VARCHAR(255) NOT NULL,
+  quantity DECIMAL(10,2) NOT NULL,
+  unit VARCHAR(50) NOT NULL,
+  cost_per_unit DECIMAL(10,2) NOT NULL,
+  total_cost DECIMAL(10,2) NOT NULL
+);
+
+CREATE INDEX idx_quotation_supplies_quotation_id ON quotation_supplies(quotation_id);
+```
+
 ### Filling Multipliers Table
 ```sql
 CREATE TABLE filling_multipliers (
@@ -772,7 +788,25 @@ Get all quotations for authenticated user.
         "totalCost": 4000.00
       }
     ],
-    "totalCost": 9000.00,
+    "selectedSupplies": [
+      {
+        "supplyId": "uuid",
+        "supplyName": "Caja para pastel mediano",
+        "quantity": 1,
+        "unit": "unidad",
+        "costPerUnit": 500.00,
+        "totalCost": 500.00
+      },
+      {
+        "supplyId": "uuid",
+        "supplyName": "Velas decorativas",
+        "quantity": 2,
+        "unit": "paquete",
+        "costPerUnit": 150.00,
+        "totalCost": 300.00
+      }
+    ],
+    "totalCost": 9800.00,
     "notes": "Cliente prefiere bajo azúcar",
     "createdAt": "2024-01-15T10:30:00Z",
     "updatedAt": "2024-01-15T10:30:00Z"
@@ -798,9 +832,35 @@ Create a new quotation.
       "unitCost": 5000.00,
       "quantity": 1,
       "totalCost": 5000.00
+    },
+    {
+      "recipeId": "uuid",
+      "recipeName": "Relleno de Fresa",
+      "recipeType": "relleno",
+      "unitCost": 2000.00,
+      "quantity": 2,
+      "totalCost": 4000.00
     }
   ],
-  "totalCost": 9000.00,
+  "selectedSupplies": [
+    {
+      "supplyId": "uuid",
+      "supplyName": "Caja para pastel mediano",
+      "quantity": 1,
+      "unit": "unidad",
+      "costPerUnit": 500.00,
+      "totalCost": 500.00
+    },
+    {
+      "supplyId": "uuid",
+      "supplyName": "Velas decorativas",
+      "quantity": 2,
+      "unit": "paquete",
+      "costPerUnit": 150.00,
+      "totalCost": 300.00
+    }
+  ],
+  "totalCost": 9800.00,
   "notes": "Cliente prefiere bajo azúcar"
 }
 ```
