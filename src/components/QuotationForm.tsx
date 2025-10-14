@@ -183,7 +183,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       totalCost: calculateTotal(),
       notes,
     };
-
+    console.log('Submitting quotation data:', quotationData);
     await onSubmit(quotationData);
     setIsLoading(false);
   };
@@ -365,7 +365,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                 <CommandInput placeholder="Search supplies..." />
                 <CommandList>
                   <CommandEmpty>
-                    {supplies.length === 0 
+                    {supplies.length === 0
                       ? "No supplies available. Add supplies in the Supplies page first."
                       : "No supply found."}
                   </CommandEmpty>
