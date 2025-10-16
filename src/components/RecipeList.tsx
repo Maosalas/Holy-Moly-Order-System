@@ -67,7 +67,7 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
               />
             </div>
           </div>
-          <div className="rounded-md border">
+          <div className="">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -6,6 +6,13 @@ export interface RecipeIngredient {
   units: string;
   cost: number;
 }
+
+export interface RecipeMultiplier {
+  id?: string;
+  size: string;
+  multiplier: number;
+}
+
 export type Category = "queque" | "relleno" | "cubierta" | "unidad" | "otro";
 
 export interface Recipe {
@@ -13,6 +20,7 @@ export interface Recipe {
   name: string;
   image?: string;
   ingredients: RecipeIngredient[];
+  multipliers?: RecipeMultiplier[];
   totalCost: number;
   category: string;
   createdAt: Date;

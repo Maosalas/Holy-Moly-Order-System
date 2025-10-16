@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,133 +66,141 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
 
   return (
     <>
-      <div className="mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por cliente, tamaño o notas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+      <Card>
+        <CardHeader>
+          <CardTitle>Cotizaciones</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por cliente, tamaño o notas..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="font-semibold">Cliente</TableHead>
+                  <TableHead className="font-semibold">Tamaño</TableHead>
+                  <TableHead className="font-semibold">Fecha</TableHead>
+                  <TableHead className="font-semibold">Recetas</TableHead>
+                  <TableHead className="font-semibold">Suministros</TableHead>
+                  <TableHead className="font-semibold">Costo Total</TableHead>
+                  <TableHead className="text-right font-semibold">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((quotation) => (
+                  <TableRow key={quotation.id} className="hover:bg-muted/30">
+                    <TableCell>
+                      <div className="font-semibold">{quotation.clientName}</div>
+                      {quotation.notes && (
+                        <div className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">
+                          {quotation.notes}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getSizeBadgeColor(quotation.size)}>
+                        {quotation.size}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <div className="text-sm">
+                          {new Date(quotation.createdAt).toLocaleDateString('es-ES', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {quotation.recipes.length} receta(s)
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {quotation.selectedSupplies?.length || 0} suministro(s)
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-semibold">
+                        ₡{quotation.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-1 justify-end items-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setPreviewQuotation(quotation)}
+                          title="Ver detalles"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onEdit(quotation)}
+                          title="Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteId(quotation.id)}
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
           />
-        </div>
-      </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="font-semibold">Cliente</TableHead>
-              <TableHead className="font-semibold">Tamaño</TableHead>
-              <TableHead className="font-semibold">Fecha</TableHead>
-              <TableHead className="font-semibold">Recetas</TableHead>
-              <TableHead className="font-semibold">Suministros</TableHead>
-              <TableHead className="font-semibold">Costo Total</TableHead>
-              <TableHead className="text-right font-semibold">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedItems.map((quotation) => (
-              <TableRow key={quotation.id} className="hover:bg-muted/30">
-                <TableCell>
-                  <div className="font-semibold">{quotation.clientName}</div>
-                  {quotation.notes && (
-                    <div className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">
-                      {quotation.notes}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge className={getSizeBadgeColor(quotation.size)}>
-                    {quotation.size}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div className="text-sm">
-                      {new Date(quotation.createdAt).toLocaleDateString('es-ES', { 
-                        month: 'short', 
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {quotation.recipes.length} receta(s)
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {quotation.selectedSupplies?.length || 0} suministro(s)
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="font-semibold">
-                    ₡{quotation.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex gap-1 justify-end items-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setPreviewQuotation(quotation)}
-                      title="Ver detalles"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(quotation)}
-                      title="Editar"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeleteId(quotation.id)}
-                      title="Eliminar"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
 
-      <PaginationControls
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={goToPage}
-        hasNextPage={hasNextPage}
-        hasPreviousPage={hasPreviousPage}
-      />
+          <DeleteConfirmDialog
+            open={deleteId !== null}
+            onOpenChange={(open) => !open && setDeleteId(null)}
+            onConfirm={() => {
+              if (deleteId) {
+                onDelete(deleteId);
+                setDeleteId(null);
+              }
+            }}
+            title="Eliminar cotización"
+            description="¿Estás seguro de que deseas eliminar esta cotización? Esta acción no se puede deshacer."
+          />
 
-      <DeleteConfirmDialog
-        open={deleteId !== null}
-        onOpenChange={(open) => !open && setDeleteId(null)}
-        onConfirm={() => {
-          if (deleteId) {
-            onDelete(deleteId);
-            setDeleteId(null);
-          }
-        }}
-        title="Eliminar cotización"
-        description="¿Estás seguro de que deseas eliminar esta cotización? Esta acción no se puede deshacer."
-      />
+          <QuotationPreviewDialog
+            quotation={previewQuotation}
+            open={previewQuotation !== null}
+            onOpenChange={(open) => !open && setPreviewQuotation(null)}
+          />
+        </CardContent>
+      </Card>
 
-      <QuotationPreviewDialog
-        quotation={previewQuotation}
-        open={previewQuotation !== null}
-        onOpenChange={(open) => !open && setPreviewQuotation(null)}
-      />
     </>
   );
 }

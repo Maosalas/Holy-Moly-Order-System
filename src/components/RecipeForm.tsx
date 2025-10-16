@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, X, Upload, ImageIcon, Check, ChevronsUpDown, Tag, Divide } from "lucide-react";
-import { Recipe, RecipeIngredient, RecipeFormData, Category } from "@/types/recipe";
+import { Recipe, RecipeIngredient, RecipeFormData, Category, RecipeMultiplier } from "@/types/recipe";
 import { Ingredient } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
 import { ingredientsApi } from "@/lib/api";
@@ -20,7 +20,7 @@ interface RecipeFormProps {
 
 export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [name, setName] = useState(recipe?.name || "");
-  const [category, setCategory] = useState(recipe?.category || "queque");
+  const [category, setCategory] = useState(recipe?.category || "unidad");
   const [notes, setNotes] = useState(recipe?.notes || "");
   const [url, setUrl] = useState(recipe?.url || "");
   const [unidades, setUnidades] = useState(recipe?.units || 0);
@@ -28,8 +28,31 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(
     recipe?.ingredients || []
   );
+  const [multipliers, setMultipliers] = useState<RecipeMultiplier[]>(
+    recipe?.multipliers || []
+  );
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Default sizes for multipliers
+  const defaultSizes = ["mini", "pequeño", "mediano", "grande"];
+
+  // Initialize multipliers when category changes to queque, relleno, or cubierta
+  useEffect(() => {
+    if (["queque", "relleno", "cubierta"].includes(category)) {
+      if (multipliers.length === 0) {
+        setMultipliers(
+          defaultSizes.map((size) => ({
+            id: getUUID(),
+            size,
+            multiplier: 1.0,
+          }))
+        );
+      }
+    } else {
+      setMultipliers([]);
+    }
+  }, [category]);
 
   useEffect(() => {
     const fetchIngredients = async () => {
@@ -222,6 +245,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         name: name.trim(),
         image: image || undefined,
         ingredients: recipeIngredients,
+        multipliers: multipliers.length > 0 ? multipliers : undefined,
         totalCost,
         category: category,
         notes: notes,
@@ -336,6 +360,42 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
               />
             </div>
           </div>
+
+          {/* Multipliers section for queque, relleno, cubierta */}
+          {["queque", "relleno", "cubierta"].includes(category) && (
+            <div className="space-y-3">
+              <Label className="text-lg font-semibold">
+                Multiplicadores por tamaño
+              </Label>
+              <div className="grid grid-cols-2 gap-4">
+                {multipliers.map((multiplier, index) => (
+                  <div key={multiplier.id || index} className="space-y-2">
+                    <Label htmlFor={`multiplier-${index}`} className="capitalize">
+                      {multiplier.size}
+                    </Label>
+                    <Input
+                      id={`multiplier-${index}`}
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={multiplier.multiplier}
+                      onChange={(e) => {
+                        const newMultipliers = [...multipliers];
+                        newMultipliers[index] = {
+                          ...newMultipliers[index],
+                          multiplier: parseFloat(e.target.value) || 0,
+                        };
+                        setMultipliers(newMultipliers);
+                      }}
+                      placeholder="Multiplicador"
+                      required
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="notes">Notas adicionales</Label>
             <Textarea
@@ -496,24 +556,31 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
           </div>
 
           <div className="space-y-2 p-4 bg-muted rounded-lg">
-            {recipe.category === "unidad" ? (
-              <><div className="flex justify-between items-center">
-                <Label className="text-lg font-semibold">Costo total:</Label>
-                <span className="text-2xl font-bold text-primary">
-                  ₡{totalCost.toLocaleString()}
-                </span>
-              </div><div className="flex justify-between items-center">
+            {category === "unidad" || category === undefined ? (
+              <>
+                <div className="flex justify-between items-center">
+                  <Label className="text-lg font-semibold">Costo total:</Label>
+                  <span className="text-2xl font-bold text-primary">
+                    ₡{totalCost.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
                   <Label className="text-lg font-semibold">Costo por unidad:</Label>
                   <span className="text-2xl font-bold text-primary">
                     ₡{totalUnitCost.toLocaleString()}
                   </span>
-                </div></>
-            ) : <div className="flex justify-between items-center">
-              <Label className="text-lg font-semibold">Costo total:</Label>
-              <span className="text-2xl font-bold text-primary">
-                ₡{totalCost.toLocaleString()}
-              </span>
-            </div>}
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between items-center">
+                <Label className="text-lg font-semibold">Costo total:</Label>
+                <span className="text-2xl font-bold text-primary">
+                  ₡{totalCost.toLocaleString()}
+                </span>
+              </div>
+            )}
+
+
           </div>
 
           <div className="flex gap-3 justify-end pt-4">

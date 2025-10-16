@@ -48,7 +48,7 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-sm text-muted-foreground">Categoria</h3>
-              <p className="text-2xl font-bold">{recipe.category ?? "Sin categoria"}</p>
+              <p className="text-2xl font-bold">{recipe.units} {recipe.category ?? "Sin categoria"}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
