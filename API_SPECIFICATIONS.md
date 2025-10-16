@@ -272,6 +272,26 @@ CREATE INDEX idx_covering_multipliers_recipe_id ON covering_multipliers(recipe_i
 -- | uuid-2                           | mini     | 0.75       |
 ```
 
+### Cake Multipliers Table
+```sql
+CREATE TABLE cake_multipliers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
+  size VARCHAR(50) NOT NULL,
+  multiplier DECIMAL(10,2) NOT NULL,
+  UNIQUE(recipe_id, size)
+);
+
+CREATE INDEX idx_cake_multipliers_recipe_id ON cake_multipliers(recipe_id);
+
+-- Example data:
+-- | recipe_id (Queque Vainilla) | size     | multiplier |
+-- | uuid-3                      | pequeño  | 1.0        |
+-- | uuid-3                      | mediano  | 1.5        |
+-- | uuid-3                      | grande   | 2.5        |
+-- | uuid-3                      | mini     | 0.5        |
+```
+
 ---
 
 ## API Endpoints
@@ -463,6 +483,11 @@ Get all recipes for authenticated user.
     "id": "uuid",
     "name": "Chocolate Cake",
     "image": "https://storage.example.com/recipes/cake.jpg",
+    "category": "queque",
+    "notes": "Some notes",
+    "url": "https://recipe-link.com",
+    "units": 12,
+    "unitCost": 3.82,
     "ingredients": [
       {
         "id": "uuid",
@@ -471,6 +496,23 @@ Get all recipes for authenticated user.
         "quantity": 2.0,
         "units": "kg",
         "cost": 10.20
+      }
+    ],
+    "multipliers": [
+      {
+        "id": "uuid",
+        "size": "pequeño",
+        "multiplier": 1.0
+      },
+      {
+        "id": "uuid",
+        "size": "mediano",
+        "multiplier": 1.5
+      },
+      {
+        "id": "uuid",
+        "size": "grande",
+        "multiplier": 2.5
       }
     ],
     "totalCost": 45.80,
@@ -490,6 +532,11 @@ Create a new recipe.
 {
   "name": "Chocolate Cake",
   "image": "https://storage.example.com/recipes/cake.jpg",
+  "category": "queque",
+  "notes": "Some notes about the recipe",
+  "url": "https://recipe-link.com",
+  "units": 12,
+  "unitCost": 3.82,
   "ingredients": [
     {
       "ingredientId": "uuid",
@@ -499,9 +546,27 @@ Create a new recipe.
       "cost": 10.20
     }
   ],
+  "multipliers": [
+    {
+      "size": "pequeño",
+      "multiplier": 1.0
+    },
+    {
+      "size": "mediano",
+      "multiplier": 1.5
+    },
+    {
+      "size": "grande",
+      "multiplier": 2.5
+    }
+  ],
   "totalCost": 45.80
 }
 ```
+
+**Notes:**
+- `multipliers` is optional and only required for categories: "queque", "relleno", "cubierta"
+- For "unidad" and "otro" categories, multipliers should not be included
 
 **Response (201):** Same as GET response
 
