@@ -1,5 +1,5 @@
 import { Order } from "@/types/order";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -84,161 +84,168 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
 
   return (
     <>
-      <div className="mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por cliente, teléfono o detalles..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="font-semibold">Cliente</TableHead>
-              <TableHead className="font-semibold">Fecha de entrega</TableHead>
-              <TableHead className="font-semibold">Monto y cobro</TableHead>
-              <TableHead className="font-semibold">Método de pago</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="font-semibold">Detalles</TableHead>
-              <TableHead className="text-right font-semibold">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedItems.map((order) => {
-            const remainingBalance = order.chargeAmount - order.downPayment;
-            const paymentProgress = (order.downPayment / order.chargeAmount) * 100;
+      <Card>
+        <CardHeader>
+          <CardTitle>Pedidos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por cliente, teléfono o detalles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="font-semibold">Cliente</TableHead>
+                  <TableHead className="font-semibold">Fecha de entrega</TableHead>
+                  <TableHead className="font-semibold">Monto y cobro</TableHead>
+                  <TableHead className="font-semibold">Método de pago</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">Detalles</TableHead>
+                  <TableHead className="text-right font-semibold">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((order) => {
+                  const remainingBalance = order.chargeAmount - order.downPayment;
+                  const paymentProgress = (order.downPayment / order.chargeAmount) * 100;
 
-            return (
-              <TableRow key={order.id} className="hover:bg-muted/30">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    {order.clientPhotos.length > 0 ? (
-                      <img 
-                        src={order.clientPhotos[0]} 
-                        alt={order.clientName}
-                        className="w-12 h-12 rounded-full object-cover ring-2 ring-background"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {order.clientName.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-semibold">{order.clientName}</div>
-                      <div className="text-xs text-muted-foreground">{order.phoneNumber}</div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div className="font-medium">
-                      {new Date(order.deliveryDate).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1 font-semibold">
-                      ₡{order.chargeAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
-                    {order.downPayment > 0 && (
-                      <>
-                        <div className="text-xs text-green-600 dark:text-green-400">
-                          Pagado: ₡{order.downPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  return (
+                    <TableRow key={order.id} className="hover:bg-muted/30">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          {order.clientPhotos.length > 0 ? (
+                            <img
+                              src={order.clientPhotos[0]}
+                              alt={order.clientName}
+                              className="w-12 h-12 rounded-full object-cover ring-2 ring-background"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                              <span className="text-sm font-medium text-muted-foreground">
+                                {order.clientName.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-semibold">{order.clientName}</div>
+                            <div className="text-xs text-muted-foreground">{order.phoneNumber}</div>
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          Balance: ₡{remainingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({(100-paymentProgress).toFixed(0)}%)
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <div className="font-medium">
+                            {new Date(order.deliveryDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </div>
                         </div>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="capitalize">
-                    {order.paymentMethod}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1 max-w-[200px]">
-                    {order.statuses.map(status => (
-                      <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
-                        {getStatusLabel(status)}
-                      </Badge>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="max-w-[250px]">
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {order.orderDetails}
-                    </p>
-                    {order.clientPhotos.length > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {order.clientPhotos.length} foto{order.clientPhotos.length !== 1 ? 's' : ''}
-                      </p>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex gap-1 justify-end items-center">
-                    <OrderPreviewDialog order={order} />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleWhatsApp(order.phoneNumber, order.clientName)}
-                      title="WhatsApp"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                    </Button>
-                    {onEdit && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEdit(order)}
-                        title="Edit"
-                        disabled={isDeleting}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {onDelete && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(order.id)}
-                        title="Delete"
-                        disabled={isDeleting}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
-    <PaginationControls
-      currentPage={currentPage}
-      totalPages={totalPages}
-      onPageChange={goToPage}
-      hasNextPage={hasNextPage}
-      hasPreviousPage={hasPreviousPage}
-    />
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 font-semibold">
+                            ₡{order.chargeAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          {order.downPayment > 0 && (
+                            <>
+                              <div className="text-xs text-green-600 dark:text-green-400">
+                                Pagado: ₡{order.downPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Balance: ₡{remainingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({(100 - paymentProgress).toFixed(0)}%)
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="capitalize">
+                          {order.paymentMethod}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                          {order.statuses.map(status => (
+                            <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
+                              {getStatusLabel(status)}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-[250px]">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {order.orderDetails}
+                          </p>
+                          {order.clientPhotos.length > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {order.clientPhotos.length} foto{order.clientPhotos.length !== 1 ? 's' : ''}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-1 justify-end items-center">
+                          <OrderPreviewDialog order={order} />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleWhatsApp(order.phoneNumber, order.clientName)}
+                            title="WhatsApp"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                          {onEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onEdit(order)}
+                              title="Edit"
+                              disabled={isDeleting}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {onDelete && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onDelete(order.id)}
+                              title="Delete"
+                              disabled={isDeleting}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+          />
+        </CardContent>
+      </Card>
     </>
   );
 };

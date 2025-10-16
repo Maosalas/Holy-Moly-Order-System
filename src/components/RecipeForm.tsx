@@ -20,7 +20,7 @@ interface RecipeFormProps {
 
 export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [name, setName] = useState(recipe?.name || "");
-  const [category, setCategory] = useState(recipe?.category || "queque");
+  const [category, setCategory] = useState(recipe?.category || "unidad");
   const [notes, setNotes] = useState(recipe?.notes || "");
   const [url, setUrl] = useState(recipe?.url || "");
   const [unidades, setUnidades] = useState(recipe?.units || 0);
@@ -496,24 +496,31 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
           </div>
 
           <div className="space-y-2 p-4 bg-muted rounded-lg">
-            {recipe.category === "unidad" ? (
-              <><div className="flex justify-between items-center">
-                <Label className="text-lg font-semibold">Costo total:</Label>
-                <span className="text-2xl font-bold text-primary">
-                  ₡{totalCost.toLocaleString()}
-                </span>
-              </div><div className="flex justify-between items-center">
+            {recipe?.category === "unidad" || recipe?.category === undefined ? (
+              <>
+                <div className="flex justify-between items-center">
+                  <Label className="text-lg font-semibold">Costo total:</Label>
+                  <span className="text-2xl font-bold text-primary">
+                    ₡{totalCost.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
                   <Label className="text-lg font-semibold">Costo por unidad:</Label>
                   <span className="text-2xl font-bold text-primary">
                     ₡{totalUnitCost.toLocaleString()}
                   </span>
-                </div></>
-            ) : <div className="flex justify-between items-center">
-              <Label className="text-lg font-semibold">Costo total:</Label>
-              <span className="text-2xl font-bold text-primary">
-                ₡{totalCost.toLocaleString()}
-              </span>
-            </div>}
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between items-center">
+                <Label className="text-lg font-semibold">Costo total:</Label>
+                <span className="text-2xl font-bold text-primary">
+                  ₡{totalCost.toLocaleString()}
+                </span>
+              </div>
+            )}
+
+
           </div>
 
           <div className="flex gap-3 justify-end pt-4">
