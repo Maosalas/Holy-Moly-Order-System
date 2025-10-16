@@ -496,7 +496,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
           </div>
 
           <div className="space-y-2 p-4 bg-muted rounded-lg">
-            {recipe?.category === "unidad" || recipe?.category === undefined ? (
+            {category === "unidad" || category === undefined ? (
               <>
                 <div className="flex justify-between items-center">
                   <Label className="text-lg font-semibold">Costo total:</Label>
