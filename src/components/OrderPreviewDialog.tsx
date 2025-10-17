@@ -91,28 +91,15 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
             </p>
           </div>
 
-           {/* Order Details Supplies */}
-          <div className="space-y-2">
-            <h3 className="font-semibold text-sm text-muted-foreground">Miscelaneos</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm bg-muted rounded-lg">
-                <thead>
-                  <tr>
-                    <th className="px-3 py-2 text-left font-semibold">Suministro</th>
-                    <th className="px-3 py-2 text-left font-semibold">Cantidad</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.selectedSupplies.map((supply, idx) => (
-                    <tr key={idx} className="border-t">
-                      <td className="px-3 py-2">{supply.supplyName}</td>
-                      <td className="px-3 py-2">x{supply.quantity}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Quotation Reference */}
+          {order.quotationId && (
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm text-muted-foreground">Cotización</h3>
+              <p className="text-sm bg-muted px-3 py-2 rounded-lg">
+                ID: {order.quotationId}
+              </p>
             </div>
-          </div>
+          )}
 
           {/* Delivery Information */}
           <div className="space-y-2">
