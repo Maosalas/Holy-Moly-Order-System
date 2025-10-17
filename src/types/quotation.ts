@@ -26,7 +26,7 @@ export interface QuotationAdditionalExpense {
 export interface Quotation {
   id: string;
   clientName: string;
-  size: 'pequeño' | 'mediano' | 'grande';
+  size: 'mini' | 'pequeño' | 'mediano' | 'grande';
   recipes: QuotationRecipe[];
   selectedSupplies: QuotationSupply[];
   additionalExpenses?: QuotationAdditionalExpense[];

@@ -23,7 +23,7 @@ interface QuotationFormProps {
 
 export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormProps) {
   const [clientName, setClientName] = useState(quotation?.clientName || "");
-  const [size, setSize] = useState<'pequeño' | 'mediano' | 'grande'>(quotation?.size || 'pequeño');
+  const [size, setSize] = useState<'mini' | 'pequeño' | 'mediano' | 'grande'>(quotation?.size || 'pequeño');
   const [notes, setNotes] = useState(quotation?.notes || "");
   const [selectedRecipes, setSelectedRecipes] = useState<QuotationRecipe[]>(quotation?.recipes || []);
   const [selectedSupplies, setSelectedSupplies] = useState<QuotationSupply[]>(quotation?.selectedSupplies || []);
@@ -45,7 +45,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
 
     const updatedRecipes = selectedRecipes.map(recipe => {
       const multipliers = recipeMultipliers[recipe.recipeId];
-      
+
       // Only update if this recipe has multipliers (relleno, cubierta, queque)
       if (multipliers && Array.isArray(multipliers)) {
         const sizeMultiplier = multipliers.find(m => m.size === size);
@@ -58,7 +58,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
           };
         }
       }
-      
+
       return recipe;
     });
 
@@ -205,11 +205,11 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   const updateAdditionalExpense = (index: number, field: keyof QuotationAdditionalExpense, value: string | number) => {
     const updated = [...additionalExpenses];
     updated[index] = { ...updated[index], [field]: value };
-    
+
     if (field === 'unitPrice' || field === 'quantity') {
       updated[index].totalPrice = updated[index].unitPrice * updated[index].quantity;
     }
-    
+
     setAdditionalExpenses(updated);
   };
 
@@ -290,6 +290,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                       <CommandEmpty>No size found.</CommandEmpty>
                       <CommandGroup>
                         {[
+                          { value: "mini", label: "Mini" },
                           { value: "pequeño", label: "Pequeño" },
                           { value: "mediano", label: "Mediano" },
                           { value: "grande", label: "Grande" },
@@ -350,7 +351,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                                   value={recipe.name}
                                   onSelect={() => addRecipe(recipe.id, type as any)}
                                 >
-                                  {recipe.name} (₡{recipe.totalCost})
+                                  {recipe.name} (₡{recipe.category === 'unidad' ? recipe.unitCost : recipe.totalCost.toFixed(2)})
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -375,7 +376,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                             onChange={(e) => updateRecipeQuantity(actualIndex, parseFloat(e.target.value))}
                             className="w-20"
                           />
-                          <span className="w-24 text-right">₡{recipe.totalCost.toFixed(2)}</span>
+                          <span className="w-24 text-right">₡{recipe.recipeType === "unidad" ? recipe.unitCost : recipe.totalCost.toFixed(2)}</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -505,90 +506,90 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
             )}
           </div>
 
-      {/* Additional Expenses Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-base font-semibold">Otros Gastos (Opcional)</Label>
-            <p className="text-sm text-muted-foreground mt-1">Agregue gastos adicionales como entrega, montaje, etc.</p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addAdditionalExpense}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar Gasto
-          </Button>
-        </div>
+          {/* Additional Expenses Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base font-semibold">Otros Gastos (Opcional)</Label>
+                <p className="text-sm text-muted-foreground mt-1">Agregue gastos adicionales como entrega, montaje, etc.</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addAdditionalExpense}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Gasto
+              </Button>
+            </div>
 
-        {additionalExpenses.length > 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre del Gasto</TableHead>
-                    <TableHead className="text-center">Precio Unitario</TableHead>
-                    <TableHead className="text-center">Cantidad</TableHead>
-                    <TableHead className="text-right">Precio Total</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {additionalExpenses.map((expense, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Input
-                          type="text"
-                          placeholder="Ej: Entrega a domicilio"
-                          value={expense.expenseName}
-                          onChange={(e) => updateAdditionalExpense(index, 'expenseName', e.target.value)}
-                          className="min-w-[200px]"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={expense.unitPrice}
-                          onChange={(e) => updateAdditionalExpense(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                          className="w-32 mx-auto text-center"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={expense.quantity}
-                          onChange={(e) => updateAdditionalExpense(index, 'quantity', parseFloat(e.target.value) || 0)}
-                          className="w-24 mx-auto text-center"
-                        />
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        ₡{expense.totalPrice.toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeAdditionalExpense(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            {additionalExpenses.length > 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nombre del Gasto</TableHead>
+                        <TableHead className="text-center">Precio Unitario</TableHead>
+                        <TableHead className="text-center">Cantidad</TableHead>
+                        <TableHead className="text-right">Precio Total</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {additionalExpenses.map((expense, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Input
+                              type="text"
+                              placeholder="Ej: Entrega a domicilio"
+                              value={expense.expenseName}
+                              onChange={(e) => updateAdditionalExpense(index, 'expenseName', e.target.value)}
+                              className="min-w-[200px]"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={expense.unitPrice}
+                              onChange={(e) => updateAdditionalExpense(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                              className="w-32 mx-auto text-center"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              value={expense.quantity}
+                              onChange={(e) => updateAdditionalExpense(index, 'quantity', parseFloat(e.target.value) || 0)}
+                              className="w-24 mx-auto text-center"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            ₡{expense.totalPrice.toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeAdditionalExpense(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notas (Opcional)</Label>

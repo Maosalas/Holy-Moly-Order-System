@@ -76,7 +76,16 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
         : [...prev, status]
     );
   };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
 
+    // Siempre forzar que empiece con +506
+    if (!value.startsWith("+506")) {
+      value = "+506 " + value.replace(/^(\+?506)?\s?/, "");
+    }
+
+    setPhoneNumber(value);
+  };
   const compressImage = (base64: string, callback: (compressed: string) => void) => {
     const img = new Image();
     img.onload = () => {
@@ -259,8 +268,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                 id="phoneNumber"
                 type="tel"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="e.g., +506 1234 5678"
+                onChange={handleChange}
+                placeholder="+506 1234 5678"
                 required
               />
             </div>
@@ -399,7 +408,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                   >
                     <span className="flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      {selectedQuotation 
+                      {selectedQuotation
                         ? `${selectedQuotation.clientName} - ${selectedQuotation.size} (₡${selectedQuotation.totalCost.toFixed(2)})`
                         : "Seleccionar cotización..."}
                     </span>
@@ -411,7 +420,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                     <CommandInput placeholder="Buscar cotización..." />
                     <CommandList>
                       <CommandEmpty>
-                        {quotations.length === 0 
+                        {quotations.length === 0
                           ? "No hay cotizaciones disponibles. Agregue una cotización primero."
                           : "No se encontraron cotizaciones."}
                       </CommandEmpty>
@@ -460,7 +469,6 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="costAmount">Costo total (₡)</Label>
-                <p className="text-sm text-muted-foreground">Monto calculado de la cotización seleccionada</p>
                 <Input
                   id="costAmount"
                   type="number"
