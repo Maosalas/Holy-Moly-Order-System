@@ -105,6 +105,7 @@ CREATE TYPE payment_method AS ENUM ('cash', 'transfer', 'card', 'other');
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  quotation_id UUID REFERENCES quotations(id) ON DELETE SET NULL,
   client_name VARCHAR(255) NOT NULL,
   phone_number VARCHAR(50) NOT NULL,
   order_details TEXT NOT NULL,
@@ -147,21 +148,6 @@ CREATE TABLE order_statuses (
 CREATE INDEX idx_order_statuses_order_id ON order_statuses(order_id);
 ```
 
-### Order Supplies Table (Junction Table)
-```sql
-CREATE TABLE order_supplies (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID REFERENCES orders(id) ON DELETE CASCADE NOT NULL,
-  supply_id UUID REFERENCES supplies(id) ON DELETE SET NULL,
-  supply_name VARCHAR(255) NOT NULL,
-  quantity DECIMAL(10,2) NOT NULL,
-  unit VARCHAR(50) NOT NULL,
-  cost_per_unit DECIMAL(10,2) NOT NULL,
-  total_cost DECIMAL(10,2) NOT NULL
-);
-
-CREATE INDEX idx_order_supplies_order_id ON order_supplies(order_id);
-```
 
 ### Expenses Table
 ```sql
@@ -721,19 +707,10 @@ Create a new order.
   "clientPhotos": ["photo-url-1", "photo-url-2"],
   "needsCakeTopper": true,
   "costAmount": 150.00,
+  "quotationId": "uuid",
   "chargeAmount": 300.00,
   "paymentMethod": "transfer",
   "downPayment": 100.00,
-  "selectedSupplies": [
-    {
-      "supplyId": "uuid",
-      "supplyName": "Cake Box",
-      "quantity": 1,
-      "unit": "piece",
-      "costPerUnit": 5.00,
-      "totalCost": 5.00
-    }
-  ],
   "suppliesNeeded": "Fresh roses",
   "statuses": ["waiting-for-payment"]
 }

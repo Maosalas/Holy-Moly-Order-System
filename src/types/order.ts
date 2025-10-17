@@ -7,17 +7,9 @@ export type OrderStatus =
 
 export type PaymentMethod = "Efectivo" | "Transferencia" | "Link de pago/tarjeta" | "SINPE";
 
-export interface OrderSupply {
-  supplyId: string;
-  supplyName: string;
-  quantity: number;
-  unit: string;
-  costPerUnit: number;
-  totalCost: number;
-}
-
 export interface Order {
   id: string;
+  quotationId?: string;
   clientName: string;
   phoneNumber: string;
   orderDetails: string;
@@ -28,7 +20,6 @@ export interface Order {
   chargeAmount: number;
   paymentMethod: PaymentMethod;
   downPayment: number;
-  selectedSupplies: OrderSupply[];
   suppliesNeeded: string;
   statuses: OrderStatus[];
   createdAt: string;

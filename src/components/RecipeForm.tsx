@@ -370,6 +370,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
               <div className="grid grid-cols-2 gap-4">
                 {multipliers.map((multiplier, index) => (
                   <div key={multiplier.id || index} className="space-y-2">
+
                     <Label htmlFor={`multiplier-${index}`} className="capitalize">
                       {multiplier.size}
                     </Label>
@@ -390,7 +391,14 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                       placeholder="Multiplicador"
                       required
                     />
+                    <div className="flex justify-between items-center">
+                      <Label className="text-lg font-semibold">Costo total:</Label>
+                      <span className="text-2xl font-bold text-primary">
+                        ₡{Math.round(totalCost * multiplier.multiplier).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
+
                 ))}
               </div>
             </div>

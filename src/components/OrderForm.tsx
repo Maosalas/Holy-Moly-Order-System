@@ -6,15 +6,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, X, Plus, Trash2, Package, Check, ChevronsUpDown, Wallet } from "lucide-react";
+import { Upload, X, Plus, Trash2, Package, Check, ChevronsUpDown, Wallet, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TopperUploadDialog } from "./TopperUploadDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import type { Order, OrderStatus, PaymentMethod, OrderSupply } from "@/types/order";
-import type { Supply } from "@/types/supply";
-import { suppliesApi } from "@/lib/api";
+import type { Order, OrderStatus, PaymentMethod } from "@/types/order";
+import type { Quotation } from "@/types/quotation";
+import { quotationsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface OrderFormProps {
@@ -25,7 +25,8 @@ interface OrderFormProps {
 
 export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) => {
   const { toast } = useToast();
-  const [supplies, setSupplies] = useState<Supply[]>([]);
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [selectedQuotationId, setSelectedQuotationId] = useState<string>(initialData?.quotationId || "");
   const [clientName, setClientName] = useState(initialData?.clientName || "");
   const [phoneNumber, setPhoneNumber] = useState(initialData?.phoneNumber || "");
   const [orderDetails, setOrderDetails] = useState(initialData?.orderDetails || "");
@@ -36,35 +37,29 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialData?.paymentMethod || "Efectivo");
   const [clientPhotos, setClientPhotos] = useState<string[]>(initialData?.clientPhotos || []);
-  const [selectedSupplies, setSelectedSupplies] = useState<OrderSupply[]>(initialData?.selectedSupplies || []);
   const [chargeAmount, setChargeAmount] = useState(initialData?.chargeAmount?.toString() || "");
-
-  const [costoAmount, setCostoAmount] = useState("");
-
   const [downPayment, setDownPayment] = useState(initialData?.downPayment?.toString() || "0");
   const [suppliesNeeded, setSuppliesNeeded] = useState(initialData?.suppliesNeeded || "");
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
   const [statuses, setStatuses] = useState<OrderStatus[]>(initialData?.statuses || ["waiting-for-payment"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load supplies from API
+  // Load quotations from API
   useEffect(() => {
-    const fetchSupplies = async () => {
-      const result = await suppliesApi.getAll();
+    const fetchQuotations = async () => {
+      const result = await quotationsApi.getAll();
       if (result.data) {
-        const suppliesData = Array.isArray(result.data) ? result.data : [];
-        setSupplies(suppliesData.map((s: any) => ({
-          ...s,
-          createdAt: s.created_at
-        })));
+        const quotationsData = Array.isArray(result.data) ? result.data : [];
+        setQuotations(quotationsData);
       }
     };
-    fetchSupplies();
+    fetchQuotations();
   }, []);
 
-  // Calculate cost from selected supplies
-  const costAmount = selectedSupplies.reduce((sum, item) => sum + item.totalCost, 0);
-  const profit = (parseFloat(chargeAmount) || 0) - costAmount - (parseFloat(costoAmount) || 0);
+  // Calculate cost from selected quotation
+  const selectedQuotation = quotations.find(q => q.id === selectedQuotationId);
+  const costAmount = selectedQuotation ? selectedQuotation.totalCost : (initialData?.costAmount || 0);
+  const profit = (parseFloat(chargeAmount) || 0) - costAmount;
 
   const availableStatuses: { value: OrderStatus; label: string }[] = [
     { value: "waiting-for-payment", label: "Espera de pago" },
@@ -80,46 +75,6 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
         ? prev.filter(s => s !== status)
         : [...prev, status]
     );
-  };
-
-  const addSupply = (supplyId: string) => {
-    const supply = supplies.find(s => s.id === supplyId);
-    if (!supply) return;
-
-    const alreadyAdded = selectedSupplies.find(s => s.supplyId === supplyId);
-    if (alreadyAdded) {
-      toast({
-        title: "Suministro ya fue agregado",
-        description: `${supply.name} ya esta en la lista de suministros seleccionados.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newSupply: OrderSupply = {
-      supplyId: supply.id,
-      supplyName: supply.name,
-      quantity: 1,
-      unit: supply.unit,
-      costPerUnit: supply.cost,
-      totalCost: supply.cost,
-    };
-
-    setSelectedSupplies([...selectedSupplies, newSupply]);
-  };
-
-  const updateSupplyQuantity = (supplyId: string, quantity: number) => {
-    setSelectedSupplies(prev =>
-      prev.map(s =>
-        s.supplyId === supplyId
-          ? { ...s, quantity, totalCost: s.costPerUnit * quantity }
-          : s
-      )
-    );
-  };
-
-  const removeSupply = (supplyId: string) => {
-    setSelectedSupplies(prev => prev.filter(s => s.supplyId !== supplyId));
   };
 
   const compressImage = (base64: string, callback: (compressed: string) => void) => {
@@ -232,6 +187,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     }
 
     const orderData = {
+      quotationId: selectedQuotationId || undefined,
       clientName: clientName.trim(),
       phoneNumber: phoneNumber.trim(),
       orderDetails: orderDetails.trim(),
@@ -241,7 +197,6 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       costAmount,
       chargeAmount: charge,
       downPayment: downPmt,
-      selectedSupplies,
       suppliesNeeded: suppliesNeeded.trim(),
       needsCakeTopper,
       statuses: (statuses.length > 0 ? statuses : ["waiting-for-payment"]) as OrderStatus[],
@@ -259,13 +214,13 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       };
       downloadICS(fullOrder, isUpdate ? 'update' : 'create');
 
+      setSelectedQuotationId("");
       setClientName("");
       setPhoneNumber("");
       setOrderDetails("");
       setDeliveryDate("");
       setPaymentMethod("Efectivo");
       setClientPhotos([]);
-      setSelectedSupplies([]);
       setChargeAmount("");
       setDownPayment("0");
       setSuppliesNeeded("");
@@ -424,189 +379,97 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
           </div>
 
-          {/* Section 2: Financial & Supplies */}
+          {/* Section 2: Financial & Quotation */}
           <div className="space-y-5 pt-4">
             <h3 className="text-lg font-semibold border-b pb-2">Miscelaneos y Financias</h3>
 
-            {/* Supplies Selection */}
+            {/* Quotation Selection */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-base font-semibold">Suministros</Label>
-                  <p className="text-sm text-muted-foreground mt-1">Seleccione múltiples suministros necesarios para el pedido</p>
-                </div>
+              <div>
+                <Label className="text-base font-semibold">Cotización</Label>
+                <p className="text-sm text-muted-foreground mt-1">Seleccione una cotización para este pedido (opcional)</p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="flex-1 h-11 bg-background border-2 hover:border-primary/50 transition-colors justify-between"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        Escoja un suministro a agregar...
-                      </span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search supplies..." />
-                      <CommandList>
-                        <CommandEmpty>
-                          {supplies.length === 0 
-                            ? "No supplies available. Add supplies in the Supplies page first."
-                            : "No supply found."}
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {supplies.map((supply) => (
-                            <CommandItem
-                              key={supply.id}
-                              value={supply.name}
-                              onSelect={() => addSupply(supply.id)}
-                              className="cursor-pointer"
-                            >
-                              <div className="flex items-center justify-between w-full gap-4">
-                                <span className="font-medium">{supply.name}</span>
-                                <span className="text-muted-foreground text-sm">
-                                  ₡{supply.cost.toLocaleString('en-US', { minimumFractionDigits: 2 })} / {supply.unit}
-                                </span>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {/* <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-11 w-11 shrink-0"
-                  onClick={() => {
-                    const select = document.querySelector('[role="combobox"]') as HTMLElement;
-                    select?.click();
-                  }}
-                >
-                  <Plus className="h-5 w-5" />
-                </Button> */}
-              </div>
-
-              {selectedSupplies.length === 0 ? (
-                <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-3 text-muted-foreground">
-                    <div className="rounded-full bg-muted p-3">
-                      <Package className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="font-medium">No hay suministros por mostrar</p>
-                      <p className="text-sm mt-1">Seleccione los suministros del dropdown</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between px-1">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {selectedSupplies.length} {selectedSupplies.length === 1 ? 'suministro' : 'suministros'} seleccionados
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full h-11 bg-background border-2 hover:border-primary/50 transition-colors justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      {selectedQuotation 
+                        ? `${selectedQuotation.clientName} - ${selectedQuotation.size} (₡${selectedQuotation.totalCost.toFixed(2)})`
+                        : "Seleccionar cotización..."}
                     </span>
-                  </div>
-
-                  <div className="border-2 rounded-lg overflow-hidden bg-card">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50 hover:bg-muted/50">
-                          <TableHead className="font-semibold">Nombre</TableHead>
-                          <TableHead className="w-[130px] font-semibold">Cantidad</TableHead>
-                          <TableHead className="w-[80px] font-semibold">Unidad</TableHead>
-                          <TableHead className="w-[120px] font-semibold text-right">Costo</TableHead>
-                          <TableHead className="w-[120px] font-semibold text-right">Subtotal</TableHead>
-                          <TableHead className="w-[60px]"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedSupplies.map((supply, index) => (
-                          <TableRow key={supply.supplyId} className="hover:bg-muted/30">
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-2">
-                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
-                                  {index + 1}
-                                </div>
-                                {supply.supplyName}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar cotización..." />
+                    <CommandList>
+                      <CommandEmpty>
+                        {quotations.length === 0 
+                          ? "No hay cotizaciones disponibles. Agregue una cotización primero."
+                          : "No se encontraron cotizaciones."}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="none"
+                          onSelect={() => setSelectedQuotationId("")}
+                          className="cursor-pointer"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              !selectedQuotationId ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <span className="text-muted-foreground">Ninguna</span>
+                        </CommandItem>
+                        {quotations.map((quotation) => (
+                          <CommandItem
+                            key={quotation.id}
+                            value={quotation.id}
+                            onSelect={() => setSelectedQuotationId(quotation.id)}
+                            className="cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedQuotationId === quotation.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex items-center justify-between w-full gap-4">
+                              <span className="font-medium">{quotation.clientName}</span>
+                              <div className="text-sm text-muted-foreground">
+                                {quotation.size} - ₡{quotation.totalCost.toFixed(2)}
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0.01"
-                                step="0.01"
-                                value={supply.quantity}
-                                onChange={(e) => updateSupplyQuantity(supply.supplyId, parseFloat(e.target.value) || 0)}
-                                className="h-9 text-center"
-                              />
-                            </TableCell>
-                            <TableCell className="text-muted-foreground font-medium">{supply.unit}</TableCell>
-                            <TableCell className="text-right font-medium">
-                              ₡{supply.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </TableCell>
-                            <TableCell className="text-right font-bold text-primary">
-                              ₡{supply.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeSupply(supply.supplyId)}
-                                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                                title="Remove supply"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
+                            </div>
+                          </CommandItem>
                         ))}
-                        <TableRow className="bg-muted/30 hover:bg-muted/30 font-semibold">
-                          <TableCell colSpan={4} className="text-right">Total Cost:</TableCell>
-                          <TableCell className="text-right text-lg font-bold text-primary">
-                            ₡{costAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                          </TableCell>
-                          <TableCell></TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Costo total (₡) <small className="text-red">Monto calculado de los suministros</small></Label>
-                <div className="p-3 rounded-md bg-muted border">
-                  <p className="text-lg font-semibold">
-                    ₡{costAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="costoAmount">Precio costo (₡) * <small className="text-red">Monto calculado en excel</small> </Label>
+                <Label htmlFor="costAmount">Costo total (₡)</Label>
+                <p className="text-sm text-muted-foreground">Monto calculado de la cotización seleccionada</p>
                 <Input
-                  id="costoAmount"
+                  id="costAmount"
                   type="number"
-                  step="0.01"
-                  min="0"
-                  value={costoAmount}
-                  onChange={(e) => setCostoAmount(e.target.value)}
-                  placeholder="0.00"
-                  required
+                  value={costAmount.toFixed(2)}
+                  disabled
+                  className="font-semibold bg-muted"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="chargeAmount">Precio a cobrar (₡) *</Label>
                 <Input
@@ -620,7 +483,6 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                   required
                 />
               </div>
-
             </div>
 
             <div className="space-y-2">
