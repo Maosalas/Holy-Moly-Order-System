@@ -81,7 +81,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
               />
             </div>
           </div>
-          <div className="rounded-md border">
+          <div className="">
             <Table>
               <TableHeader>
               <TableRow>

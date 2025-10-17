@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Edit, Trash2, Calendar, Package, Search } from "lucide-react";
 import { useState, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { OrderPreviewDialog } from "./OrderPreviewDialog";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
@@ -19,7 +20,7 @@ interface OrderListProps {
 
 export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-
+  const isMobile = useIsMobile();
   const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return orders;
     const query = searchQuery.toLowerCase();
@@ -82,6 +83,134 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
     );
   }
 
+  if (isMobile) {
+    return (
+      <>
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar pedidos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
+        <div className="space-y-3">
+          {paginatedItems.map((order) => (
+
+            <Card key={order.id}>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {order.clientPhotos.length > 0 ? (
+                        <img
+                          src={order.clientPhotos[0]}
+                          alt={order.clientName}
+                          className="w-12 h-12 rounded-full object-cover ring-2 ring-background"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {order.clientName.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-semibold">{order.clientName}</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <OrderPreviewDialog order={order} />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit(order)}
+                        title="Edit"
+                        disabled={isDeleting}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleWhatsApp(order.phoneNumber, order.clientName)}
+                        title="WhatsApp"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(order.id)}
+                        title="Delete"
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Detalles:</span>
+                      <span className="font-medium">{order.orderDetails}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Fecha de entrega:</span>
+                      </div>
+                      <span className="font-semibold">{new Date(order.deliveryDate).toLocaleDateString('en-US')}</span>
+
+                    </div>
+                    <div className="space-y-1 flex items-center gap-2 justify-between">
+                      <span className="text-muted-foreground">Pago:</span>
+                      <div className="text-right">
+                        <div className="gap-1 font-semibold">
+                          ₡{order.chargeAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        {order.downPayment > 0 && (
+                          <>
+                            <div className="text-xs text-green-600 dark:text-green-400">
+                              Pagado: ₡{order.downPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Balance: ₡{(order.chargeAmount - order.downPayment).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({(100 - ((order.downPayment / order.chargeAmount) * 100)).toFixed(0)}%)
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        <span className="text-muted-foreground">Status:</span>
+                        {order.statuses.map(status => (
+                          <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
+                            {getStatusLabel(status)}
+                          </Badge>
+                        ))}
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={goToPage}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+        />
+      </>
+    );
+  }
   return (
     <>
       <Card>

@@ -10,6 +10,7 @@ import { QuotationPreviewDialog } from "@/components/QuotationPreviewDialog";
 import type { Quotation } from "@/types/quotation";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface QuotationListProps {
   quotations: Quotation[];
@@ -21,6 +22,7 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [previewQuotation, setPreviewQuotation] = useState<Quotation | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const isMobile = useIsMobile();
 
   const filteredQuotations = useMemo(() => {
     if (!searchQuery.trim()) return quotations;
@@ -63,7 +65,107 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
       </Card>
     );
   }
+  if (isMobile) {
+    return (
+      <>
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar cotizaciones..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
+        <div className="space-y-3">
+          {paginatedItems.map((quotation) => (
 
+            <Card key={quotation.id}>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {quotation.clientName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="font-semibold">{quotation.clientName}</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setPreviewQuotation(quotation)}
+                        title="Ver detalles"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit(quotation)}
+                        title="Editar"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteId(quotation.id)}
+                        title="Eliminar"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Fecha creado:</span>
+                      </div>
+                      <span className="font-semibold">{new Date(quotation.createdAt).toLocaleDateString('en-US')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Recetas:</span>
+                      <span className="font-medium">{quotation.recipes.length} receta(s)</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Suministros:</span>
+                      <span className="font-medium">{quotation.selectedSupplies?.length || 0} suministro(s)</span>
+                    </div>
+
+                    <div className="space-y-1 flex items-center gap-2 justify-between">
+                      <span className="text-muted-foreground">Costo total:</span>
+                      <div className="text-right">
+                        <div className="gap-1 font-semibold">
+                          ₡{quotation.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={goToPage}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+        />
+      </>
+    );
+  }
   return (
     <>
       <Card>
@@ -82,7 +184,7 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
               />
             </div>
           </div>
-          <div className="rounded-md border">
+          <div className="">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
