@@ -38,6 +38,32 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     loadSupplies();
   }, []);
 
+  // Recalculate recipe quantities when size changes
+  useEffect(() => {
+    if (selectedRecipes.length === 0) return;
+
+    const updatedRecipes = selectedRecipes.map(recipe => {
+      const multipliers = recipeMultipliers[recipe.recipeId];
+      
+      // Only update if this recipe has multipliers (relleno, cubierta, queque)
+      if (multipliers && Array.isArray(multipliers)) {
+        const sizeMultiplier = multipliers.find(m => m.size === size);
+        if (sizeMultiplier) {
+          const newQuantity = sizeMultiplier.multiplier;
+          return {
+            ...recipe,
+            quantity: newQuantity,
+            totalCost: recipe.unitCost * newQuantity,
+          };
+        }
+      }
+      
+      return recipe;
+    });
+
+    setSelectedRecipes(updatedRecipes);
+  }, [size, recipeMultipliers]);
+
   const loadRecipes = async () => {
     const { data, error } = await recipesApi.getAll();
     if (error) {
