@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { recipesApi, quotationsApi, suppliesApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { Quotation, QuotationRecipe, QuotationSupply } from "@/types/quotation";
+import type { Quotation, QuotationRecipe, QuotationSupply, QuotationAdditionalExpense } from "@/types/quotation";
 import type { Recipe } from "@/types/recipe";
 import type { Supply } from "@/types/supply";
 import { Loader2, Plus, Trash2, Ruler, Check, ChevronsUpDown, Package } from "lucide-react";
@@ -27,6 +27,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   const [notes, setNotes] = useState(quotation?.notes || "");
   const [selectedRecipes, setSelectedRecipes] = useState<QuotationRecipe[]>(quotation?.recipes || []);
   const [selectedSupplies, setSelectedSupplies] = useState<QuotationSupply[]>(quotation?.selectedSupplies || []);
+  const [additionalExpenses, setAdditionalExpenses] = useState<QuotationAdditionalExpense[]>(quotation?.additionalExpenses || []);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [supplies, setSupplies] = useState<Supply[]>([]);
   const [recipeMultipliers, setRecipeMultipliers] = useState<Record<string, Array<{ size: string, multiplier: number }>>>({});
@@ -37,6 +38,32 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     loadRecipes();
     loadSupplies();
   }, []);
+
+  // Recalculate recipe quantities when size changes
+  useEffect(() => {
+    if (selectedRecipes.length === 0) return;
+
+    const updatedRecipes = selectedRecipes.map(recipe => {
+      const multipliers = recipeMultipliers[recipe.recipeId];
+      
+      // Only update if this recipe has multipliers (relleno, cubierta, queque)
+      if (multipliers && Array.isArray(multipliers)) {
+        const sizeMultiplier = multipliers.find(m => m.size === size);
+        if (sizeMultiplier) {
+          const newQuantity = sizeMultiplier.multiplier;
+          return {
+            ...recipe,
+            quantity: newQuantity,
+            totalCost: recipe.unitCost * newQuantity,
+          };
+        }
+      }
+      
+      return recipe;
+    });
+
+    setSelectedRecipes(updatedRecipes);
+  }, [size, recipeMultipliers]);
 
   const loadRecipes = async () => {
     const { data, error } = await recipesApi.getAll();
@@ -165,10 +192,36 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     setSelectedSupplies(prev => prev.filter(s => s.supplyId !== supplyId));
   };
 
+  const addAdditionalExpense = () => {
+    const newExpense: QuotationAdditionalExpense = {
+      expenseName: "",
+      unitPrice: 0,
+      quantity: 1,
+      totalPrice: 0,
+    };
+    setAdditionalExpenses([...additionalExpenses, newExpense]);
+  };
+
+  const updateAdditionalExpense = (index: number, field: keyof QuotationAdditionalExpense, value: string | number) => {
+    const updated = [...additionalExpenses];
+    updated[index] = { ...updated[index], [field]: value };
+    
+    if (field === 'unitPrice' || field === 'quantity') {
+      updated[index].totalPrice = updated[index].unitPrice * updated[index].quantity;
+    }
+    
+    setAdditionalExpenses(updated);
+  };
+
+  const removeAdditionalExpense = (index: number) => {
+    setAdditionalExpenses(additionalExpenses.filter((_, i) => i !== index));
+  };
+
   const calculateTotal = () => {
     const recipesTotal = selectedRecipes.reduce((sum, r) => sum + r.totalCost, 0);
     const suppliesTotal = selectedSupplies.reduce((sum, s) => sum + s.totalCost, 0);
-    return recipesTotal + suppliesTotal;
+    const expensesTotal = additionalExpenses.reduce((sum, e) => sum + e.totalPrice, 0);
+    return recipesTotal + suppliesTotal + expensesTotal;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -180,6 +233,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       size,
       recipes: selectedRecipes,
       selectedSupplies,
+      additionalExpenses: additionalExpenses.length > 0 ? additionalExpenses : undefined,
       totalCost: calculateTotal(),
       notes,
     };
@@ -450,6 +504,91 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
               </Card>
             )}
           </div>
+
+      {/* Additional Expenses Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-base font-semibold">Otros Gastos (Opcional)</Label>
+            <p className="text-sm text-muted-foreground mt-1">Agregue gastos adicionales como entrega, montaje, etc.</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addAdditionalExpense}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar Gasto
+          </Button>
+        </div>
+
+        {additionalExpenses.length > 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nombre del Gasto</TableHead>
+                    <TableHead className="text-center">Precio Unitario</TableHead>
+                    <TableHead className="text-center">Cantidad</TableHead>
+                    <TableHead className="text-right">Precio Total</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {additionalExpenses.map((expense, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <Input
+                          type="text"
+                          placeholder="Ej: Entrega a domicilio"
+                          value={expense.expenseName}
+                          onChange={(e) => updateAdditionalExpense(index, 'expenseName', e.target.value)}
+                          className="min-w-[200px]"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={expense.unitPrice}
+                          onChange={(e) => updateAdditionalExpense(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          className="w-32 mx-auto text-center"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={expense.quantity}
+                          onChange={(e) => updateAdditionalExpense(index, 'quantity', parseFloat(e.target.value) || 0)}
+                          className="w-24 mx-auto text-center"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        ₡{expense.totalPrice.toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAdditionalExpense(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notas (Opcional)</Label>
