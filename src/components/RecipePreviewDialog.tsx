@@ -4,12 +4,19 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, ChefHat, Package } from "lucide-react";
 import { Recipe } from "@/types/recipe";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useState } from "react";
 
 interface RecipePreviewDialogProps {
   recipe: Recipe;
 }
 
+
 export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
+
+  const [selected, setSelected] = useState("1X");
+
+  const options = ["0.5X", "1X", "2X", "4X"];
+  const multiplier = parseFloat(selected.replace("X", ""));
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -63,10 +70,30 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
           </div>
           {/* Ingredients List */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-semibold text-sm text-muted-foreground">Ingredients</h3>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-semibold text-sm text-muted-foreground">Ingredients</h3>
+              </div>
+
+              <div className="inline-flex border border-gray-300 rounded-full overflow-hidden">
+                {options.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setSelected(option)}
+                    className={`px-4 py-0 font-semibold text-lg transition-all 
+          ${selected === option
+                        ? "bg-orange-100 text-black border-r border-gray-300"
+                        : "bg-white text-gray-600 hover:bg-gray-100 border-r border-gray-300"
+                      } 
+          ${option === "4X" ? "border-r-0" : ""}`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
             </div>
+
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -77,20 +104,27 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
                     <TableHead className="text-right font-semibold">Cost</TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
                   {recipe.ingredients.map((ingredient) => (
                     <TableRow key={ingredient.id}>
                       <TableCell className="font-medium">
                         {ingredient.ingredientName}
                       </TableCell>
-                      <TableCell>{ingredient.quantity}</TableCell>
+                      <TableCell>
+                        {(ingredient.quantity * multiplier).toLocaleString("en-US", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 2,
+                        })}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         {ingredient.units}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
-                        ₡{ingredient.cost.toLocaleString('en-US', {
+                        ₡
+                        {(ingredient.cost * multiplier).toLocaleString("en-US", {
                           minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
+                          maximumFractionDigits: 2,
                         })}
                       </TableCell>
                     </TableRow>
