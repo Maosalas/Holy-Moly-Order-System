@@ -232,6 +232,20 @@ CREATE TABLE quotation_supplies (
 CREATE INDEX idx_quotation_supplies_quotation_id ON quotation_supplies(quotation_id);
 ```
 
+### Quotation Additional Expenses Table
+```sql
+CREATE TABLE quotation_additional_expenses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quotation_id UUID REFERENCES quotations(id) ON DELETE CASCADE NOT NULL,
+  expense_name VARCHAR(255) NOT NULL,
+  unit_price DECIMAL(10,2) NOT NULL,
+  quantity DECIMAL(10,2) NOT NULL,
+  total_price DECIMAL(10,2) NOT NULL
+);
+
+CREATE INDEX idx_quotation_additional_expenses_quotation_id ON quotation_additional_expenses(quotation_id);
+```
+
 ### Filling Multipliers Table
 ```sql
 CREATE TABLE filling_multipliers (
@@ -871,7 +885,21 @@ Get all quotations for authenticated user.
         "totalCost": 300.00
       }
     ],
-    "totalCost": 9800.00,
+    "additionalExpenses": [
+      {
+        "expenseName": "Entrega a domicilio",
+        "unitPrice": 2000.00,
+        "quantity": 1,
+        "totalPrice": 2000.00
+      },
+      {
+        "expenseName": "Montaje especial",
+        "unitPrice": 1500.00,
+        "quantity": 1,
+        "totalPrice": 1500.00
+      }
+    ],
+    "totalCost": 13300.00,
     "notes": "Cliente prefiere bajo azúcar",
     "createdAt": "2024-01-15T10:30:00Z",
     "updatedAt": "2024-01-15T10:30:00Z"
@@ -925,7 +953,21 @@ Create a new quotation.
       "totalCost": 300.00
     }
   ],
-  "totalCost": 9800.00,
+  "additionalExpenses": [
+    {
+      "expenseName": "Entrega a domicilio",
+      "unitPrice": 2000.00,
+      "quantity": 1,
+      "totalPrice": 2000.00
+    },
+    {
+      "expenseName": "Montaje especial",
+      "unitPrice": 1500.00,
+      "quantity": 1,
+      "totalPrice": 1500.00
+    }
+  ],
+  "totalCost": 13300.00,
   "notes": "Cliente prefiere bajo azúcar"
 }
 ```

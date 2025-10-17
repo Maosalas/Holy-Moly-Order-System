@@ -16,12 +16,20 @@ export interface QuotationSupply {
   totalCost: number;
 }
 
+export interface QuotationAdditionalExpense {
+  expenseName: string;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+}
+
 export interface Quotation {
   id: string;
   clientName: string;
   size: 'pequeño' | 'mediano' | 'grande';
   recipes: QuotationRecipe[];
   selectedSupplies: QuotationSupply[];
+  additionalExpenses?: QuotationAdditionalExpense[];
   totalCost: number;
   notes?: string;
   createdAt: Date;
