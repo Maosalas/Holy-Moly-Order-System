@@ -129,13 +129,15 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       }
     }
 
+    const unitCost = recipeType === 'unidad' ? (recipe.unitCost || recipe.totalCost) : recipe.totalCost;
+    
     const newRecipe: QuotationRecipe = {
       recipeId: recipe.id,
       recipeName: recipe.name,
       recipeType,
-      unitCost: recipe.totalCost,
+      unitCost: unitCost,
       quantity,
-      totalCost: recipe.totalCost * quantity,
+      totalCost: unitCost * quantity,
     };
 
     setSelectedRecipes([...selectedRecipes, newRecipe]);
@@ -243,12 +245,10 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   };
 
   const recipesByType = {
-    queque: recipes.filter(r => r.name.toLowerCase().includes('queque')),
-    relleno: recipes.filter(r => r.name.toLowerCase().includes('relleno')),
-    cubierta: recipes.filter(r => r.name.toLowerCase().includes('cubierta')),
-    unidad: recipes.filter(r => !r.name.toLowerCase().includes('queque') &&
-      !r.name.toLowerCase().includes('relleno') &&
-      !r.name.toLowerCase().includes('cubierta')),
+    queque: recipes.filter(r => r.category === 'queque'),
+    relleno: recipes.filter(r => r.category === 'relleno'),
+    cubierta: recipes.filter(r => r.category === 'cubierta'),
+    unidad: recipes.filter(r => r.category === 'unidad'),
   };
 
   return (
@@ -351,7 +351,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                                   value={recipe.name}
                                   onSelect={() => addRecipe(recipe.id, type as any)}
                                 >
-                                  {recipe.name} (₡{recipe.category === 'unidad' ? recipe.unitCost : recipe.totalCost.toFixed(2)})
+                                  {recipe.name} (₡{type === 'unidad' ? (recipe.unitCost || recipe.totalCost).toFixed(2) : recipe.totalCost.toFixed(2)})
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -376,7 +376,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                             onChange={(e) => updateRecipeQuantity(actualIndex, parseFloat(e.target.value))}
                             className="w-20"
                           />
-                          <span className="w-24 text-right">₡{recipe.recipeType === "unidad" ? recipe.unitCost : recipe.totalCost.toFixed(2)}</span>
+                          <span className="w-24 text-right">₡{recipe.totalCost.toFixed(2)}</span>
                           <Button
                             type="button"
                             variant="ghost"
