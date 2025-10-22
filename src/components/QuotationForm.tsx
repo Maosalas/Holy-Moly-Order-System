@@ -77,18 +77,23 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       const loadedRecipes = (data as Recipe[]) || [];
       setRecipes(loadedRecipes);
 
-      // Load multipliers for relleno and cubierta recipes
+      // Load multipliers for queque, relleno and cubierta recipes
       const multipliersToLoad = loadedRecipes.filter(r =>
-        r.name.toLowerCase().includes('relleno') || r.name.toLowerCase().includes('cubierta')
+        r.category === 'queque' || r.category === 'relleno' || r.category === 'cubierta'
       );
 
       const multiplierPromises = multipliersToLoad.map(async (recipe) => {
-        const isRelleno = recipe.name.toLowerCase().includes('relleno');
-        const result = isRelleno
-          ? await quotationsApi.getFillingMultipliers(recipe.id)
-          : await quotationsApi.getCoveringMultipliers(recipe.id);
+        let result;
+        
+        if (recipe.category === 'queque') {
+          result = await quotationsApi.getCakeMultipliers(recipe.id);
+        } else if (recipe.category === 'relleno') {
+          result = await quotationsApi.getFillingMultipliers(recipe.id);
+        } else if (recipe.category === 'cubierta') {
+          result = await quotationsApi.getCoveringMultipliers(recipe.id);
+        }
 
-        if (result.data && Array.isArray(result.data)) {
+        if (result && result.data && Array.isArray(result.data)) {
           return { recipeId: recipe.id, multipliers: result.data };
         }
         return null;
