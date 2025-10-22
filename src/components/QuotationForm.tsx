@@ -47,15 +47,21 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     if (isUpdatingRef.current || previousSizeRef.current === size) return;
     if (selectedRecipes.length === 0) return;
 
+    console.log('Size changed to:', size);
+    console.log('Current selectedRecipes:', selectedRecipes);
+    console.log('Available multipliers:', recipeMultipliers);
+
     isUpdatingRef.current = true;
     previousSizeRef.current = size;
 
     const updatedRecipes = selectedRecipes.map(recipe => {
       const multipliers = recipeMultipliers[recipe.recipeId];
+      console.log(`Checking recipe ${recipe.recipeName} (${recipe.recipeId}):`, { multipliers, recipeType: recipe.recipeType });
 
       // Only update if this recipe has multipliers (relleno, cubierta, queque)
       if (multipliers && Array.isArray(multipliers)) {
         const sizeMultiplier = multipliers.find(m => m.size === size);
+        console.log(`Found multiplier for ${recipe.recipeName}:`, sizeMultiplier);
         if (sizeMultiplier) {
           const newQuantity = sizeMultiplier.multiplier;
           return {
@@ -64,11 +70,14 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
             totalCost: recipe.unitCost * newQuantity,
           };
         }
+      } else {
+        console.log(`No multipliers found for recipe ${recipe.recipeName} (${recipe.recipeId})`);
       }
 
       return recipe;
     });
 
+    console.log('Updated recipes:', updatedRecipes);
     setSelectedRecipes(updatedRecipes);
     isUpdatingRef.current = false;
   }, [size, recipeMultipliers, selectedRecipes]);
@@ -113,6 +122,12 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
         if (result) {
           newRecipeMultipliers[result.recipeId] = result.multipliers;
         }
+      });
+      console.log('Loaded recipe multipliers:', newRecipeMultipliers);
+      console.log('Recipes by category:', {
+        queque: loadedRecipes.filter(r => r.category === 'queque').map(r => ({ id: r.id, name: r.name, category: r.category })),
+        relleno: loadedRecipes.filter(r => r.category === 'relleno').map(r => ({ id: r.id, name: r.name, category: r.category })),
+        cubierta: loadedRecipes.filter(r => r.category === 'cubierta').map(r => ({ id: r.id, name: r.name, category: r.category })),
       });
       setRecipeMultipliers(newRecipeMultipliers);
     }
