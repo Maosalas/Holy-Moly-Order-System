@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,8 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   const [recipeMultipliers, setRecipeMultipliers] = useState<Record<string, Array<{ size: string, multiplier: number }>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const previousSizeRef = useRef(size);
+  const isUpdatingRef = useRef(false);
 
   useEffect(() => {
     loadRecipes();
@@ -41,7 +43,12 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
 
   // Recalculate recipe quantities when size changes
   useEffect(() => {
+    // Skip if we're in the middle of updating or size hasn't changed
+    if (isUpdatingRef.current || previousSizeRef.current === size) return;
     if (selectedRecipes.length === 0) return;
+
+    isUpdatingRef.current = true;
+    previousSizeRef.current = size;
 
     const updatedRecipes = selectedRecipes.map(recipe => {
       const multipliers = recipeMultipliers[recipe.recipeId];
@@ -63,7 +70,8 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     });
 
     setSelectedRecipes(updatedRecipes);
-  }, [size, recipeMultipliers]);
+    isUpdatingRef.current = false;
+  }, [size, recipeMultipliers, selectedRecipes]);
 
   const loadRecipes = async () => {
     const { data, error } = await recipesApi.getAll();
