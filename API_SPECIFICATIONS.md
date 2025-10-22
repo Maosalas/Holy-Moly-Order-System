@@ -1169,6 +1169,107 @@ Create or update covering multipliers for a recipe.
 ]
 ```
 
+#### GET /api/quotations/cake-multipliers/:recipeId
+Get size multipliers for a specific cake recipe (queque).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+```json
+[
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Queque Vainilla",
+    "size": "pequeño",
+    "multiplier": 1.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Queque Vainilla",
+    "size": "mediano",
+    "multiplier": 1.5
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Queque Vainilla",
+    "size": "grande",
+    "multiplier": 2.5
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "recipeName": "Queque Vainilla",
+    "size": "mini",
+    "multiplier": 0.5
+  }
+]
+```
+
+**Response (404):** If no multipliers found for recipe
+
+#### POST /api/quotations/cake-multipliers
+Create or update cake multipliers for a recipe.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "recipeId": "uuid",
+  "multipliers": [
+    {
+      "size": "pequeño",
+      "multiplier": 1.0
+    },
+    {
+      "size": "mediano",
+      "multiplier": 1.5
+    },
+    {
+      "size": "grande",
+      "multiplier": 2.5
+    },
+    {
+      "size": "mini",
+      "multiplier": 0.5
+    }
+  ]
+}
+```
+
+**Response (200):**
+```json
+[
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "pequeño",
+    "multiplier": 1.0
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "mediano",
+    "multiplier": 1.5
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "grande",
+    "multiplier": 2.5
+  },
+  {
+    "id": "uuid",
+    "recipeId": "uuid",
+    "size": "mini",
+    "multiplier": 0.5
+  }
+]
+```
+
 ---
 
 ### File Upload
