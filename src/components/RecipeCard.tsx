@@ -26,7 +26,7 @@ export const RecipeCard = ({ recipe, onEdit, onDelete }: RecipeCardProps) => {
       <CardHeader>
         <CardTitle className="text-lg">{recipe.name}</CardTitle>
         <div className="text-sm text-muted-foreground">
-          {recipe.elaborations.length} elaboración{recipe.elaborations.length !== 1 ? "es" : ""}
+          {recipe.elaborations?.length || 0} elaboración{(recipe.elaborations?.length || 0) !== 1 ? "es" : ""}
         </div>
       </CardHeader>
       <CardContent>

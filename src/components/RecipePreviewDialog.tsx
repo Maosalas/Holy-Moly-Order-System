@@ -103,6 +103,7 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
 
           <div className="space-y-3">
             <Label className="text-lg font-semibold">Elaboraciones</Label>
+            {recipe.elaborations && recipe.elaborations.length > 0 ? (
             <Accordion type="single" collapsible defaultValue={recipe.elaborations[0]?.id} className="space-y-2">
               {recipe.elaborations.map((elaboration) => (
                 <AccordionItem key={elaboration.id} value={elaboration.id} className="border rounded-lg px-4">
@@ -153,6 +154,9 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
                 </AccordionItem>
               ))}
             </Accordion>
+            ) : (
+              <p className="text-sm text-muted-foreground">No hay elaboraciones definidas</p>
+            )}
           </div>
 
           <div className="pt-4 border-t space-y-2">
