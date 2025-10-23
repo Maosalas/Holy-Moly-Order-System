@@ -7,24 +7,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, ChefHat } from "lucide-react";
+import { Eye, ChefHat, Package } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useState } from "react";
 import { Label } from "./ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { cn } from "@/lib/utils";
 
 interface RecipePreviewDialogProps {
   recipe: Recipe;
 }
 
 export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
+  const multiplierOptions = [0.5, 1, 2, 4];
   const [selectedMultiplier, setSelectedMultiplier] = useState<number>(1);
-
-  const handleMultiplierChange = (value: string) => {
-    const multiplier = recipe.multipliers?.find(m => m.size === value);
-    setSelectedMultiplier(multiplier?.multiplier || 1);
-  };
 
   return (
     <Dialog>
@@ -33,12 +29,12 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
           <Eye className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">{recipe.name}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">{recipe.name}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {recipe.image && (
             <div className="w-full h-64 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
               <img
@@ -49,60 +45,61 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <Label className="text-muted-foreground">Categoría</Label>
-              <p className="font-semibold capitalize">{recipe.category}</p>
+              <Label className="text-muted-foreground text-sm">Nombre</Label>
+              <p className="font-bold text-xl mt-1">{recipe.name}</p>
             </div>
-            {recipe.units && recipe.units > 0 && (
-              <div>
-                <Label className="text-muted-foreground">Unidades</Label>
-                <p className="font-semibold">{recipe.units}</p>
-              </div>
-            )}
+            <div>
+              <Label className="text-muted-foreground text-sm">Categoría</Label>
+              <p className="font-bold text-xl mt-1 capitalize">{recipe.category}</p>
+            </div>
           </div>
 
-          {recipe.notes && (
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <Label className="text-muted-foreground">Notas</Label>
-              <p className="text-sm mt-1">{recipe.notes}</p>
+              <Label className="text-muted-foreground text-sm">Notas</Label>
+              <p className="text-sm mt-1">{recipe.notes || "No hay notas"}</p>
             </div>
-          )}
-
-          {recipe.url && (
             <div>
-              <Label className="text-muted-foreground">Recurso/Link</Label>
-              <a
-                href={recipe.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline block mt-1"
+              <Label className="text-muted-foreground text-sm">Link/recurso</Label>
+              {recipe.url ? (
+                <a
+                  href={recipe.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline block mt-1"
+                >
+                  {recipe.url}
+                </a>
+              ) : (
+                <p className="text-sm mt-1">No hay link/recurso</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 justify-end">
+            {multiplierOptions.map((multiplier) => (
+              <Button
+                key={multiplier}
+                variant={selectedMultiplier === multiplier ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedMultiplier(multiplier)}
+                className={cn(
+                  "min-w-[60px]",
+                  selectedMultiplier === multiplier && "font-bold"
+                )}
               >
-                {recipe.url}
-              </a>
-            </div>
-          )}
-
-          {recipe.multipliers && recipe.multipliers.length > 0 && (
-            <div className="space-y-2">
-              <Label>Tamaño</Label>
-              <Select onValueChange={handleMultiplierChange} defaultValue={recipe.multipliers[1]?.size || recipe.multipliers[0]?.size}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione un tamaño" />
-                </SelectTrigger>
-                <SelectContent>
-                  {recipe.multipliers.map((multiplier) => (
-                    <SelectItem key={multiplier.size} value={multiplier.size} className="capitalize">
-                      {multiplier.size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+                {multiplier}X
+              </Button>
+            ))}
+          </div>
 
           <div className="space-y-3">
-            <Label className="text-lg font-semibold">Elaboraciones</Label>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Package className="h-5 w-5" />
+              <Label className="text-base font-semibold">Ingredientes</Label>
+            </div>
             {recipe.elaborations && recipe.elaborations.length > 0 ? (
             <Accordion type="single" collapsible defaultValue={recipe.elaborations[0]?.id} className="space-y-2">
               {recipe.elaborations.map((elaboration) => (
