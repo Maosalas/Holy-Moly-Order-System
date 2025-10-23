@@ -51,6 +51,11 @@ CREATE TABLE recipes (
   name VARCHAR(255) NOT NULL,
   image VARCHAR(500),
   total_cost DECIMAL(10,2) NOT NULL DEFAULT 0,
+  category VARCHAR(50) NOT NULL DEFAULT 'unidad',
+  notes TEXT,
+  url VARCHAR(500),
+  units INTEGER,
+  unit_cost DECIMAL(10,2),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -58,19 +63,31 @@ CREATE TABLE recipes (
 CREATE INDEX idx_recipes_user_id ON recipes(user_id);
 ```
 
+### Recipe Elaborations Table
+```sql
+CREATE TABLE recipe_elaborations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  order_number INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_recipe_elaborations_recipe_id ON recipe_elaborations(recipe_id);
+```
+
 ### Recipe Ingredients Table (Junction Table)
 ```sql
 CREATE TABLE recipe_ingredients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
+  elaboration_id UUID REFERENCES recipe_elaborations(id) ON DELETE CASCADE NOT NULL,
   ingredient_id UUID REFERENCES ingredients(id) ON DELETE CASCADE NOT NULL,
   quantity DECIMAL(10,2) NOT NULL,
   units VARCHAR(50) NOT NULL,
-  cost DECIMAL(10,2) NOT NULL,
-  UNIQUE(recipe_id, ingredient_id)
+  cost DECIMAL(10,2) NOT NULL
 );
 
-CREATE INDEX idx_recipe_ingredients_recipe_id ON recipe_ingredients(recipe_id);
+CREATE INDEX idx_recipe_ingredients_elaboration_id ON recipe_ingredients(elaboration_id);
 CREATE INDEX idx_recipe_ingredients_ingredient_id ON recipe_ingredients(ingredient_id);
 ```
 
