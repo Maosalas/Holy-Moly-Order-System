@@ -51,6 +51,11 @@ CREATE TABLE recipes (
   name VARCHAR(255) NOT NULL,
   image VARCHAR(500),
   total_cost DECIMAL(10,2) NOT NULL DEFAULT 0,
+  category VARCHAR(50) NOT NULL DEFAULT 'unidad',
+  notes TEXT,
+  url VARCHAR(500),
+  units INTEGER,
+  unit_cost DECIMAL(10,2),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -58,19 +63,31 @@ CREATE TABLE recipes (
 CREATE INDEX idx_recipes_user_id ON recipes(user_id);
 ```
 
+### Recipe Elaborations Table
+```sql
+CREATE TABLE recipe_elaborations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  order_number INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_recipe_elaborations_recipe_id ON recipe_elaborations(recipe_id);
+```
+
 ### Recipe Ingredients Table (Junction Table)
 ```sql
 CREATE TABLE recipe_ingredients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
+  elaboration_id UUID REFERENCES recipe_elaborations(id) ON DELETE CASCADE NOT NULL,
   ingredient_id UUID REFERENCES ingredients(id) ON DELETE CASCADE NOT NULL,
   quantity DECIMAL(10,2) NOT NULL,
   units VARCHAR(50) NOT NULL,
-  cost DECIMAL(10,2) NOT NULL,
-  UNIQUE(recipe_id, ingredient_id)
+  cost DECIMAL(10,2) NOT NULL
 );
 
-CREATE INDEX idx_recipe_ingredients_recipe_id ON recipe_ingredients(recipe_id);
+CREATE INDEX idx_recipe_ingredients_elaboration_id ON recipe_ingredients(elaboration_id);
 CREATE INDEX idx_recipe_ingredients_ingredient_id ON recipe_ingredients(ingredient_id);
 ```
 
@@ -488,14 +505,54 @@ Get all recipes for authenticated user.
     "url": "https://recipe-link.com",
     "units": 12,
     "unitCost": 3.82,
-    "ingredients": [
+    "elaborations": [
       {
         "id": "uuid",
-        "ingredientId": "uuid",
-        "ingredientName": "Flour",
-        "quantity": 2.0,
-        "units": "kg",
-        "cost": 10.20
+        "name": "Masa de Chocolate",
+        "order": 1,
+        "cost": 25.40,
+        "ingredients": [
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Flour",
+            "quantity": 2.0,
+            "units": "kg",
+            "cost": 10.20
+          },
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Cocoa Powder",
+            "quantity": 0.5,
+            "units": "kg",
+            "cost": 15.20
+          }
+        ]
+      },
+      {
+        "id": "uuid",
+        "name": "Ganache",
+        "order": 2,
+        "cost": 20.40,
+        "ingredients": [
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Dark Chocolate",
+            "quantity": 0.3,
+            "units": "kg",
+            "cost": 12.00
+          },
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Heavy Cream",
+            "quantity": 0.2,
+            "units": "L",
+            "cost": 8.40
+          }
+        ]
       }
     ],
     "multipliers": [
@@ -522,6 +579,11 @@ Get all recipes for authenticated user.
 ]
 ```
 
+**Notes:**
+- `elaborations`: Array of recipe elaborations/steps, each containing its own ingredients and cost
+- `elaborations[].cost`: Calculated sum of all ingredient costs for that elaboration
+- `totalCost`: Sum of all elaboration costs
+
 #### POST /api/recipes
 Create a new recipe.
 
@@ -536,14 +598,46 @@ Create a new recipe.
   "notes": "Some notes about the recipe",
   "url": "https://recipe-link.com",
   "units": 12,
-  "unitCost": 3.82,
-  "ingredients": [
+  "elaborations": [
     {
-      "ingredientId": "uuid",
-      "ingredientName": "Flour",
-      "quantity": 2.0,
-      "units": "kg",
-      "cost": 10.20
+      "name": "Masa de Chocolate",
+      "order": 1,
+      "ingredients": [
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Flour",
+          "quantity": 2.0,
+          "units": "kg",
+          "cost": 10.20
+        },
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Cocoa Powder",
+          "quantity": 0.5,
+          "units": "kg",
+          "cost": 15.20
+        }
+      ]
+    },
+    {
+      "name": "Ganache",
+      "order": 2,
+      "ingredients": [
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Dark Chocolate",
+          "quantity": 0.3,
+          "units": "kg",
+          "cost": 12.00
+        },
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Heavy Cream",
+          "quantity": 0.2,
+          "units": "L",
+          "cost": 8.40
+        }
+      ]
     }
   ],
   "multipliers": [
@@ -559,12 +653,16 @@ Create a new recipe.
       "size": "grande",
       "multiplier": 2.5
     }
-  ],
-  "totalCost": 45.80
+  ]
 }
 ```
 
 **Notes:**
+- `elaborations`: Required array of elaborations, each with name, order, and ingredients
+- `elaborations[].ingredients`: Array of ingredients specific to that elaboration
+- Backend calculates `elaborations[].cost` as sum of ingredient costs
+- Backend calculates `totalCost` as sum of all elaboration costs
+- Backend calculates `unitCost` as totalCost / units (if units is provided)
 - `multipliers` is optional and only required for categories: "queque", "relleno", "cubierta"
 - For "unidad" and "otro" categories, multipliers should not be included
 
