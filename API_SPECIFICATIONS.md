@@ -505,14 +505,54 @@ Get all recipes for authenticated user.
     "url": "https://recipe-link.com",
     "units": 12,
     "unitCost": 3.82,
-    "ingredients": [
+    "elaborations": [
       {
         "id": "uuid",
-        "ingredientId": "uuid",
-        "ingredientName": "Flour",
-        "quantity": 2.0,
-        "units": "kg",
-        "cost": 10.20
+        "name": "Masa de Chocolate",
+        "order": 1,
+        "cost": 25.40,
+        "ingredients": [
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Flour",
+            "quantity": 2.0,
+            "units": "kg",
+            "cost": 10.20
+          },
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Cocoa Powder",
+            "quantity": 0.5,
+            "units": "kg",
+            "cost": 15.20
+          }
+        ]
+      },
+      {
+        "id": "uuid",
+        "name": "Ganache",
+        "order": 2,
+        "cost": 20.40,
+        "ingredients": [
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Dark Chocolate",
+            "quantity": 0.3,
+            "units": "kg",
+            "cost": 12.00
+          },
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Heavy Cream",
+            "quantity": 0.2,
+            "units": "L",
+            "cost": 8.40
+          }
+        ]
       }
     ],
     "multipliers": [
@@ -539,6 +579,11 @@ Get all recipes for authenticated user.
 ]
 ```
 
+**Notes:**
+- `elaborations`: Array of recipe elaborations/steps, each containing its own ingredients and cost
+- `elaborations[].cost`: Calculated sum of all ingredient costs for that elaboration
+- `totalCost`: Sum of all elaboration costs
+
 #### POST /api/recipes
 Create a new recipe.
 
@@ -553,14 +598,46 @@ Create a new recipe.
   "notes": "Some notes about the recipe",
   "url": "https://recipe-link.com",
   "units": 12,
-  "unitCost": 3.82,
-  "ingredients": [
+  "elaborations": [
     {
-      "ingredientId": "uuid",
-      "ingredientName": "Flour",
-      "quantity": 2.0,
-      "units": "kg",
-      "cost": 10.20
+      "name": "Masa de Chocolate",
+      "order": 1,
+      "ingredients": [
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Flour",
+          "quantity": 2.0,
+          "units": "kg",
+          "cost": 10.20
+        },
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Cocoa Powder",
+          "quantity": 0.5,
+          "units": "kg",
+          "cost": 15.20
+        }
+      ]
+    },
+    {
+      "name": "Ganache",
+      "order": 2,
+      "ingredients": [
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Dark Chocolate",
+          "quantity": 0.3,
+          "units": "kg",
+          "cost": 12.00
+        },
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Heavy Cream",
+          "quantity": 0.2,
+          "units": "L",
+          "cost": 8.40
+        }
+      ]
     }
   ],
   "multipliers": [
@@ -576,12 +653,16 @@ Create a new recipe.
       "size": "grande",
       "multiplier": 2.5
     }
-  ],
-  "totalCost": 45.80
+  ]
 }
 ```
 
 **Notes:**
+- `elaborations`: Required array of elaborations, each with name, order, and ingredients
+- `elaborations[].ingredients`: Array of ingredients specific to that elaboration
+- Backend calculates `elaborations[].cost` as sum of ingredient costs
+- Backend calculates `totalCost` as sum of all elaboration costs
+- Backend calculates `unitCost` as totalCost / units (if units is provided)
 - `multipliers` is optional and only required for categories: "queque", "relleno", "cubierta"
 - For "unidad" and "otro" categories, multipliers should not be included
 
