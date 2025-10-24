@@ -41,11 +41,11 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
 
   // Recalculate recipe quantities when size changes
   useEffect(() => {
+
     if (selectedRecipes.length === 0) return;
 
     setSelectedRecipes(prev => prev.map(recipe => {
       const multipliers = recipeMultipliers[recipe.recipeId];
-
       // Only update if this recipe has multipliers (relleno, cubierta, queque)
       if (multipliers && Array.isArray(multipliers)) {
         const sizeMultiplier = multipliers.find(m => m.size === size);
@@ -82,7 +82,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
 
       const multiplierPromises = multipliersToLoad.map(async (recipe) => {
         let result;
-        
+
         if (recipe.category === 'queque') {
           result = await quotationsApi.getCakeMultipliers(recipe.id);
         } else if (recipe.category === 'relleno') {
@@ -133,7 +133,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     }
 
     const unitCost = recipeType === 'unidad' ? (recipe.unitCost || recipe.totalCost) : recipe.totalCost;
-    
+
     const newRecipe: QuotationRecipe = {
       recipeId: recipe.id,
       recipeName: recipe.name,
@@ -242,7 +242,6 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       totalCost: calculateTotal(),
       notes,
     };
-    console.log('Submitting quotation data:', quotationData);
     await onSubmit(quotationData);
     setIsLoading(false);
   };
