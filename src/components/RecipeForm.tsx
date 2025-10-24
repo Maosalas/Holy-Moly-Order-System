@@ -13,6 +13,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { migrateRecipeToElaborations } from "@/lib/recipeUtils";
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -21,15 +22,18 @@ interface RecipeFormProps {
 }
 
 export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
-  const [name, setName] = useState(recipe?.name || "");
-  const [category, setCategory] = useState(recipe?.category || "unidad");
-  const [notes, setNotes] = useState(recipe?.notes || "");
-  const [url, setUrl] = useState(recipe?.url || "");
-  const [unidades, setUnidades] = useState(recipe?.units || 0);
-  const [image, setImage] = useState(recipe?.image || "");
+  // Aplicar migración si la receta existe y lo necesita
+  const migratedRecipe = recipe ? migrateRecipeToElaborations(recipe) : undefined;
+  
+  const [name, setName] = useState(migratedRecipe?.name || "");
+  const [category, setCategory] = useState(migratedRecipe?.category || "unidad");
+  const [notes, setNotes] = useState(migratedRecipe?.notes || "");
+  const [url, setUrl] = useState(migratedRecipe?.url || "");
+  const [unidades, setUnidades] = useState(migratedRecipe?.units || 0);
+  const [image, setImage] = useState(migratedRecipe?.image || "");
   const [elaborations, setElaborations] = useState<RecipeElaboration[]>(
-    recipe?.elaborations && recipe.elaborations.length > 0
-      ? recipe.elaborations
+    migratedRecipe?.elaborations && migratedRecipe.elaborations.length > 0
+      ? migratedRecipe.elaborations
       : [{
           id: getUUID(),
           name: "Elaboración principal",
@@ -38,7 +42,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         }]
   );
   const [multipliers, setMultipliers] = useState<RecipeMultiplier[]>(
-    recipe?.multipliers || []
+    migratedRecipe?.multipliers || []
   );
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);

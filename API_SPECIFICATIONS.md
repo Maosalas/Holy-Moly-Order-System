@@ -684,6 +684,47 @@ Delete a recipe.
 
 **Response (204):** No content
 
+#### POST /api/recipes/migrate-to-elaborations
+Migrate all recipes from old structure (with direct ingredients) to new structure (with elaborations).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Description:**
+This endpoint migrates all recipes that have `recipe_ingredients` linked directly to `recipe_id` (old structure) to the new structure where `recipe_ingredients` are linked to `elaboration_id` through `recipe_elaborations`.
+
+For each recipe that needs migration:
+1. Checks if the recipe already has elaborations in `recipe_elaborations` table
+2. If NO elaborations exist:
+   - Creates a new elaboration named "Elaboración principal" with `order_number = 1`
+   - Updates all `recipe_ingredients` for that recipe to link to the new elaboration via `elaboration_id`
+3. If elaborations already exist:
+   - Uses the first elaboration (lowest `order_number`)
+   - Updates all orphaned `recipe_ingredients` to link to this elaboration
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "migratedRecipes": 15,
+  "message": "15 recetas migradas exitosamente a la estructura de elaboraciones"
+}
+```
+
+**Response (200) - No migrations needed:**
+```json
+{
+  "success": true,
+  "migratedRecipes": 0,
+  "message": "No hay recetas que necesiten migración"
+}
+```
+
+**Notes:**
+- This is a one-time migration endpoint
+- Safe to run multiple times (idempotent)
+- Does not affect recipes that already have elaborations
+- Frontend components automatically handle both old and new structures for backwards compatibility
+
 ---
 
 ### Supplies

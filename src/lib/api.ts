@@ -95,7 +95,11 @@ export const ingredientsApi = {
 
 // Recipes API
 export const recipesApi = {
-  getAll: () => apiFetch("/recipes", { method: "GET" }),
+  getAll: async () => {
+    const result = await apiFetch("/recipes", { method: "GET" });
+    // Las recetas se migran en los componentes individuales según sea necesario
+    return result;
+  },
 
   create: (recipe: any) =>
     apiFetch("/recipes", {
@@ -113,6 +117,12 @@ export const recipesApi = {
   delete: (id: string) =>
     apiFetch(`/recipes/${id}`, {
       method: "DELETE",
+    }),
+
+  // Endpoint para migrar recetas antiguas a elaboraciones
+  migrateToElaborations: () =>
+    apiFetch("/recipes/migrate-to-elaborations", {
+      method: "POST",
     }),
 };
 

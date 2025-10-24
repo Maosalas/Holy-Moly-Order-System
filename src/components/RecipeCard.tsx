@@ -2,6 +2,7 @@ import { Recipe } from "@/types/recipe";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Trash2, ChefHat } from "lucide-react";
+import { migrateRecipeToElaborations } from "@/lib/recipeUtils";
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -10,13 +11,16 @@ interface RecipeCardProps {
 }
 
 export const RecipeCard = ({ recipe, onEdit, onDelete }: RecipeCardProps) => {
+  // Aplicar migración si es necesario
+  const migratedRecipe = migrateRecipeToElaborations(recipe);
+  
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-video w-full bg-muted flex items-center justify-center overflow-hidden">
-        {recipe.image ? (
+        {migratedRecipe.image ? (
           <img 
-            src={recipe.image} 
-            alt={recipe.name}
+            src={migratedRecipe.image} 
+            alt={migratedRecipe.name}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -24,21 +28,21 @@ export const RecipeCard = ({ recipe, onEdit, onDelete }: RecipeCardProps) => {
         )}
       </div>
       <CardHeader>
-        <CardTitle className="text-lg">{recipe.name}</CardTitle>
+        <CardTitle className="text-lg">{migratedRecipe.name}</CardTitle>
         <div className="text-sm text-muted-foreground">
-          {recipe.elaborations?.length || 0} elaboración{(recipe.elaborations?.length || 0) !== 1 ? "es" : ""}
+          {migratedRecipe.elaborations?.length || 0} elaboración{(migratedRecipe.elaborations?.length || 0) !== 1 ? "es" : ""}
         </div>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-primary">
-          ₡{recipe.totalCost.toLocaleString()}
+          ₡{migratedRecipe.totalCost.toLocaleString()}
         </div>
       </CardContent>
       <CardFooter className="gap-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onEdit(recipe)}
+          onClick={() => onEdit(migratedRecipe)}
           className="flex-1 gap-2"
         >
           <Edit className="h-4 w-4" />
@@ -47,7 +51,7 @@ export const RecipeCard = ({ recipe, onEdit, onDelete }: RecipeCardProps) => {
         <Button
           variant="destructive"
           size="sm"
-          onClick={() => onDelete(recipe.id)}
+          onClick={() => onDelete(migratedRecipe.id)}
           className="flex-1 gap-2"
         >
           <Trash2 className="h-4 w-4" />

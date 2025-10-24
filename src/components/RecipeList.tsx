@@ -9,6 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { RecipePreviewDialog } from "./RecipePreviewDialog";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
+import { migrateRecipeToElaborations } from "@/lib/recipeUtils";
 
 interface RecipeListProps {
   recipes: Recipe[];
@@ -20,10 +21,14 @@ interface RecipeListProps {
 export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
+  
   const filteredRecipes = useMemo(() => {
-    if (!searchQuery.trim()) return recipes;
+    // Aplicar migración a todas las recetas
+    const migratedRecipes = recipes.map(recipe => migrateRecipeToElaborations(recipe));
+    
+    if (!searchQuery.trim()) return migratedRecipes;
     const query = searchQuery.toLowerCase();
-    return recipes.filter(recipe =>
+    return migratedRecipes.filter(recipe =>
       recipe.name.toLowerCase().includes(query) ||
       recipe.category.toLowerCase().includes(query)
     );
