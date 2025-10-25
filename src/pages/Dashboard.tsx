@@ -469,9 +469,9 @@ const Dashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
-                            {order.statuses.slice(0, 2).map(status => (
-                              <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
-                                {getStatusLabel(status)}
+                            {order.statuses.slice(0, 2).map(statusObj => (
+                              <Badge key={typeof statusObj === 'string' ? statusObj : statusObj.id} className={`text-xs ${getStatusColor(typeof statusObj === 'string' ? statusObj : statusObj.status)}`}>
+                                {getStatusLabel(typeof statusObj === 'string' ? statusObj : statusObj.status)}
                               </Badge>
                             ))}
                             {order.statuses.length > 2 && (
