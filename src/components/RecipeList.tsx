@@ -9,6 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { RecipePreviewDialog } from "./RecipePreviewDialog";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
+import { migrateRecipeToElaborations } from "@/lib/recipeUtils";
 
 interface RecipeListProps {
   recipes: Recipe[];
@@ -20,10 +21,14 @@ interface RecipeListProps {
 export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
+  
   const filteredRecipes = useMemo(() => {
-    if (!searchQuery.trim()) return recipes;
+    // Aplicar migración a todas las recetas
+    const migratedRecipes = recipes.map(recipe => migrateRecipeToElaborations(recipe));
+    console.log("Migrated Recipes:", migratedRecipes);
+    if (!searchQuery.trim()) return migratedRecipes;
     const query = searchQuery.toLowerCase();
-    return recipes.filter(recipe =>
+    return migratedRecipes.filter(recipe =>
       recipe.name.toLowerCase().includes(query) ||
       recipe.category.toLowerCase().includes(query)
     );
@@ -109,8 +114,8 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Ingredientes:</span>
-                      <span className="font-medium">{recipe.ingredients.length} ingrediente{recipe.ingredients.length !== 1 ? 's' : ''}</span>
+                      <span className="text-muted-foreground">Elaboraciones:</span>
+                      <span className="font-medium">{recipe.elaborations?.length || 0} elaboración{(recipe.elaborations?.length || 0) !== 1 ? 'es' : ''}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Categoria:</span>
@@ -168,7 +173,7 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
               <TableHeader>
                 <TableRow>
                   <TableHead className="font-semibold">Receta</TableHead>
-                  <TableHead className="font-semibold">Ingredientes</TableHead>
+                  <TableHead className="font-semibold">Elaboraciones</TableHead>
                   <TableHead className="font-semibold">Costo Total</TableHead>
                   <TableHead className="font-semibold">Categoria</TableHead>
                   <TableHead className="text-right font-semibold">Acciones</TableHead>
@@ -195,9 +200,9 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        <span className="font-medium">{recipe.ingredients.length}</span>
+                        <span className="font-medium">{recipe.elaborations?.length || 0}</span>
                         <span className="text-muted-foreground ml-1">
-                          ingredient{recipe.ingredients.length !== 1 ? 's' : ''}
+                          elaboración{(recipe.elaborations?.length || 0) !== 1 ? 'es' : ''}
                         </span>
                       </div>
                     </TableCell>

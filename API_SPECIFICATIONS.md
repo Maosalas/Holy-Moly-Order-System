@@ -49,30 +49,50 @@ CREATE TABLE recipes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   name VARCHAR(255) NOT NULL,
-  image VARCHAR(500),
+  image TEXT,
   total_cost DECIMAL(10,2) NOT NULL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  category VARCHAR(255),
+  notes TEXT,
+  url TEXT,
+  units NUMERIC(10,0),
+  unit_cost DECIMAL(10,2),
+  created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
 CREATE INDEX idx_recipes_user_id ON recipes(user_id);
+```
+
+### Recipe Elaborations Table
+```sql
+CREATE TABLE recipe_elaborations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  order_number INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_recipe_elaborations_recipe_id ON recipe_elaborations(recipe_id);
 ```
 
 ### Recipe Ingredients Table (Junction Table)
 ```sql
 CREATE TABLE recipe_ingredients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
   ingredient_id UUID REFERENCES ingredients(id) ON DELETE CASCADE NOT NULL,
   quantity DECIMAL(10,2) NOT NULL,
   units VARCHAR(50) NOT NULL,
   cost DECIMAL(10,2) NOT NULL,
-  UNIQUE(recipe_id, ingredient_id)
+  elaboration_id UUID REFERENCES recipe_elaborations(id) ON DELETE CASCADE NOT NULL,
+  recipe_id UUID  -- LEGACY: nullable field for migration compatibility, will be removed
 );
 
-CREATE INDEX idx_recipe_ingredients_recipe_id ON recipe_ingredients(recipe_id);
+CREATE INDEX idx_recipe_ingredients_elaboration_id ON recipe_ingredients(elaboration_id);
 CREATE INDEX idx_recipe_ingredients_ingredient_id ON recipe_ingredients(ingredient_id);
 ```
+
+**Note:** The `recipe_id` field is a legacy column maintained for backwards compatibility during migration. New implementations should only use `elaboration_id`.
 
 ### Supplies Table
 ```sql
@@ -105,32 +125,33 @@ CREATE TYPE payment_method AS ENUM ('cash', 'transfer', 'card', 'other');
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  quotation_id UUID REFERENCES quotations(id) ON DELETE SET NULL,
   client_name VARCHAR(255) NOT NULL,
   phone_number VARCHAR(50) NOT NULL,
   order_details TEXT NOT NULL,
-  delivery_date DATE NOT NULL,
-  needs_cake_topper BOOLEAN DEFAULT false,
+  delivery_date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  needs_cake_topper BOOLEAN DEFAULT false NOT NULL,
   cost_amount DECIMAL(10,2) NOT NULL,
   charge_amount DECIMAL(10,2) NOT NULL,
   payment_method payment_method NOT NULL,
-  down_payment DECIMAL(10,2) DEFAULT 0,
+  down_payment DECIMAL(10,2) DEFAULT 0 NOT NULL,
   supplies_needed TEXT,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_delivery_date ON orders(delivery_date);
 ```
 
+**Note:** The `quotation_id` field has been removed from the current database implementation.
+
 ### Order Photos Table
 ```sql
 CREATE TABLE order_photos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID REFERENCES orders(id) ON DELETE CASCADE NOT NULL,
-  photo_url VARCHAR(500) NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
+  photo_url TEXT NOT NULL,
+  created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
 CREATE INDEX idx_order_photos_order_id ON order_photos(order_id);
@@ -148,6 +169,21 @@ CREATE TABLE order_statuses (
 CREATE INDEX idx_order_statuses_order_id ON order_statuses(order_id);
 ```
 
+### Order Supplies Table
+```sql
+CREATE TABLE order_supplies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE NOT NULL,
+  supply_id UUID REFERENCES supplies(id) ON DELETE SET NULL,
+  supply_name VARCHAR(255) NOT NULL,
+  quantity DECIMAL(10,2) NOT NULL,
+  unit VARCHAR(50) NOT NULL,
+  cost_per_unit DECIMAL(10,2) NOT NULL,
+  total_cost DECIMAL(10,2) NOT NULL
+);
+
+CREATE INDEX idx_order_supplies_order_id ON order_supplies(order_id);
+```
 
 ### Expenses Table
 ```sql
@@ -160,8 +196,8 @@ CREATE TABLE expenses (
   purchase_date DATE NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
   card_type card_type NOT NULL,
-  receipt_url VARCHAR(500),
-  created_at TIMESTAMP DEFAULT NOW()
+  receipt_url TEXT,
+  created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
 CREATE INDEX idx_expenses_user_id ON expenses(user_id);
@@ -292,6 +328,19 @@ CREATE INDEX idx_cake_multipliers_recipe_id ON cake_multipliers(recipe_id);
 -- | uuid-3                      | mini     | 0.5        |
 ```
 
+### Refresh Tokens Table
+```sql
+CREATE TABLE refresh_tokens (
+  token TEXT PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  revoked_at TIMESTAMP WITHOUT TIME ZONE,
+  created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+```
+
 ---
 
 ## API Endpoints
@@ -374,6 +423,26 @@ Get current user info.
   "role": "owner"
 }
 ```
+
+#### POST /api/auth/refresh
+Refresh access token using refresh token.
+
+**Request:**
+```json
+{
+  "refreshToken": "refresh-token-string"
+}
+```
+
+**Response (200):**
+```json
+{
+  "token": "new-jwt-token",
+  "refreshToken": "new-refresh-token"
+}
+```
+
+**Response (401):** Invalid or expired refresh token
 
 ---
 
@@ -488,14 +557,54 @@ Get all recipes for authenticated user.
     "url": "https://recipe-link.com",
     "units": 12,
     "unitCost": 3.82,
-    "ingredients": [
+    "elaborations": [
       {
         "id": "uuid",
-        "ingredientId": "uuid",
-        "ingredientName": "Flour",
-        "quantity": 2.0,
-        "units": "kg",
-        "cost": 10.20
+        "name": "Masa de Chocolate",
+        "order": 1,
+        "cost": 25.40,
+        "ingredients": [
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Flour",
+            "quantity": 2.0,
+            "units": "kg",
+            "cost": 10.20
+          },
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Cocoa Powder",
+            "quantity": 0.5,
+            "units": "kg",
+            "cost": 15.20
+          }
+        ]
+      },
+      {
+        "id": "uuid",
+        "name": "Ganache",
+        "order": 2,
+        "cost": 20.40,
+        "ingredients": [
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Dark Chocolate",
+            "quantity": 0.3,
+            "units": "kg",
+            "cost": 12.00
+          },
+          {
+            "id": "uuid",
+            "ingredientId": "uuid",
+            "ingredientName": "Heavy Cream",
+            "quantity": 0.2,
+            "units": "L",
+            "cost": 8.40
+          }
+        ]
       }
     ],
     "multipliers": [
@@ -522,6 +631,17 @@ Get all recipes for authenticated user.
 ]
 ```
 
+**Notes:**
+- `elaborations`: Array of recipe elaborations/steps, each containing its own ingredients
+- `elaborations[].cost`: **CALCULATED FIELD** - Sum of all ingredient costs for that elaboration (not stored in DB)
+- `totalCost`: **CALCULATED FIELD** - Sum of all elaboration costs (stored in `recipes.total_cost`)
+- `unitCost`: **CALCULATED FIELD** - `totalCost / units` (stored in `recipes.unit_cost`)
+- `multipliers`: Stored in separate tables based on category:
+  - `category = 'queque'` → stored in `cake_multipliers` table
+  - `category = 'relleno'` → stored in `filling_multipliers` table
+  - `category = 'cubierta'` → stored in `covering_multipliers` table
+  - `category = 'unidad'` or `'otro'` → no multipliers stored
+
 #### POST /api/recipes
 Create a new recipe.
 
@@ -536,14 +656,46 @@ Create a new recipe.
   "notes": "Some notes about the recipe",
   "url": "https://recipe-link.com",
   "units": 12,
-  "unitCost": 3.82,
-  "ingredients": [
+  "elaborations": [
     {
-      "ingredientId": "uuid",
-      "ingredientName": "Flour",
-      "quantity": 2.0,
-      "units": "kg",
-      "cost": 10.20
+      "name": "Masa de Chocolate",
+      "order": 1,
+      "ingredients": [
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Flour",
+          "quantity": 2.0,
+          "units": "kg",
+          "cost": 10.20
+        },
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Cocoa Powder",
+          "quantity": 0.5,
+          "units": "kg",
+          "cost": 15.20
+        }
+      ]
+    },
+    {
+      "name": "Ganache",
+      "order": 2,
+      "ingredients": [
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Dark Chocolate",
+          "quantity": 0.3,
+          "units": "kg",
+          "cost": 12.00
+        },
+        {
+          "ingredientId": "uuid",
+          "ingredientName": "Heavy Cream",
+          "quantity": 0.2,
+          "units": "L",
+          "cost": 8.40
+        }
+      ]
     }
   ],
   "multipliers": [
@@ -559,14 +711,21 @@ Create a new recipe.
       "size": "grande",
       "multiplier": 2.5
     }
-  ],
-  "totalCost": 45.80
+  ]
 }
 ```
 
 **Notes:**
-- `multipliers` is optional and only required for categories: "queque", "relleno", "cubierta"
-- For "unidad" and "otro" categories, multipliers should not be included
+- `elaborations`: Required array of elaborations, each with name, order, and ingredients
+- `elaborations[].ingredients`: Array of ingredients specific to that elaboration
+- **DO NOT SEND** `elaborations[].cost` in request - backend calculates it automatically
+- **DO NOT SEND** `totalCost` in request - backend calculates as sum of all elaboration costs
+- **DO NOT SEND** `unitCost` in request - backend calculates as `totalCost / units` (if units provided)
+- `multipliers`: Optional, only for categories "queque", "relleno", "cubierta"
+  - Stored in specific tables: `cake_multipliers`, `filling_multipliers`, `covering_multipliers`
+  - Each table has UNIQUE constraint on `(recipe_id, size)`
+- For "unidad" and "otro" categories, multipliers should NOT be included
+- When updating a recipe with multipliers, old multipliers are deleted and replaced with new ones
 
 **Response (201):** Same as GET response
 
@@ -585,6 +744,47 @@ Delete a recipe.
 **Headers:** `Authorization: Bearer {token}`
 
 **Response (204):** No content
+
+#### POST /api/recipes/migrate-to-elaborations
+Migrate all recipes from old structure (with direct ingredients) to new structure (with elaborations).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Description:**
+This endpoint migrates all recipes that have `recipe_ingredients` linked directly to `recipe_id` (old structure) to the new structure where `recipe_ingredients` are linked to `elaboration_id` through `recipe_elaborations`.
+
+For each recipe that needs migration:
+1. Checks if the recipe already has elaborations in `recipe_elaborations` table
+2. If NO elaborations exist:
+   - Creates a new elaboration named "Elaboración principal" with `order_number = 1`
+   - Updates all `recipe_ingredients` for that recipe to link to the new elaboration via `elaboration_id`
+3. If elaborations already exist:
+   - Uses the first elaboration (lowest `order_number`)
+   - Updates all orphaned `recipe_ingredients` to link to this elaboration
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "migratedRecipes": 15,
+  "message": "15 recetas migradas exitosamente a la estructura de elaboraciones"
+}
+```
+
+**Response (200) - No migrations needed:**
+```json
+{
+  "success": true,
+  "migratedRecipes": 0,
+  "message": "No hay recetas que necesiten migración"
+}
+```
+
+**Notes:**
+- This is a one-time migration endpoint
+- Safe to run multiple times (idempotent)
+- Does not affect recipes that already have elaborations
+- Frontend components automatically handle both old and new structures for backwards compatibility
 
 ---
 
@@ -666,17 +866,27 @@ Get all orders for authenticated user.
     "clientName": "Jane Smith",
     "phoneNumber": "+1234567890",
     "orderDetails": "3-tier chocolate cake with flowers",
-    "deliveryDate": "2024-02-14",
+    "deliveryDate": "2024-02-14T15:00:00Z",
     "clientPhotos": [
-      "https://storage.example.com/orders/photo1.jpg"
+      {
+        "id": "uuid",
+        "photoUrl": "https://storage.example.com/orders/photo1.jpg",
+        "createdAt": "2024-01-15T10:30:00Z"
+      },
+      {
+        "id": "uuid",
+        "photoUrl": "https://storage.example.com/orders/photo2.jpg",
+        "createdAt": "2024-01-15T10:31:00Z"
+      }
     ],
     "needsCakeTopper": true,
     "costAmount": 150.00,
     "chargeAmount": 300.00,
-    "paymentMethod": "transfer",
+    "paymentMethod": "cash",
     "downPayment": 100.00,
     "selectedSupplies": [
       {
+        "id": "uuid",
         "supplyId": "uuid",
         "supplyName": "Cake Box",
         "quantity": 1,
@@ -686,11 +896,30 @@ Get all orders for authenticated user.
       }
     ],
     "suppliesNeeded": "Fresh roses, gold foil",
-    "statuses": ["waiting-for-payment", "confirmed"],
-    "createdAt": "2024-01-15T10:30:00Z"
+    "statuses": [
+      {
+        "id": "uuid",
+        "status": "waiting-for-payment",
+        "createdAt": "2024-01-15T10:30:00Z"
+      },
+      {
+        "id": "uuid",
+        "status": "confirmed",
+        "createdAt": "2024-01-15T14:20:00Z"
+      }
+    ],
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T14:20:00Z"
   }
 ]
 ```
+
+**Notes:**
+- `deliveryDate`: TIMESTAMP WITHOUT TIME ZONE (includes time)
+- `clientPhotos`: Array of photo objects from `order_photos` table
+- `selectedSupplies`: Array of supply objects from `order_supplies` table
+- `statuses`: Array of status objects from `order_statuses` table (ordered by `created_at`)
+- `paymentMethod`: Must be one of: 'cash', 'transfer', 'card', 'other' (from ENUM)
 
 #### POST /api/orders
 Create a new order.
@@ -703,18 +932,35 @@ Create a new order.
   "clientName": "Jane Smith",
   "phoneNumber": "+1234567890",
   "orderDetails": "3-tier chocolate cake",
-  "deliveryDate": "2024-02-14",
+  "deliveryDate": "2024-02-14T15:00:00Z",
   "clientPhotos": ["photo-url-1", "photo-url-2"],
   "needsCakeTopper": true,
   "costAmount": 150.00,
-  "quotationId": "uuid",
   "chargeAmount": 300.00,
-  "paymentMethod": "transfer",
+  "paymentMethod": "cash",
   "downPayment": 100.00,
+  "selectedSupplies": [
+    {
+      "supplyId": "uuid",
+      "supplyName": "Cake Box",
+      "quantity": 1,
+      "unit": "piece",
+      "costPerUnit": 5.00,
+      "totalCost": 5.00
+    }
+  ],
   "suppliesNeeded": "Fresh roses",
   "statuses": ["waiting-for-payment"]
 }
 ```
+
+**Notes:**
+- `deliveryDate`: Must be ISO 8601 timestamp string
+- `clientPhotos`: Array of photo URL strings - backend creates `order_photos` records
+- `selectedSupplies`: Array of supply objects - backend creates `order_supplies` records
+- `statuses`: Array of status strings - backend creates `order_statuses` records with timestamps
+- `paymentMethod`: Must be one of: 'cash', 'transfer', 'card', 'other'
+- `quotationId` field has been removed from current implementation
 
 **Response (201):** Created order object
 
@@ -1301,27 +1547,89 @@ FormData with:
 ## Security Requirements
 
 ### Authentication
-- Use JWT tokens with 24-hour expiration
-- Hash passwords with bcrypt (cost factor: 12)
-- Implement refresh token mechanism
+- JWT-based authentication for access tokens
+- Refresh token system using `refresh_tokens` table
+- Password hashing using bcrypt (cost factor: 12)
+- Access token expiration: 24 hours
+- Refresh token expiration: 30 days
+- Revoked tokens tracked in `refresh_tokens.revoked_at`
 - Rate limit login attempts (5 per 15 minutes)
 
 ### Authorization
-- All endpoints (except auth) require valid JWT token
-- Users can only access their own data
-- Role-based access for cake_topper_provider (limited to viewing orders with needsCakeTopper=true)
+- All endpoints require valid JWT token (except signup/login/refresh)
+- Users can only access their own data (enforced via `user_id` filtering)
+- Role-based access control using `user_roles` table
+- `cake_topper_provider` role: limited to viewing orders with `needsCakeTopper=true`
 
-### Input Validation
-- Validate all inputs server-side
-- Sanitize SQL queries (use parameterized queries)
-- Validate file uploads (type, size limits: 5MB for images)
+### Data Validation
+- Input validation on all endpoints
+- SQL injection prevention through parameterized queries
+- XSS protection on all text inputs
+- File upload validation (type, size limits: 5MB for images)
 - Implement CORS with whitelist
 
-### Data Protection
-- Use HTTPS only
-- Implement rate limiting (100 requests per 15 minutes per IP)
-- Log all authentication attempts
+### Additional Security
+- HTTPS only in production
+- Rate limiting (100 requests per 15 minutes per IP)
+- Request logging for audit trail
+- Cascade deletion rules to prevent orphaned data
+- Foreign key constraints for data integrity
 - Sanitize error messages (no stack traces in production)
+
+---
+
+## TypeScript Type Compatibility
+
+### Important Type Differences
+
+**PaymentMethod Enum:**
+- **Database (SQL):** `'cash' | 'transfer' | 'card' | 'other'`
+- **Frontend (TS):** Currently uses `"Efectivo" | "Transferencia" | "Link de pago/tarjeta" | "SINPE"`
+- **⚠️ ACTION REQUIRED:** Update TypeScript types to match database enum or implement mapping layer
+
+**Recommendation:** Update `src/types/order.ts`:
+```typescript
+export type PaymentMethod = "cash" | "transfer" | "card" | "other";
+```
+
+**RecipeElaboration Interface:**
+- Add `cost?: number` field to match API responses (calculated field, not stored in DB)
+
+---
+
+## Database Indexes
+
+### Performance Indexes
+All foreign key relationships have indexes:
+- `idx_ingredients_user_id`
+- `idx_recipes_user_id`
+- `idx_recipe_elaborations_recipe_id`
+- `idx_recipe_ingredients_elaboration_id`
+- `idx_recipe_ingredients_ingredient_id`
+- `idx_supplies_user_id`
+- `idx_orders_user_id`
+- `idx_orders_delivery_date`
+- `idx_order_photos_order_id`
+- `idx_order_statuses_order_id`
+- `idx_order_supplies_order_id`
+- `idx_expenses_user_id`
+- `idx_expenses_purchase_date`
+- `idx_quotations_user_id`
+- `idx_quotation_recipes_quotation_id`
+- `idx_quotation_supplies_quotation_id`
+- `idx_quotation_additional_expenses_quotation_id`
+- `idx_filling_multipliers_recipe_id`
+- `idx_covering_multipliers_recipe_id`
+- `idx_cake_multipliers_recipe_id`
+- `idx_refresh_tokens_user_id`
+
+### Unique Constraints
+- `users.email` - UNIQUE
+- `user_roles(user_id, role)` - UNIQUE
+- `filling_multipliers(recipe_id, size)` - UNIQUE
+- `covering_multipliers(recipe_id, size)` - UNIQUE
+- `cake_multipliers(recipe_id, size)` - UNIQUE
+- `refresh_tokens.token` - PRIMARY KEY (unique)
 
 ---
 
@@ -1344,5 +1652,6 @@ All error responses follow this format:
 - `403`: Forbidden (insufficient permissions)
 - `404`: Resource not found
 - `422`: Validation error
+- `409`: Duplicate entry (UNIQUE constraint violation)
 - `429`: Too many requests
 - `500`: Internal server error
