@@ -105,11 +105,11 @@ CREATE TYPE payment_method AS ENUM ('cash', 'transfer', 'card', 'other');
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  quotation_id UUID REFERENCES quotations(id) ON DELETE SET NULL,
+  quotation_id UUID REFERENCES quotations(id) ON DELETE SET NULL NOT NULL,
   client_name VARCHAR(255) NOT NULL,
   phone_number VARCHAR(50) NOT NULL,
   order_details TEXT NOT NULL,
-  delivery_date DATE NOT NULL,
+  delivery_date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   needs_cake_topper BOOLEAN DEFAULT false,
   cost_amount DECIMAL(10,2) NOT NULL,
   charge_amount DECIMAL(10,2) NOT NULL,
@@ -129,7 +129,7 @@ CREATE INDEX idx_orders_delivery_date ON orders(delivery_date);
 CREATE TABLE order_photos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID REFERENCES orders(id) ON DELETE CASCADE NOT NULL,
-  photo_url VARCHAR(500) NOT NULL,
+  photo_url TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -663,30 +663,44 @@ Get all orders for authenticated user.
 [
   {
     "id": "uuid",
+    "quotationId": "uuid-quotation",
+    "quotation": {
+      "id": "uuid-quotation",
+      "clientName": "Jane Smith",
+      "size": "3 pisos",
+      "servings": 50,
+      "totalCost": 150.00,
+      "createdAt": "2024-01-10T09:00:00Z"
+    },
     "clientName": "Jane Smith",
     "phoneNumber": "+1234567890",
     "orderDetails": "3-tier chocolate cake with flowers",
-    "deliveryDate": "2024-02-14",
+    "deliveryDate": "2024-02-14T15:00:00Z",
     "clientPhotos": [
-      "https://storage.example.com/orders/photo1.jpg"
+      {
+        "id": "uuid-photo-1",
+        "photoUrl": "https://storage.example.com/orders/photo1.jpg",
+        "createdAt": "2024-01-15T10:30:00Z"
+      }
     ],
     "needsCakeTopper": true,
     "costAmount": 150.00,
     "chargeAmount": 300.00,
     "paymentMethod": "transfer",
     "downPayment": 100.00,
-    "selectedSupplies": [
+    "suppliesNeeded": "Fresh roses, gold foil",
+    "statuses": [
       {
-        "supplyId": "uuid",
-        "supplyName": "Cake Box",
-        "quantity": 1,
-        "unit": "piece",
-        "costPerUnit": 5.00,
-        "totalCost": 5.00
+        "id": "uuid-status-1",
+        "status": "waiting-for-payment",
+        "createdAt": "2024-01-15T10:30:00Z"
+      },
+      {
+        "id": "uuid-status-2",
+        "status": "confirmed",
+        "createdAt": "2024-01-15T14:20:00Z"
       }
     ],
-    "suppliesNeeded": "Fresh roses, gold foil",
-    "statuses": ["waiting-for-payment", "confirmed"],
     "createdAt": "2024-01-15T10:30:00Z"
   }
 ]
@@ -700,14 +714,17 @@ Create a new order.
 **Request:**
 ```json
 {
+  "quotationId": "uuid",
   "clientName": "Jane Smith",
   "phoneNumber": "+1234567890",
   "orderDetails": "3-tier chocolate cake",
-  "deliveryDate": "2024-02-14",
-  "clientPhotos": ["photo-url-1", "photo-url-2"],
+  "deliveryDate": "2024-02-14T15:00:00",
+  "clientPhotos": [
+    "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+    "https://storage.example.com/photo2.jpg"
+  ],
   "needsCakeTopper": true,
   "costAmount": 150.00,
-  "quotationId": "uuid",
   "chargeAmount": 300.00,
   "paymentMethod": "transfer",
   "downPayment": 100.00,
@@ -715,6 +732,15 @@ Create a new order.
   "statuses": ["waiting-for-payment"]
 }
 ```
+
+**Notes:**
+- `quotationId` is **required** and references an existing quotation
+- `costAmount` is automatically calculated from the selected quotation's `totalCost`
+- `clientPhotos` accepts both base64-encoded images and URLs
+- Photos are stored in `order_photos` table with individual records
+- `statuses` is sent as array of strings, stored in `order_statuses` table with timestamps
+- Server validates that `downPayment` ≤ `chargeAmount`
+- The quotation's details are populated when the order is retrieved
 
 **Response (201):** Created order object
 

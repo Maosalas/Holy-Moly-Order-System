@@ -61,6 +61,13 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const costAmount = selectedQuotation ? selectedQuotation.totalCost : (initialData?.costAmount || 0);
   const profit = (parseFloat(chargeAmount) || 0) - costAmount;
 
+  // Populate quotation when editing
+  useEffect(() => {
+    if (initialData?.quotationId && quotations.length > 0 && !selectedQuotationId) {
+      setSelectedQuotationId(initialData.quotationId);
+    }
+  }, [initialData?.quotationId, quotations, selectedQuotationId]);
+
   const availableStatuses: { value: OrderStatus; label: string }[] = [
     { value: "waiting-for-payment", label: "Espera de pago" },
     { value: "partially-paid", label: "Pago Parcial" },
@@ -165,12 +172,13 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
     const isUpdate = !!initialData;
 
-    if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate || !chargeAmount) {
+    if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate || !chargeAmount || !selectedQuotationId) {
       toast({
         title: "Información incompleta",
-        description: "Por favor complete todos los campos obligatorios marcados con *",
+        description: "Por favor complete todos los campos obligatorios marcados con * (incluyendo la cotización)",
         variant: "destructive",
       });
+      setIsSubmitting(false);
       return;
     }
 
@@ -196,7 +204,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     }
 
     const orderData = {
-      quotationId: selectedQuotationId || undefined,
+      quotationId: selectedQuotationId,
       clientName: clientName.trim(),
       phoneNumber: phoneNumber.trim(),
       orderDetails: orderDetails.trim(),
@@ -395,8 +403,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             {/* Quotation Selection */}
             <div className="space-y-4">
               <div>
-                <Label className="text-base font-semibold">Cotización</Label>
-                <p className="text-sm text-muted-foreground mt-1">Seleccione una cotización para este pedido (opcional)</p>
+                <Label className="text-base font-semibold">Cotización *</Label>
+                <p className="text-sm text-muted-foreground mt-1">Seleccione una cotización para este pedido</p>
               </div>
 
               <Popover>
