@@ -187,9 +187,9 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
 
                       <div className="flex flex-wrap gap-1 mt-1">
                         <span className="text-muted-foreground">Status:</span>
-                        {order.statuses.map(statusObj => (
-                          <Badge key={typeof statusObj === 'string' ? statusObj : statusObj.id} className={`text-xs ${getStatusColor(typeof statusObj === 'string' ? statusObj : statusObj.status)}`}>
-                            {getStatusLabel(typeof statusObj === 'string' ? statusObj : statusObj.status)}
+                        {order.statuses.map(status => (
+                          <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
+                            {getStatusLabel(status)}
                           </Badge>
                         ))}
                       </div>
@@ -306,9 +306,9 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1 max-w-[200px]">
-                          {order.statuses.map(statusObj => (
-                            <Badge key={typeof statusObj === 'string' ? statusObj : statusObj.id} className={`text-xs ${getStatusColor(typeof statusObj === 'string' ? statusObj : statusObj.status)}`}>
-                              {getStatusLabel(typeof statusObj === 'string' ? statusObj : statusObj.status)}
+                          {order.statuses.map(status => (
+                            <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
+                              {getStatusLabel(status)}
                             </Badge>
                           ))}
                         </div>
