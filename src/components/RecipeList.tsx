@@ -25,7 +25,7 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
   const filteredRecipes = useMemo(() => {
     // Aplicar migración a todas las recetas
     const migratedRecipes = recipes.map(recipe => migrateRecipeToElaborations(recipe));
-    
+    console.log("Migrated Recipes:", migratedRecipes);
     if (!searchQuery.trim()) return migratedRecipes;
     const query = searchQuery.toLowerCase();
     return migratedRecipes.filter(recipe =>
