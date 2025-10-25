@@ -7,12 +7,6 @@ export type OrderStatus =
 
 export type PaymentMethod = "Efectivo" | "Transferencia" | "Link de pago/tarjeta" | "SINPE";
 
-export interface OrderStatusObject {
-  id: string;
-  status: OrderStatus;
-  createdAt: string;
-}
-
 export interface Order {
   id: string;
   quotationId?: string;
@@ -27,6 +21,6 @@ export interface Order {
   paymentMethod: PaymentMethod;
   downPayment: number;
   suppliesNeeded: string;
-  statuses: (OrderStatus | OrderStatusObject)[];
+  statuses: OrderStatus[];
   createdAt: string;
 }
