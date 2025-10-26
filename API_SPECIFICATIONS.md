@@ -978,11 +978,11 @@ Get all orders for authenticated user.
 
 **Notes:**
 
-- `deliveryDate`: TIMESTAMP WITHOUT TIME ZONE (includes time)
+- `deliveryDate`: TIMESTAMP TIME ZONE
 - `clientPhotos`: Array of photo objects from `order_photos` table
 - `quotationId` is **required** and references an existing quotation
 - `statuses`: Array of status objects from `order_statuses` table (ordered by `created_at`)
-- `paymentMethod`: Must be one of: 'cash', 'transfer', 'card', 'other' (from ENUM)
+- `paymentMethod`: Must be one of: the tables
 
 #### POST /api/orders
 
