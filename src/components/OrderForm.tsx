@@ -333,7 +333,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                           "Link de pago/tarjeta",
                           "SINPE"
                         ].map((method) => (
-                          <CommandItem
+                           <CommandItem
                             key={method}
                             value={method}
                             onSelect={() => setPaymentMethod(method as PaymentMethod)}
