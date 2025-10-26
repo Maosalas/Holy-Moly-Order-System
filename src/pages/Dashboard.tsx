@@ -469,11 +469,15 @@ const Dashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
-                            {order.statuses.slice(0, 2).map(status => (
-                              <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
-                                {getStatusLabel(status)}
-                              </Badge>
-                            ))}
+                            {order.statuses.slice(0, 2).map(statusObj => {
+                              const statusValue = typeof statusObj === 'string' ? statusObj : statusObj.status;
+                              const statusKey = typeof statusObj === 'string' ? statusObj : statusObj.id;
+                              return (
+                                <Badge key={statusKey} className={`text-xs ${getStatusColor(statusValue)}`}>
+                                  {getStatusLabel(statusValue)}
+                                </Badge>
+                              );
+                            })}
                             {order.statuses.length > 2 && (
                               <Badge variant="outline" className="text-xs">
                                 +{order.statuses.length - 2}
