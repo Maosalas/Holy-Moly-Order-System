@@ -171,6 +171,8 @@ CREATE INDEX idx_orders_delivery_date ON orders(delivery_date);
 CREATE INDEX idx_orders_payment_method_id ON orders(payment_method_id);
 ```
 
+**Note:** The `quotation_id` field has been removed from the current database implementation.
+
 ### Order Photos Table
 
 ```sql

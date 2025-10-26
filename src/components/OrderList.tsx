@@ -49,9 +49,9 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
 
   const getStatusColor = (status: string) => {
     const colors = {
-      "waiting-for-payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-      "partially-paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      "payment-received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      "waiting_for_payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+      "partially_paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      "payment_received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       "confirmed": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
       "finished": "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
     };
@@ -60,9 +60,9 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
 
   const getStatusLabel = (status: string) => {
     const labels = {
-      "waiting-for-payment": "Espera",
-      "partially-paid": "Parcial",
-      "payment-received": "Pagado",
+      "waiting_for_payment": "Espera",
+      "partially_paid": "Parcial",
+      "payment_received": "Pagado",
       "confirmed": "Confirmado",
       "finished": "Terminado",
     };

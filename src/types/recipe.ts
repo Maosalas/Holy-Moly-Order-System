@@ -7,6 +7,13 @@ export interface RecipeIngredient {
   cost: number;
 }
 
+export interface RecipeElaboration {
+  id: string;
+  name: string;
+  order: number;
+  ingredients: RecipeIngredient[];
+}
+
 export interface RecipeMultiplier {
   id?: string;
   size: string;
@@ -19,7 +26,7 @@ export interface Recipe {
   id: string;
   name: string;
   image?: string;
-  ingredients: RecipeIngredient[];
+  elaborations: RecipeElaboration[];
   multipliers?: RecipeMultiplier[];
   totalCost: number;
   category: string;

@@ -1,7 +1,7 @@
 export type OrderStatus = 
-  | "waiting-for-payment"
-  | "partially-paid"
-  | "payment-received"
+  | "waiting_for_payment"
+  | "partially_paid"
+  | "payment_received"
   | "confirmed"
   | "finished";
 
