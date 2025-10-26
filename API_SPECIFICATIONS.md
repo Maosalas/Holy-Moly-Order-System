@@ -133,19 +133,12 @@ CREATE TYPE payment_method AS ENUM ('cash', 'transfer', 'card', 'other');
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-<<<<<<< HEAD
-=======
   quotation_id UUID REFERENCES quotations(id) ON DELETE SET NULL NOT NULL,
->>>>>>> 290a5b04bdc387874b277f4102041c3a8a1ff663
   client_name VARCHAR(255) NOT NULL,
   phone_number VARCHAR(50) NOT NULL,
   order_details TEXT NOT NULL,
   delivery_date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-<<<<<<< HEAD
-  needs_cake_topper BOOLEAN DEFAULT false NOT NULL,
-=======
   needs_cake_topper BOOLEAN DEFAULT false,
->>>>>>> 290a5b04bdc387874b277f4102041c3a8a1ff663
   cost_amount DECIMAL(10,2) NOT NULL,
   charge_amount DECIMAL(10,2) NOT NULL,
   payment_method payment_method NOT NULL,
@@ -168,11 +161,7 @@ CREATE TABLE order_photos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID REFERENCES orders(id) ON DELETE CASCADE NOT NULL,
   photo_url TEXT NOT NULL,
-<<<<<<< HEAD
   created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
-=======
-  created_at TIMESTAMP DEFAULT NOW()
->>>>>>> 290a5b04bdc387874b277f4102041c3a8a1ff663
 );
 
 CREATE INDEX idx_order_photos_order_id ON order_photos(order_id);
@@ -954,7 +943,6 @@ Get all orders for authenticated user.
     "deliveryDate": "2024-02-14T15:00:00Z",
     "clientPhotos": [
       {
-<<<<<<< HEAD
         "id": "uuid",
         "photoUrl": "https://storage.example.com/orders/photo1.jpg",
         "createdAt": "2024-01-15T10:30:00Z"
@@ -963,11 +951,6 @@ Get all orders for authenticated user.
         "id": "uuid",
         "photoUrl": "https://storage.example.com/orders/photo2.jpg",
         "createdAt": "2024-01-15T10:31:00Z"
-=======
-        "id": "uuid-photo-1",
-        "photoUrl": "https://storage.example.com/orders/photo1.jpg",
-        "createdAt": "2024-01-15T10:30:00Z"
->>>>>>> 290a5b04bdc387874b277f4102041c3a8a1ff663
       }
     ],
     "needsCakeTopper": true,
@@ -975,35 +958,20 @@ Get all orders for authenticated user.
     "chargeAmount": 300.00,
     "paymentMethod": "cash",
     "downPayment": 100.00,
-<<<<<<< HEAD
     "statuses": [
       {
         "id": "uuid",
-=======
-    "suppliesNeeded": "Fresh roses, gold foil",
-    "statuses": [
-      {
-        "id": "uuid-status-1",
->>>>>>> 290a5b04bdc387874b277f4102041c3a8a1ff663
         "status": "waiting-for-payment",
         "createdAt": "2024-01-15T10:30:00Z"
       },
       {
-<<<<<<< HEAD
         "id": "uuid",
-=======
-        "id": "uuid-status-2",
->>>>>>> 290a5b04bdc387874b277f4102041c3a8a1ff663
         "status": "confirmed",
         "createdAt": "2024-01-15T14:20:00Z"
       }
     ],
-<<<<<<< HEAD
     "createdAt": "2024-01-15T10:30:00Z",
     "updatedAt": "2024-01-15T14:20:00Z"
-=======
-    "createdAt": "2024-01-15T10:30:00Z"
->>>>>>> 290a5b04bdc387874b277f4102041c3a8a1ff663
   }
 ]
 ```
@@ -1030,16 +998,11 @@ Create a new order.
   "clientName": "Jane Smith",
   "phoneNumber": "+1234567890",
   "orderDetails": "3-tier chocolate cake",
-<<<<<<< HEAD
-  "deliveryDate": "2024-02-14T15:00:00Z",
-  "clientPhotos": ["photo-url-1", "photo-url-2"],
-=======
   "deliveryDate": "2024-02-14T15:00:00",
   "clientPhotos": [
     "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
     "https://storage.example.com/photo2.jpg"
   ],
->>>>>>> 290a5b04bdc387874b277f4102041c3a8a1ff663
   "needsCakeTopper": true,
   "costAmount": 150.00,
   "chargeAmount": 300.00,
@@ -1050,15 +1013,6 @@ Create a new order.
 ```
 
 **Notes:**
-<<<<<<< HEAD
-
-- `deliveryDate`: Must be ISO 8601 timestamp string
-- `clientPhotos`: Array of photo URL strings - backend creates `order_photos` records
-- `quotationId` is **required** and references an existing quotation
-- `statuses`: Array of status strings - backend creates `order_statuses` records with timestamps
-- `paymentMethod`: Must be one of: 'cash', 'transfer', 'card', 'other'
-
-=======
 - `quotationId` is **required** and references an existing quotation
 - `costAmount` is automatically calculated from the selected quotation's `totalCost`
 - `clientPhotos` accepts both base64-encoded images and URLs
@@ -1066,7 +1020,6 @@ Create a new order.
 - `statuses` is sent as array of strings, stored in `order_statuses` table with timestamps
 - Server validates that `downPayment` ≤ `chargeAmount`
 - The quotation's details are populated when the order is retrieved
->>>>>>> 290a5b04bdc387874b277f4102041c3a8a1ff663
 
 **Response (201):** Created order object
 
