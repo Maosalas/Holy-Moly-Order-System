@@ -13,7 +13,7 @@ interface OrderCardProps {
 
 export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
   const handleWhatsApp = () => {
-    const message = `Hi ${order.clientName}! This is about your order for ${order.deliveryDate}`;
+    const message = `Hola ${order.clientName}! Te hablamos de Holy Moly acerca de tu orden ${order.orderDetails}`;
     const url = `https://wa.me/${order.phoneNumber.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
@@ -23,20 +23,20 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
 
   const getStatusColor = (status: string) => {
     const colors = {
-      "waiting-for-payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-      "partially-paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      "payment-received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      "waiting_for_payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+      "partially_paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      "payment_received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       "confirmed": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
       "finished": "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
     };
-    return colors[status as keyof typeof colors] || colors["waiting-for-payment"];
+    return colors[status as keyof typeof colors] || colors["waiting_for_payment"];
   };
 
   const getStatusLabel = (status: string) => {
     const labels = {
-      "waiting-for-payment": "Waiting",
-      "partially-paid": "Partial",
-      "payment-received": "Paid",
+      "waiting_for_payment": "Waiting",
+      "partially_paid": "Partial",
+      "payment_received": "Paid",
       "confirmed": "Confirmed",
       "finished": "Finished",
     };
@@ -49,8 +49,8 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-video w-full bg-muted flex items-center justify-center overflow-hidden">
         {order.clientPhotos.length > 0 ? (
-          <img 
-            src={order.clientPhotos[0]} 
+          <img
+            src={order.clientPhotos[0]}
             alt={`${order.clientName}'s order`}
             className="w-full h-full object-cover"
           />
@@ -62,9 +62,9 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg">{order.clientName}</CardTitle>
           <div className="flex flex-wrap gap-1">
-            {order.statuses.map(status => (
-              <Badge key={status} className={getStatusColor(status)}>
-                {getStatusLabel(status)}
+            {order.statuses.map(statusObj => (
+              <Badge key={typeof statusObj === 'string' ? statusObj : statusObj.id} className={getStatusColor(typeof statusObj === 'string' ? statusObj : statusObj.status)}>
+                {getStatusLabel(typeof statusObj === 'string' ? statusObj : statusObj.status)}
               </Badge>
             ))}
           </div>
@@ -81,13 +81,13 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
         <p className="text-sm text-muted-foreground line-clamp-2">
           {order.orderDetails}
         </p>
-        
+
         {order.needsCakeTopper && (
           <div className="pt-2 border-t">
             <TopperUploadDialog clientName={order.clientName} />
           </div>
         )}
-        
+
         <div className="space-y-2 pt-2 border-t">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Total Amount:</span>

@@ -1,11 +1,17 @@
 export type OrderStatus = 
-  | "waiting-for-payment"
-  | "partially-paid"
-  | "payment-received"
+  | "waiting_for_payment"
+  | "partially_paid"
+  | "payment_received"
   | "confirmed"
   | "finished";
 
 export type PaymentMethod = "Efectivo" | "Transferencia" | "Link de pago/tarjeta" | "SINPE";
+
+export interface OrderStatusObject {
+  id: string;
+  status: OrderStatus;
+  createdAt: string;
+}
 
 export interface Order {
   id: string;
@@ -21,6 +27,6 @@ export interface Order {
   paymentMethod: PaymentMethod;
   downPayment: number;
   suppliesNeeded: string;
-  statuses: OrderStatus[];
+  statuses: (OrderStatus | OrderStatusObject)[];
   createdAt: string;
 }

@@ -388,9 +388,9 @@ const Dashboard = () => {
 
                     const getStatusColor = (status: string) => {
                       const colors = {
-                        "waiting-for-payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-                        "partially-paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-                        "payment-received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+                        "waiting_for_payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+                        "partially_paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+                        "payment_received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
                         "confirmed": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
                         "finished": "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
                       };
@@ -399,9 +399,9 @@ const Dashboard = () => {
 
                     const getStatusLabel = (status: string) => {
                       const labels = {
-                        "waiting-for-payment": "Espera de pago",
-                        "partially-paid": "pago Parcial",
-                        "payment-received": "Pago recibido",
+                        "waiting_for_payment": "Espera de pago",
+                        "partially_paid": "pago Parcial",
+                        "payment_received": "Pago recibido",
                         "confirmed": "Confirmado",
                         "finished": "Terminado",
                       };
@@ -469,9 +469,9 @@ const Dashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
-                            {order.statuses.slice(0, 2).map(status => (
-                              <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
-                                {getStatusLabel(status)}
+                            {order.statuses.slice(0, 2).map(statusObj => (
+                              <Badge key={typeof statusObj === 'string' ? statusObj : statusObj.id} className={`text-xs ${getStatusColor(typeof statusObj === 'string' ? statusObj : statusObj.status)}`}>
+                                {getStatusLabel(typeof statusObj === 'string' ? statusObj : statusObj.status)}
                               </Badge>
                             ))}
                             {order.statuses.length > 2 && (

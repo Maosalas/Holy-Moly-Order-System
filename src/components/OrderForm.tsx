@@ -41,7 +41,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [downPayment, setDownPayment] = useState(initialData?.downPayment?.toString() || "0");
   const [suppliesNeeded, setSuppliesNeeded] = useState(initialData?.suppliesNeeded || "");
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
-  const [statuses, setStatuses] = useState<OrderStatus[]>(initialData?.statuses || ["waiting-for-payment"]);
+  const [statuses, setStatuses] = useState<OrderStatus[]>(
+    (initialData?.statuses as OrderStatus[]) || ["waiting_for_payment"]
+  );
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load quotations from API
@@ -62,9 +65,9 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const profit = (parseFloat(chargeAmount) || 0) - costAmount;
 
   const availableStatuses: { value: OrderStatus; label: string }[] = [
-    { value: "waiting-for-payment", label: "Espera de pago" },
-    { value: "partially-paid", label: "Pago Parcial" },
-    { value: "payment-received", label: "Pago recibido" },
+    { value: "waiting_for_payment", label: "Espera de pago" },
+    { value: "partially_paid", label: "Pago Parcial" },
+    { value: "payment_received", label: "Pago recibido" },
     { value: "confirmed", label: "Confirmado" },
     { value: "finished", label: "Terminado" },
   ];
@@ -234,7 +237,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       setDownPayment("0");
       setSuppliesNeeded("");
       setNeedsCakeTopper(false);
-      setStatuses(["waiting-for-payment"]);
+      setStatuses(["waiting_for_payment"]);
     } finally {
       setIsSubmitting(false);
     }
