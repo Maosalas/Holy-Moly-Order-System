@@ -62,11 +62,15 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg">{order.clientName}</CardTitle>
           <div className="flex flex-wrap gap-1">
-            {order.statuses.map(statusObj => (
-              <Badge key={typeof statusObj === 'string' ? statusObj : statusObj.id} className={getStatusColor(typeof statusObj === 'string' ? statusObj : statusObj.status)}>
-                {getStatusLabel(typeof statusObj === 'string' ? statusObj : statusObj.status)}
-              </Badge>
-            ))}
+            {order.statuses.map(statusObj => {
+              const statusValue = typeof statusObj === 'string' ? statusObj : statusObj.status;
+              const statusKey = typeof statusObj === 'string' ? statusObj : statusObj.id;
+              return (
+                <Badge key={statusKey} className={getStatusColor(statusValue)}>
+                  {getStatusLabel(statusValue)}
+                </Badge>
+              );
+            })}
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">

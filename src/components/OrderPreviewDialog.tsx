@@ -159,11 +159,15 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
           <div className="space-y-2">
             <h3 className="font-semibold text-sm text-muted-foreground">Status de Orden</h3>
             <div className="flex flex-wrap gap-2">
-              {order.statuses.map(statusObj => (
-                <Badge key={typeof statusObj === 'string' ? statusObj : statusObj.id} className={getStatusColor(typeof statusObj === 'string' ? statusObj : statusObj.status)}>
-                  {getStatusLabel(typeof statusObj === 'string' ? statusObj : statusObj.status)}
-                </Badge>
-              ))}
+              {order.statuses.map(statusObj => {
+                const statusValue = typeof statusObj === 'string' ? statusObj : statusObj.status;
+                const statusKey = typeof statusObj === 'string' ? statusObj : statusObj.id;
+                return (
+                  <Badge key={statusKey} className={getStatusColor(statusValue)}>
+                    {getStatusLabel(statusValue)}
+                  </Badge>
+                );
+              })}
             </div>
           </div>
 

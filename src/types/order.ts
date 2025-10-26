@@ -16,6 +16,14 @@ export interface OrderStatusObject {
 export interface Order {
   id: string;
   quotationId?: string;
+  quotation?: {
+    id: string;
+    clientName: string;
+    size: string;
+    servings: number;
+    totalCost: number;
+    createdAt: string;
+  };
   clientName: string;
   phoneNumber: string;
   orderDetails: string;

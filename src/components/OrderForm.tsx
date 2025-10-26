@@ -42,9 +42,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [suppliesNeeded, setSuppliesNeeded] = useState(initialData?.suppliesNeeded || "");
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
   const [statuses, setStatuses] = useState<OrderStatus[]>(
-    (initialData?.statuses as OrderStatus[]) || ["waiting_for_payment"]
+    initialData?.statuses 
+      ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
+      : ["waiting-for-payment"]
   );
-
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load quotations from API
@@ -63,6 +64,13 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const selectedQuotation = quotations.find(q => q.id === selectedQuotationId);
   const costAmount = selectedQuotation ? selectedQuotation.totalCost : (initialData?.costAmount || 0);
   const profit = (parseFloat(chargeAmount) || 0) - costAmount;
+
+  // Populate quotation when editing
+  useEffect(() => {
+    if (initialData?.quotationId && quotations.length > 0 && !selectedQuotationId) {
+      setSelectedQuotationId(initialData.quotationId);
+    }
+  }, [initialData?.quotationId, quotations, selectedQuotationId]);
 
   const availableStatuses: { value: OrderStatus; label: string }[] = [
     { value: "waiting_for_payment", label: "Espera de pago" },
@@ -168,12 +176,13 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
     const isUpdate = !!initialData;
 
-    if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate || !chargeAmount) {
+    if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate || !chargeAmount || !selectedQuotationId) {
       toast({
         title: "Información incompleta",
-        description: "Por favor complete todos los campos obligatorios marcados con *",
+        description: "Por favor complete todos los campos obligatorios marcados con * (incluyendo la cotización)",
         variant: "destructive",
       });
+      setIsSubmitting(false);
       return;
     }
 
@@ -199,7 +208,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     }
 
     const orderData = {
-      quotationId: selectedQuotationId || undefined,
+      quotationId: selectedQuotationId,
       clientName: clientName.trim(),
       phoneNumber: phoneNumber.trim(),
       orderDetails: orderDetails.trim(),
@@ -328,7 +337,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                           "Link de pago/tarjeta",
                           "SINPE"
                         ].map((method) => (
-                          <CommandItem
+                           <CommandItem
                             key={method}
                             value={method}
                             onSelect={() => setPaymentMethod(method as PaymentMethod)}
@@ -398,8 +407,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             {/* Quotation Selection */}
             <div className="space-y-4">
               <div>
-                <Label className="text-base font-semibold">Cotización</Label>
-                <p className="text-sm text-muted-foreground mt-1">Seleccione una cotización para este pedido (opcional)</p>
+                <Label className="text-base font-semibold">Cotización *</Label>
+                <p className="text-sm text-muted-foreground mt-1">Seleccione una cotización para este pedido</p>
               </div>
 
               <Popover>
