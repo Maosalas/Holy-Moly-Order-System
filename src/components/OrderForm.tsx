@@ -41,7 +41,11 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [downPayment, setDownPayment] = useState(initialData?.downPayment?.toString() || "0");
   const [suppliesNeeded, setSuppliesNeeded] = useState(initialData?.suppliesNeeded || "");
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
-  const [statuses, setStatuses] = useState<OrderStatus[]>(initialData?.statuses || ["waiting-for-payment"]);
+  const [statuses, setStatuses] = useState<OrderStatus[]>(
+    initialData?.statuses 
+      ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
+      : ["waiting-for-payment"]
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load quotations from API
@@ -333,7 +337,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                           "Link de pago/tarjeta",
                           "SINPE"
                         ].map((method) => (
-                          <CommandItem
+                           <CommandItem
                             key={method}
                             value={method}
                             onSelect={() => setPaymentMethod(method as PaymentMethod)}

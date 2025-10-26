@@ -187,11 +187,15 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
 
                       <div className="flex flex-wrap gap-1 mt-1">
                         <span className="text-muted-foreground">Status:</span>
-                        {order.statuses.map(status => (
-                          <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
-                            {getStatusLabel(status)}
-                          </Badge>
-                        ))}
+                        {order.statuses.map(statusObj => {
+                          const statusValue = typeof statusObj === 'string' ? statusObj : statusObj.status;
+                          const statusKey = typeof statusObj === 'string' ? statusObj : statusObj.id;
+                          return (
+                            <Badge key={statusKey} className={`text-xs ${getStatusColor(statusValue)}`}>
+                              {getStatusLabel(statusValue)}
+                            </Badge>
+                          );
+                        })}
                       </div>
 
                     </div>
@@ -306,11 +310,15 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1 max-w-[200px]">
-                          {order.statuses.map(status => (
-                            <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
-                              {getStatusLabel(status)}
-                            </Badge>
-                          ))}
+                          {order.statuses.map(statusObj => {
+                            const statusValue = typeof statusObj === 'string' ? statusObj : statusObj.status;
+                            const statusKey = typeof statusObj === 'string' ? statusObj : statusObj.id;
+                            return (
+                              <Badge key={statusKey} className={`text-xs ${getStatusColor(statusValue)}`}>
+                                {getStatusLabel(statusValue)}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       </TableCell>
                       <TableCell>
