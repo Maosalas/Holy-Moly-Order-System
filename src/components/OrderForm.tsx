@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import type { Order, OrderStatus, PaymentMethod } from "@/types/order";
 import type { Quotation } from "@/types/quotation";
-import { quotationsApi } from "@/lib/api";
+import { quotationsApi, paymentMethodsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface OrderFormProps {
@@ -26,6 +26,7 @@ interface OrderFormProps {
 export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) => {
   const { toast } = useToast();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedQuotationId, setSelectedQuotationId] = useState<string>(initialData?.quotationId || "");
   const [clientName, setClientName] = useState(initialData?.clientName || "");
   const [phoneNumber, setPhoneNumber] = useState(initialData?.phoneNumber || "");
@@ -35,20 +36,28 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       ? new Date(initialData.deliveryDate).toISOString().slice(0, 16)
       : ""
   );
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialData?.paymentMethod || "Efectivo");
-  const [clientPhotos, setClientPhotos] = useState<string[]>(initialData?.clientPhotos || []);
+  const [paymentMethodId, setPaymentMethodId] = useState<string>(
+    initialData?.paymentMethod
+      ? (typeof initialData.paymentMethod === 'string' ? "" : initialData.paymentMethod.id)
+      : ""
+  );
+  const [clientPhotos, setClientPhotos] = useState<string[]>(
+    initialData?.clientPhotos?.map(photo =>
+      typeof photo === 'string' ? photo : photo.photoUrl
+    ) || []
+  );
   const [chargeAmount, setChargeAmount] = useState(initialData?.chargeAmount?.toString() || "");
   const [downPayment, setDownPayment] = useState(initialData?.downPayment?.toString() || "0");
   const [suppliesNeeded, setSuppliesNeeded] = useState(initialData?.suppliesNeeded || "");
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
   const [statuses, setStatuses] = useState<OrderStatus[]>(
-    initialData?.statuses 
+    initialData?.statuses
       ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
-      : ["waiting-for-payment"]
+      : ["waiting_for_payment"]
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load quotations from API
+  // Load quotations and payment methods from API
   useEffect(() => {
     const fetchQuotations = async () => {
       const result = await quotationsApi.getAll();
@@ -57,20 +66,75 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
         setQuotations(quotationsData);
       }
     };
+
+    const fetchPaymentMethods = async () => {
+      const result = await paymentMethodsApi.getAll();
+      if (result.data) {
+        const paymentMethodsData = Array.isArray(result.data) ? result.data : [];
+        setPaymentMethods(paymentMethodsData);
+
+        // Set default payment method if not editing and methods are available
+        if (!initialData && paymentMethodsData.length > 0) {
+          setPaymentMethodId(paymentMethodsData[0].id);
+        }
+      }
+    };
+
     fetchQuotations();
-  }, []);
+    fetchPaymentMethods();
+  }, [initialData]);
 
   // Calculate cost from selected quotation
   const selectedQuotation = quotations.find(q => q.id === selectedQuotationId);
   const costAmount = selectedQuotation ? selectedQuotation.totalCost : (initialData?.costAmount || 0);
   const profit = (parseFloat(chargeAmount) || 0) - costAmount;
 
-  // Populate quotation when editing
+  // Update form fields when initialData changes
   useEffect(() => {
-    if (initialData?.quotationId && quotations.length > 0 && !selectedQuotationId) {
-      setSelectedQuotationId(initialData.quotationId);
+    if (initialData) {
+      setSelectedQuotationId(initialData.quotationId || "");
+      setClientName(initialData.clientName || "");
+      setPhoneNumber(initialData.phoneNumber || "");
+      setOrderDetails(initialData.orderDetails || "");
+      const formattedDate = initialData.deliveryDate
+        ? new Date(initialData.deliveryDate).toISOString().slice(0, 16)
+        : "";
+      setDeliveryDate(formattedDate);
+      setPaymentMethodId(
+        initialData.paymentMethod
+          ? (typeof initialData.paymentMethod === 'string' ? "" : initialData.paymentMethod.id)
+          : ""
+      );
+      // Extract photoUrl from clientPhotos objects
+      const photos = initialData.clientPhotos?.map(photo =>
+        typeof photo === 'string' ? photo : photo.photoUrl
+      ) || [];
+      setClientPhotos(photos);
+      setChargeAmount(initialData.chargeAmount?.toString() || "");
+      setDownPayment(initialData.downPayment?.toString() || "0");
+      setSuppliesNeeded(initialData.suppliesNeeded || "");
+      setNeedsCakeTopper(initialData.needsCakeTopper || false);
+      setStatuses(
+        initialData.statuses
+          ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
+          : ["waiting_for_payment"]
+      );
+    } else {
+      // Reset form when creating new order
+      setSelectedQuotationId("");
+      setClientName("");
+      setPhoneNumber("");
+      setOrderDetails("");
+      setDeliveryDate("");
+      setPaymentMethodId("");
+      setClientPhotos([]);
+      setChargeAmount("");
+      setDownPayment("0");
+      setSuppliesNeeded("");
+      setNeedsCakeTopper(false);
+      setStatuses(["waiting_for_payment"]);
     }
-  }, [initialData?.quotationId, quotations, selectedQuotationId]);
+  }, [initialData]);
 
   const availableStatuses: { value: OrderStatus; label: string }[] = [
     { value: "waiting_for_payment", label: "Espera de pago" },
@@ -176,10 +240,10 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
     const isUpdate = !!initialData;
 
-    if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate || !chargeAmount || !selectedQuotationId) {
+    if (!clientName.trim() || !phoneNumber.trim() || !orderDetails.trim() || !deliveryDate || !chargeAmount || !selectedQuotationId || !paymentMethodId) {
       toast({
         title: "Información incompleta",
-        description: "Por favor complete todos los campos obligatorios marcados con * (incluyendo la cotización)",
+        description: "Por favor complete todos los campos obligatorios marcados con * (incluyendo la cotización y método de pago)",
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -207,13 +271,25 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       return;
     }
 
-    const orderData = {
+    // Get the selected payment method object
+    const selectedPaymentMethod = paymentMethods.find(pm => pm.id === paymentMethodId);
+    if (!selectedPaymentMethod) {
+      toast({
+        title: "Método de pago requerido",
+        description: "Por favor seleccione un método de pago",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    const orderData: Omit<Order, "id" | "createdAt"> = {
       quotationId: selectedQuotationId,
       clientName: clientName.trim(),
       phoneNumber: phoneNumber.trim(),
       orderDetails: orderDetails.trim(),
       deliveryDate: new Date(deliveryDate),
-      paymentMethod,
+      paymentMethod: selectedPaymentMethod, // Include the full object for type compatibility
       clientPhotos,
       costAmount,
       chargeAmount: charge,
@@ -240,7 +316,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       setPhoneNumber("");
       setOrderDetails("");
       setDeliveryDate("");
-      setPaymentMethod("Efectivo");
+      setPaymentMethodId(paymentMethods.length > 0 ? paymentMethods[0].id : "");
       setClientPhotos([]);
       setChargeAmount("");
       setDownPayment("0");
@@ -310,45 +386,41 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paymentMethod">Método de pago</Label>
+              <Label htmlFor="paymentMethod">Método de pago *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
                     className="w-full justify-between"
+                    disabled={paymentMethods.length === 0}
                   >
                     <span className="flex items-center gap-2">
                       <Wallet className="h-4 w-4" />
-                      {paymentMethod}
+                      {paymentMethods.find((pm) => pm.id === paymentMethodId)?.name || "Seleccionar método de pago"}
                     </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
                   <Command>
-                    <CommandInput placeholder="Search payment method..." />
+                    <CommandInput placeholder="Buscar método de pago..." />
                     <CommandList>
-                      <CommandEmpty>No payment method found.</CommandEmpty>
+                      <CommandEmpty>No se encontró método de pago.</CommandEmpty>
                       <CommandGroup>
-                        {[
-                          "Efectivo",
-                          "Transferencia",
-                          "Link de pago/tarjeta",
-                          "SINPE"
-                        ].map((method) => (
+                        {paymentMethods.map((method) => (
                            <CommandItem
-                            key={method}
-                            value={method}
-                            onSelect={() => setPaymentMethod(method as PaymentMethod)}
+                            key={method.id}
+                            value={method.name}
+                            onSelect={() => setPaymentMethodId(method.id)}
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                paymentMethod === method ? "opacity-100" : "opacity-0"
+                                paymentMethodId === method.id ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            {method}
+                            {method.name}
                           </CommandItem>
                         ))}
                       </CommandGroup>

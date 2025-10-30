@@ -1,15 +1,27 @@
-export type OrderStatus = 
+export type OrderStatus =
   | "waiting_for_payment"
   | "partially_paid"
   | "payment_received"
   | "confirmed"
   | "finished";
 
-export type PaymentMethod = "Efectivo" | "Transferencia" | "Link de pago/tarjeta" | "SINPE";
+export type PaymentMethodName = "Efectivo" | "Transferencia" | "Link de pago/tarjeta" | "SINPE";
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  description: string;
+}
 
 export interface OrderStatusObject {
   id: string;
   status: OrderStatus;
+  createdAt: string;
+}
+
+export interface ClientPhoto {
+  id: string;
+  photoUrl: string;
   createdAt: string;
 }
 
@@ -28,7 +40,7 @@ export interface Order {
   phoneNumber: string;
   orderDetails: string;
   deliveryDate: Date;
-  clientPhotos: string[];
+  clientPhotos: (string | ClientPhoto)[]; // Can be strings when creating, objects when fetched
   needsCakeTopper: boolean;
   costAmount: number;
   chargeAmount: number;

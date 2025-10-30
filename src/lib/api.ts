@@ -152,6 +152,8 @@ export const suppliesApi = {
 export const ordersApi = {
   getAll: () => apiFetch("/orders", { method: "GET" }),
 
+  getById: (id: string) => apiFetch(`/orders/${id}`, { method: "GET" }),
+
   create: (order: any) =>
     apiFetch("/orders", {
       method: "POST",
@@ -174,6 +176,8 @@ export const ordersApi = {
 export const expensesApi = {
   getAll: () => apiFetch("/expenses", { method: "GET" }),
 
+  getById: (id: string) => apiFetch(`/expenses/${id}`, { method: "GET" }),
+
   create: (expense: any) =>
     apiFetch("/expenses", {
       method: "POST",
@@ -188,6 +192,78 @@ export const expensesApi = {
 
   delete: (id: string) =>
     apiFetch(`/expenses/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+// Card Types API
+export const cardTypesApi = {
+  getAll: () => apiFetch("/card-types", { method: "GET" }),
+
+  getById: (id: string) => apiFetch(`/card-types/${id}`, { method: "GET" }),
+
+  create: (cardType: any) =>
+    apiFetch("/card-types", {
+      method: "POST",
+      body: JSON.stringify(cardType),
+    }),
+
+  update: (id: string, cardType: any) =>
+    apiFetch(`/card-types/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(cardType),
+    }),
+
+  delete: (id: string) =>
+    apiFetch(`/card-types/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+// Recipe Types API
+export const recipeTypesApi = {
+  getAll: () => apiFetch("/recipe-types", { method: "GET" }),
+
+  getById: (id: string) => apiFetch(`/recipe-types/${id}`, { method: "GET" }),
+
+  create: (recipeType: any) =>
+    apiFetch("/recipe-types", {
+      method: "POST",
+      body: JSON.stringify(recipeType),
+    }),
+
+  update: (id: string, recipeType: any) =>
+    apiFetch(`/recipe-types/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(recipeType),
+    }),
+
+  delete: (id: string) =>
+    apiFetch(`/recipe-types/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+// Payment Methods API
+export const paymentMethodsApi = {
+  getAll: () => apiFetch("/payment-methods", { method: "GET" }),
+
+  getById: (id: string) => apiFetch(`/payment-methods/${id}`, { method: "GET" }),
+
+  create: (paymentMethod: any) =>
+    apiFetch("/payment-methods", {
+      method: "POST",
+      body: JSON.stringify(paymentMethod),
+    }),
+
+  update: (id: string, paymentMethod: any) =>
+    apiFetch(`/payment-methods/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(paymentMethod),
+    }),
+
+  delete: (id: string) =>
+    apiFetch(`/payment-methods/${id}`, {
       method: "DELETE",
     }),
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Expense } from "@/types/expense";
 import ExpenseForm from "@/components/ExpenseForm";
 import ExpenseList from "@/components/ExpenseList";
@@ -7,80 +7,58 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { expensesApi } from "@/lib/api";
+import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense } from "@/hooks/use-expenses";
 
 const Expenses = () => {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  // Usar React Query hooks
+  const { data: expenses = [], isLoading } = useExpenses();
+  const createExpense = useCreateExpense();
+  const updateExpense = useUpdateExpense();
+  const deleteExpense = useDeleteExpense();
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      const result = await expensesApi.getAll();
-      if (result.data) {
-        const expensesData = Array.isArray(result.data) ? result.data : [];
-        setExpenses(expensesData.map((e: any) => ({
-          ...e,
-          createdAt: e.created_at
-        })));
-      }
-      setIsLoading(false);
-    };
-    fetchExpenses();
-  }, []);
+  const [isFetchingExpense, setIsFetchingExpense] = useState(false);
 
   const handleSubmit = async (expenseData: Expense) => {
-    if (editingExpense) {
-      const result = await expensesApi.update(editingExpense.id, expenseData);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
-        return;
+    try {
+      if (editingExpense) {
+        await updateExpense.mutateAsync({ id: editingExpense.id, expense: expenseData });
+      } else {
+        await createExpense.mutateAsync(expenseData);
       }
-      setExpenses(
-        expenses.map((e) =>
-          e.id === editingExpense.id ? { ...expenseData, id: e.id, createdAt: e.createdAt } : e
-        )
-      );
-      toast({
-        title: "Gasto Actualizado",
-        description: "El gasto ha sido actualizado exitosamente.",
-      });
-    } else {
-      const result = await expensesApi.create(expenseData);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
-        return;
-      }
-      const expenseDataResponse = (result.data as any).expense || result.data;
-      const newExpense = {
-        ...expenseData,
-        id: expenseDataResponse.id,
-        createdAt: expenseDataResponse.created_at
-      };
-      setExpenses([newExpense, ...expenses]);
-      toast({
-        title: "Gasto Agregado",
-        description: "El gasto ha sido registrado exitosamente.",
-      });
+      setIsFormOpen(false);
+      setEditingExpense(undefined);
+    } catch (error) {
+      // Los errores ya son manejados por los hooks
+      console.error("Error submitting expense:", error);
     }
-    setIsFormOpen(false);
-    setEditingExpense(undefined);
   };
 
-  const handleEdit = (expense: Expense) => {
-    setEditingExpense(expense);
-    setIsFormOpen(true);
+  const handleEdit = async (expense: Expense) => {
+    setIsFetchingExpense(true);
+    try {
+      // Fetch the full expense data including the receipt image
+      const result = await expensesApi.getById(expense.id);
+      if (result.data) {
+        setEditingExpense(result.data as Expense);
+      } else {
+        // Fallback to the expense from the list if fetch fails
+        setEditingExpense(expense);
+        if (result.error) {
+          toast({
+            title: "Warning",
+            description: "Could not load receipt image. You can still edit other fields.",
+            variant: "default",
+          });
+        }
+      }
+      setIsFormOpen(true);
+    } finally {
+      setIsFetchingExpense(false);
+    }
   };
 
   const handleDeleteClick = (id: string) => {
@@ -90,28 +68,16 @@ const Expenses = () => {
 
   const handleDeleteConfirm = async () => {
     if (expenseToDelete) {
-      setIsDeleting(true);
-      const expense = expenses.find((e) => e.id === expenseToDelete);
-      const result = await expensesApi.delete(expenseToDelete);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
+      try {
+        await deleteExpense.mutateAsync(expenseToDelete);
         setDeleteDialogOpen(false);
         setExpenseToDelete(null);
-        setIsDeleting(false);
-        return;
+      } catch (error) {
+        // Los errores ya son manejados por los hooks
+        console.error("Error deleting expense:", error);
+        setDeleteDialogOpen(false);
+        setExpenseToDelete(null);
       }
-      setExpenses(expenses.filter((e) => e.id !== expenseToDelete));
-      setDeleteDialogOpen(false);
-      setExpenseToDelete(null);
-      setIsDeleting(false);
-      toast({
-        title: "Gasto Eliminado",
-        description: `El gasto de ${expense?.supermarketName} ha sido eliminado.`,
-      });
     }
   };
 
@@ -146,7 +112,7 @@ const Expenses = () => {
           expenses={expenses}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
-          isDeleting={isDeleting}
+          isDeleting={deleteExpense.isPending || isFetchingExpense}
         />
       )}
 

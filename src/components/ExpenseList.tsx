@@ -9,6 +9,7 @@ import { ExpensePreviewDialog } from "./ExpensePreviewDialog";
 import { useState, useMemo } from "react";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
+import { expensesApi } from "@/lib/api";
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -20,13 +21,16 @@ interface ExpenseListProps {
 const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProps) => {
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
+  const [fullExpenses, setFullExpenses] = useState<Record<string, Expense>>({});
 
   const filteredExpenses = useMemo(() => {
     if (!searchQuery.trim()) return expenses;
     const query = searchQuery.toLowerCase();
     return expenses.filter(expense =>
       expense.supermarketName.toLowerCase().includes(query) ||
-      expense.cardType.toLowerCase().includes(query) ||
+      expense.cardType.name.toLowerCase().includes(query) ||
+      expense.cardType.description.toLowerCase().includes(query) ||
       expense.amount.toString().includes(query)
     );
   }, [expenses, searchQuery]);
@@ -40,8 +44,53 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
     hasPreviousPage,
   } = usePagination({ items: filteredExpenses, itemsPerPage: 10 });
 
-  const getCardBadgeColor = (cardType: string) => {
-    switch (cardType) {
+  // Fetch full expense with image
+  const fetchFullExpense = async (expenseId: string): Promise<Expense | null> => {
+    // Return cached version if available
+    if (fullExpenses[expenseId]) {
+      return fullExpenses[expenseId];
+    }
+
+    // Check if already loading
+    if (loadingImages[expenseId]) {
+      return null;
+    }
+
+    try {
+      setLoadingImages(prev => ({ ...prev, [expenseId]: true }));
+
+      const result = await expensesApi.getById(expenseId);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      if (!result.data) {
+        throw new Error('No data received');
+      }
+
+      const fullExpense: Expense = result.data as Expense;
+
+      // Cache the full expense
+      setFullExpenses(prev => ({ ...prev, [expenseId]: fullExpense }));
+
+      return fullExpense;
+    } catch (error) {
+      console.error('Error fetching full expense:', error);
+      return null;
+    } finally {
+      setLoadingImages(prev => ({ ...prev, [expenseId]: false }));
+    }
+  };
+
+  // Get expense with full data (image) if available
+  const getExpenseWithImage = (expense: Expense): Expense => {
+    return fullExpenses[expense.id] || expense;
+  };
+
+  const getCardBadgeColor = (cardTypeName: string) => {
+    const normalizedName = cardTypeName.toLowerCase();
+    switch (normalizedName) {
       case "amex":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
       case "visa":
@@ -107,13 +156,18 @@ const ExpenseList = ({ expenses, onEdit, onDelete, isDeleting }: ExpenseListProp
                       ₡{expense.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={getCardBadgeColor(expense.cardType)}>
-                        {expense.cardType.toUpperCase()}
+                      <Badge variant="outline" className={getCardBadgeColor(expense.cardType.name)}>
+                        {expense.cardType.description}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <ExpensePreviewDialog expense={expense} setExpandedPhoto={setExpandedPhoto} />
+                        <ExpensePreviewDialog
+                          expense={getExpenseWithImage(expense)}
+                          setExpandedPhoto={setExpandedPhoto}
+                          onOpen={() => fetchFullExpense(expense.id)}
+                          isLoadingImage={loadingImages[expense.id]}
+                        />
                         <Button
                           variant="ghost"
                           size="icon"

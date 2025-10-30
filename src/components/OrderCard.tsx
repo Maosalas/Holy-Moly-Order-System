@@ -45,12 +45,21 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
 
   const remainingBalance = order.chargeAmount - order.downPayment;
 
+  const getPhotoUrl = (photo: string | { id: string; photoUrl: string; createdAt: string }): string => {
+    const url = typeof photo === 'string' ? photo : photo.photoUrl;
+    // Ensure base64 images have proper data URL prefix
+    if (url && !url.startsWith('data:') && !url.startsWith('http')) {
+      return `data:image/jpeg;base64,${url}`;
+    }
+    return url || '';
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-video w-full bg-muted flex items-center justify-center overflow-hidden">
         {order.clientPhotos.length > 0 ? (
           <img
-            src={order.clientPhotos[0]}
+            src={getPhotoUrl(order.clientPhotos[0])}
             alt={`${order.clientName}'s order`}
             className="w-full h-full object-cover"
           />
@@ -118,7 +127,7 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Payment Method:</span>
             <Badge variant="secondary" className="text-xs capitalize">
-              {order.paymentMethod}
+              {typeof order.paymentMethod === 'string' ? order.paymentMethod : order.paymentMethod.name}
             </Badge>
           </div>
         </div>

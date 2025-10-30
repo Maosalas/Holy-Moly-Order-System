@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,20 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DollarSign, ShoppingBag, Phone, Calendar, ArrowRight, Package, Receipt, Filter } from "lucide-react";
+import { ShoppingBag, Phone, Calendar, ArrowRight, Package, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { expensesApi, ordersApi } from "@/lib/api";
-import type { Order } from "@/types/order";
-import type { Expense } from "@/types/expense";
-
-const ORDERS_STORAGE_KEY = "holy-moly-orders";
-const EXPENSES_STORAGE_KEY = "holy-moly-expenses";
+import { useOrders } from "@/hooks/use-orders";
+import { useExpenses } from "@/hooks/use-expenses";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+
+  // Usar React Query hooks en lugar de estado manual
+  const { data: orders = [] } = useOrders();
+  const { data: expenses = [] } = useExpenses();
 
   // Date filters
   const [ordersStartDate, setOrdersStartDate] = useState("");
@@ -29,53 +27,11 @@ const Dashboard = () => {
   const [expensesStartDate, setExpensesStartDate] = useState("");
   const [expensesEndDate, setExpensesEndDate] = useState("");
 
-  useEffect(() => {
-    const loadOrders = async () => {
-      const { data, error } = await ordersApi.getAll();
-      if (error) {
-        console.error("Error loading orders:", error);
-        setOrders([]);
-      } else {
-        setOrders((data as Order[]) || []);
-      }
-    };
-
-    const loadExpenses = async () => {
-      const { data, error } = await expensesApi.getAll();
-      if (error) {
-        console.error("Error loading expenses:", error);
-        setExpenses([]);
-      } else {
-        setExpenses((data as Expense[]) || []);
-      }
-    };
-
-    // Load data on mount
-    loadOrders();
-    loadExpenses();
-
-    // Listen for visibility changes (when user switches tabs/routes)
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        loadOrders();
-        loadExpenses();
-      }
-    };
-
-    // Listen for focus (when window gets focus)
-    const handleFocus = () => {
-      loadOrders();
-      loadExpenses();
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
+  // React Query maneja automáticamente:
+  // - Carga inicial
+  // - Refetch en window focus
+  // - Refetch en reconexión
+  // - Caché de datos
 
   // Filter orders by user role - cake topper providers only see orders with cake toppers
   const roleFilteredOrders = user?.role === "cake_topper_provider"
@@ -112,24 +68,43 @@ const Dashboard = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  function parseLocalDate(dateString: string) {
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day); // JS months are 0-based
-  }
-
   const upcomingOrders = roleFilteredOrders
-    .filter(order => !order.statuses.includes("finished"))
+    .filter(order => {
+      if (order.statuses.includes("finished")) return false;
+
+      // Filter out orders with past delivery dates
+      const delivery = new Date(order.deliveryDate);
+      delivery.setHours(0, 0, 0, 0);
+      const diffTime = delivery.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      return diffDays >= 0; // Only include today and future dates
+    })
+    .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
 
 
   const getTimeUntilDelivery = (deliveryDate: Date | string) => {
-    const delivery = typeof deliveryDate === 'string' ? new Date(deliveryDate) : deliveryDate;
+    const delivery = typeof deliveryDate === 'string' ? new Date(deliveryDate) : new Date(deliveryDate);
+    // Normalize delivery date to midnight for accurate day comparison
+    delivery.setHours(0, 0, 0, 0);
+
     const diffTime = delivery.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return "Hoy";
     if (diffDays === 1) return "Mañana";
+    if (diffDays < 0) return `Hace ${Math.abs(diffDays)} días`;
     if (diffDays <= 7) return `En ${diffDays} días`;
     return `En ${Math.ceil(diffDays / 7)} semanas`;
+  };
+
+  const getPhotoUrl = (photo: string | { id: string; photoUrl: string; createdAt: string }): string => {
+    const url = typeof photo === 'string' ? photo : photo.photoUrl;
+    // Ensure base64 images have proper data URL prefix
+    if (url && !url.startsWith('data:') && !url.startsWith('http')) {
+      return `data:image/jpeg;base64,${url}`;
+    }
+    return url;
   };
 
   const handleWhatsApp = (phoneNumber: string, clientName: string) => {
@@ -418,7 +393,7 @@ const Dashboard = () => {
                           <div className="flex items-center gap-3">
                             {order.clientPhotos.length > 0 ? (
                               <img
-                                src={order.clientPhotos[0]}
+                                src={getPhotoUrl(order.clientPhotos[0])}
                                 alt={order.clientName}
                                 className="w-10 h-10 rounded-full object-cover ring-2 ring-background"
                               />
@@ -464,7 +439,7 @@ const Dashboard = () => {
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="text-xs capitalize">
-                            {order.paymentMethod}
+                            {typeof order.paymentMethod === 'string' ? order.paymentMethod : order.paymentMethod.name}
                           </Badge>
                         </TableCell>
                         <TableCell>
