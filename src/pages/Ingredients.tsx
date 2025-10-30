@@ -1,85 +1,43 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Ingredient, IngredientFormData } from "@/types/ingredient";
 import { IngredientForm } from "@/components/IngredientForm";
 import { IngredientList } from "@/components/IngredientList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { ingredientsApi } from "@/lib/api";
+import { useIngredients, useCreateIngredient, useUpdateIngredient, useDeleteIngredient } from "@/hooks/use-ingredients";
 
 const Ingredients = () => {
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Usar React Query hooks
+  const { data: ingredientsData = [], isLoading } = useIngredients();
+  const createIngredient = useCreateIngredient();
+  const updateIngredient = useUpdateIngredient();
+  const deleteIngredient = useDeleteIngredient();
 
-   useEffect(() => {
-    const fetchIngredients = async () => {
-      const result = await ingredientsApi.getAll();
-      if (result.data) {
-        const ingredientsData = Array.isArray(result.data) ? result.data : [];
-        setIngredients(ingredientsData.map((i: any) => ({
-          ...i,
-          createdAt: new Date(i.created_at),
-          updatedAt: new Date(i.updated_at)
-        })));
-      }
-      setIsLoading(false);
-    };
-    fetchIngredients();
-  }, []);
+  // Transformar datos del API
+  const ingredients: Ingredient[] = ingredientsData.map((i: any) => ({
+    ...i,
+    createdAt: new Date(i.created_at || i.createdAt),
+    updatedAt: new Date(i.updated_at || i.updatedAt)
+  }));
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ingredientToDelete, setIngredientToDelete] = useState<string | null>(null);
 
   const handleSubmit = async (data: IngredientFormData) => {
-    if (editingIngredient) {
-      const result = await ingredientsApi.update(editingIngredient.id, data);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
-        return;
+    try {
+      if (editingIngredient) {
+        await updateIngredient.mutateAsync({ id: editingIngredient.id, ingredient: data });
+      } else {
+        await createIngredient.mutateAsync(data);
       }
-      setIngredients(
-        ingredients.map((i) =>
-          i.id === editingIngredient.id
-            ? { ...data, id: i.id, createdAt: i.createdAt, updatedAt: new Date() }
-            : i
-        )
-      );
-        toast({
-          title: "Ingrediente Actualizado",
-          description: `${data.name} ha sido actualizado exitosamente.`,
-        });
-  } else {
-      const result = await ingredientsApi.create(data);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
-        return;
-      }
-      const ingredientData = (result.data as any).ingredient || result.data;
-      const newIngredient: Ingredient = {
-        ...data,
-        id: ingredientData.id,
-        createdAt: new Date(ingredientData.created_at),
-        updatedAt: new Date(ingredientData.updated_at),
-      };
-      setIngredients([...ingredients, newIngredient]);
-      toast({
-        title: "Ingrediente Creado",
-        description: `${data.name} ha sido agregado exitosamente.`,
-      });
+      setIsFormOpen(false);
+      setEditingIngredient(undefined);
+    } catch (error) {
+      // Los errores ya son manejados por los hooks
+      console.error("Error submitting ingredient:", error);
     }
-    setIsFormOpen(false);
-    setEditingIngredient(undefined);
   };
 
   const handleEdit = (ingredient: Ingredient) => {
@@ -94,28 +52,16 @@ const Ingredients = () => {
 
   const handleDeleteConfirm = async () => {
     if (ingredientToDelete) {
-      setIsDeleting(true);
-      const ingredient = ingredients.find((i) => i.id === ingredientToDelete);
-      const result = await ingredientsApi.delete(ingredientToDelete);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
+      try {
+        await deleteIngredient.mutateAsync(ingredientToDelete);
         setDeleteDialogOpen(false);
         setIngredientToDelete(null);
-        setIsDeleting(false);
-        return;
+      } catch (error) {
+        // Los errores ya son manejados por los hooks
+        console.error("Error deleting ingredient:", error);
+        setDeleteDialogOpen(false);
+        setIngredientToDelete(null);
       }
-      setIngredients(ingredients.filter((i) => i.id !== ingredientToDelete));
-      setDeleteDialogOpen(false);
-      setIngredientToDelete(null);
-      setIsDeleting(false);
-      toast({
-        title: "Ingrediente Eliminado",
-        description: `${ingredient?.name} ha sido eliminado.`,
-      });
     }
   };
 
@@ -154,7 +100,7 @@ const Ingredients = () => {
           ingredients={ingredients}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
-          isDeleting={isDeleting}
+          isDeleting={deleteIngredient.isPending}
         />
       )}
 

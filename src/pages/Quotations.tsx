@@ -1,87 +1,48 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Calculator } from "lucide-react";
 import { QuotationForm } from "@/components/QuotationForm";
 import { QuotationList } from "@/components/QuotationList";
-import { quotationsApi } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
+import { useQuotations, useCreateQuotation, useUpdateQuotation, useDeleteQuotation } from "@/hooks/use-quotations";
 import type { Quotation } from "@/types/quotation";
 
 const Quotations = () => {
-  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  // Usar React Query hooks
+  const { data: quotations = [], isLoading } = useQuotations();
+  const createQuotation = useCreateQuotation();
+  const updateQuotation = useUpdateQuotation();
+  const deleteQuotation = useDeleteQuotation();
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingQuotation, setEditingQuotation] = useState<Quotation | undefined>();
-  const { toast } = useToast();
-
-  const loadQuotations = async () => {
-    const { data, error } = await quotationsApi.getAll();
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las cotizaciones",
-        variant: "destructive",
-      });
-      setQuotations([]);
-    } else {
-      setQuotations((data as Quotation[]) || []);
-    }
-  };
-
-  useEffect(() => {
-    loadQuotations();
-  }, []);
 
   const handleCreate = async (quotationData: any) => {
-    const { error } = await quotationsApi.create(quotationData);
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo crear la cotización",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Éxito",
-        description: "Cotización creada correctamente",
-      });
+    try {
+      await createQuotation.mutateAsync(quotationData);
       setIsFormOpen(false);
-      loadQuotations();
+    } catch (error) {
+      // Los errores ya son manejados por los hooks
+      console.error("Error creating quotation:", error);
     }
   };
 
   const handleUpdate = async (id: string, quotationData: any) => {
-    const { error } = await quotationsApi.update(id, quotationData);
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la cotización",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Éxito",
-        description: "Cotización actualizada correctamente",
-      });
+    try {
+      await updateQuotation.mutateAsync({ id, quotation: quotationData });
       setEditingQuotation(undefined);
       setIsFormOpen(false);
-      loadQuotations();
+    } catch (error) {
+      // Los errores ya son manejados por los hooks
+      console.error("Error updating quotation:", error);
     }
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await quotationsApi.delete(id);
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar la cotización",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Éxito",
-        description: "Cotización eliminada correctamente",
-      });
-      loadQuotations();
+    try {
+      await deleteQuotation.mutateAsync(id);
+    } catch (error) {
+      // Los errores ya son manejados por los hooks
+      console.error("Error deleting quotation:", error);
     }
   };
 

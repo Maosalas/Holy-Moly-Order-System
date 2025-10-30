@@ -13,11 +13,27 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
   const deliveryDate = new Date(order.deliveryDate);
   const remainingBalance = order.chargeAmount - order.downPayment;
 
+  const getPhotoUrl = (photo: string | { id: string; photoUrl: string; createdAt: string }): string => {
+    // Debug logging - see the full object structure
+    console.log('Photo object:', photo);
+    console.log('Photo keys:', typeof photo === 'object' ? Object.keys(photo) : 'N/A');
+
+    const url = typeof photo === 'string' ? photo : photo.photoUrl;
+
+    console.log('Extracted URL:', url?.substring(0, 50));
+
+    // Ensure base64 images have proper data URL prefix
+    if (url && !url.startsWith('data:') && !url.startsWith('http')) {
+      return `data:image/jpeg;base64,${url}`;
+    }
+    return url || '';
+  };
+
   const getStatusColor = (status: string) => {
     const colors = {
-      "waiting-for-payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-      "partially-paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      "payment-received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      "waiting_for_payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+      "partially_paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      "payment_received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       "confirmed": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
       "finished": "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
     };
@@ -26,9 +42,9 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
 
   const getStatusLabel = (status: string) => {
     const labels = {
-      "waiting-for-payment": "En espera",
-      "partially-paid": "Pago Parcial",
-      "payment-received": "Pagado",
+      "waiting_for_payment": "En espera",
+      "partially_paid": "Pago Parcial",
+      "payment_received": "Pagado",
       "confirmed": "Confirmado",
       "finished": "Terminado",
     };
@@ -46,21 +62,28 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
         <DialogHeader>
           <DialogTitle className="text-2xl">Orden de {order.clientName}</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Client Photos */}
           {order.clientPhotos.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-semibold text-sm text-muted-foreground">Fotos de referencia</h3>
               <div className="grid grid-cols-2 gap-2">
-                {order.clientPhotos.map((photo, index) => (
-                  <img
-                    key={index}
-                    src={photo}
-                    alt={`Client photo ${index + 1}`}
-                    className="w-full h-48 object-cover rounded-lg border"
-                  />
-                ))}
+                {order.clientPhotos.map((photo, index) => {
+                  const photoUrl = getPhotoUrl(photo);
+                  return (
+                    <img
+                      key={typeof photo === 'string' ? index : photo.id}
+                      src={photoUrl}
+                      alt={`Client photo ${index + 1}`}
+                      className="w-full h-48 object-cover rounded-lg border"
+                      onError={(e) => {
+                        console.error('Failed to load image:', photoUrl);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
@@ -131,7 +154,7 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
                   <p className="text-sm text-muted-foreground">Método de pago</p>
                 </div>
                 <Badge variant="secondary" className="capitalize">
-                  {order.paymentMethod}
+                  {typeof order.paymentMethod === 'string' ? order.paymentMethod : order.paymentMethod.name}
                 </Badge>
               </div>
               {order.downPayment > 0 && (
@@ -159,11 +182,15 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
           <div className="space-y-2">
             <h3 className="font-semibold text-sm text-muted-foreground">Status de Orden</h3>
             <div className="flex flex-wrap gap-2">
-              {order.statuses.map(status => (
-                <Badge key={status} className={getStatusColor(status)}>
-                  {getStatusLabel(status)}
-                </Badge>
-              ))}
+              {order.statuses.map(statusObj => {
+                const statusValue = typeof statusObj === 'string' ? statusObj : statusObj.status;
+                const statusKey = typeof statusObj === 'string' ? statusObj : statusObj.id;
+                return (
+                  <Badge key={statusKey} className={getStatusColor(statusValue)}>
+                    {getStatusLabel(statusValue)}
+                  </Badge>
+                );
+              })}
             </div>
           </div>
 

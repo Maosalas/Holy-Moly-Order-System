@@ -21,15 +21,28 @@ interface OrderListProps {
 export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
+
+  const getPhotoUrl = (photo: string | { id: string; photoUrl: string; createdAt: string }): string => {
+    const url = typeof photo === 'string' ? photo : photo.photoUrl;
+    // Ensure base64 images have proper data URL prefix
+    if (url && !url.startsWith('data:') && !url.startsWith('http')) {
+      return `data:image/jpeg;base64,${url}`;
+    }
+    return url;
+  };
+
   const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return orders;
     const query = searchQuery.toLowerCase();
-    return orders.filter(order =>
-      order.clientName.toLowerCase().includes(query) ||
-      order.phoneNumber.includes(query) ||
-      order.orderDetails.toLowerCase().includes(query) ||
-      order.paymentMethod.toLowerCase().includes(query)
-    );
+    return orders.filter(order => {
+      const paymentMethodName = typeof order.paymentMethod === 'string'
+        ? order.paymentMethod
+        : order.paymentMethod.name;
+      return order.clientName.toLowerCase().includes(query) ||
+        order.phoneNumber.includes(query) ||
+        order.orderDetails.toLowerCase().includes(query) ||
+        paymentMethodName.toLowerCase().includes(query);
+    });
   }, [orders, searchQuery]);
 
   const {
@@ -49,9 +62,9 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
 
   const getStatusColor = (status: string) => {
     const colors = {
-      "waiting-for-payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-      "partially-paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      "payment-received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      "waiting_for_payment": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+      "partially_paid": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      "payment_received": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       "confirmed": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
       "finished": "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
     };
@@ -60,9 +73,9 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
 
   const getStatusLabel = (status: string) => {
     const labels = {
-      "waiting-for-payment": "Espera",
-      "partially-paid": "Parcial",
-      "payment-received": "Pagado",
+      "waiting_for_payment": "Espera",
+      "partially_paid": "Parcial",
+      "payment_received": "Pagado",
       "confirmed": "Confirmado",
       "finished": "Terminado",
     };
@@ -107,7 +120,7 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
                     <div className="flex items-center gap-2 min-w-0">
                       {order.clientPhotos.length > 0 ? (
                         <img
-                          src={order.clientPhotos[0]}
+                          src={getPhotoUrl(order.clientPhotos[0])}
                           alt={order.clientName}
                           className="w-12 h-12 rounded-full object-cover ring-2 ring-background"
                         />
@@ -187,11 +200,15 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
 
                       <div className="flex flex-wrap gap-1 mt-1">
                         <span className="text-muted-foreground">Status:</span>
-                        {order.statuses.map(status => (
-                          <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
-                            {getStatusLabel(status)}
-                          </Badge>
-                        ))}
+                        {order.statuses.map(statusObj => {
+                          const statusValue = typeof statusObj === 'string' ? statusObj : statusObj.status;
+                          const statusKey = typeof statusObj === 'string' ? statusObj : statusObj.id;
+                          return (
+                            <Badge key={statusKey} className={`text-xs ${getStatusColor(statusValue)}`}>
+                              {getStatusLabel(statusValue)}
+                            </Badge>
+                          );
+                        })}
                       </div>
 
                     </div>
@@ -253,7 +270,7 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
                         <div className="flex items-center gap-3">
                           {order.clientPhotos.length > 0 ? (
                             <img
-                              src={order.clientPhotos[0]}
+                              src={getPhotoUrl(order.clientPhotos[0])}
                               alt={order.clientName}
                               className="w-12 h-12 rounded-full object-cover ring-2 ring-background"
                             />
@@ -301,16 +318,20 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">
-                          {order.paymentMethod}
+                          {typeof order.paymentMethod === 'string' ? order.paymentMethod : order.paymentMethod.name}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1 max-w-[200px]">
-                          {order.statuses.map(status => (
-                            <Badge key={status} className={`text-xs ${getStatusColor(status)}`}>
-                              {getStatusLabel(status)}
-                            </Badge>
-                          ))}
+                          {order.statuses.map(statusObj => {
+                            const statusValue = typeof statusObj === 'string' ? statusObj : statusObj.status;
+                            const statusKey = typeof statusObj === 'string' ? statusObj : statusObj.id;
+                            return (
+                              <Badge key={statusKey} className={`text-xs ${getStatusColor(statusValue)}`}>
+                                {getStatusLabel(statusValue)}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       </TableCell>
                       <TableCell>

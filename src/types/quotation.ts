@@ -1,7 +1,15 @@
+export interface RecipeType {
+  id: string;
+  name: string;
+  description: string;
+  active?: boolean;
+  createdAt?: string;
+}
+
 export interface QuotationRecipe {
   recipeId: string;
   recipeName: string;
-  recipeType: 'queque' | 'relleno' | 'cubierta' | 'unidad';
+  recipeType: RecipeType;
   unitCost: number;
   quantity: number;
   totalCost: number;

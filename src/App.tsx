@@ -16,7 +16,17 @@ import Quotations from "./pages/Quotations";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000, // 30 segundos - considera los datos frescos por este tiempo
+      gcTime: 1000 * 60 * 5, // 5 minutos - mantiene datos en caché aunque no se usen
+      refetchOnWindowFocus: true, // Refresca cuando el usuario vuelve a la ventana
+      refetchOnReconnect: true, // Refresca cuando se reconecta a internet
+      retry: 1, // Reintenta 1 vez si falla
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

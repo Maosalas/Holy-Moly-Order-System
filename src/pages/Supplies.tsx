@@ -1,81 +1,43 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Supply } from "@/types/supply";
 import SupplyForm from "@/components/SupplyForm";
 import SupplyList from "@/components/SupplyList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { suppliesApi } from "@/lib/api";
+import { useSupplies, useCreateSupply, useUpdateSupply, useDeleteSupply } from "@/hooks/use-supplies";
 
 const Supplies = () => {
-  const [supplies, setSupplies] = useState<Supply[]>([]);
+  // Usar React Query hooks
+  const { data: suppliesData = [], isLoading } = useSupplies();
+  const createSupply = useCreateSupply();
+  const updateSupply = useUpdateSupply();
+  const deleteSupply = useDeleteSupply();
+
+  // Transformar datos del API
+  const supplies: Supply[] = suppliesData.map((s: any) => ({
+    ...s,
+    createdAt: s.created_at || s.createdAt
+  }));
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSupply, setEditingSupply] = useState<Supply | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [supplyToDelete, setSupplyToDelete] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const fetchSupplies = async () => {
-      const result = await suppliesApi.getAll();
-      if (result.data) {
-        const suppliesData = Array.isArray(result.data) ? result.data : [];
-        setSupplies(suppliesData.map((s: any) => ({
-          ...s,
-          createdAt: s.created_at
-        })));
-      }
-      setIsLoading(false);
-    };
-    fetchSupplies();
-  }, []);
 
   const handleSubmit = async (supplyData: Supply) => {
-    if (editingSupply) {
-      const result = await suppliesApi.update(editingSupply.id, supplyData);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
-        return;
+    try {
+      if (editingSupply) {
+        await updateSupply.mutateAsync({ id: editingSupply.id, supply: supplyData });
+      } else {
+        await createSupply.mutateAsync(supplyData);
       }
-      setSupplies(
-        supplies.map((s) =>
-          s.id === editingSupply.id ? { ...supplyData, id: s.id, createdAt: s.createdAt } : s
-        )
-      );
-      toast({
-        title: "Insumo Actualizado",
-        description: `${supplyData.name} ha sido actualizado exitosamente.`,
-      });
-    } else {
-      const result = await suppliesApi.create(supplyData);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
-        return;
-      }
-      const supplyDataResponse = (result.data as any).supply || result.data;
-      const newSupply = {
-        ...supplyData,
-        id: supplyDataResponse.id,
-        createdAt: supplyDataResponse.created_at
-      };
-      setSupplies([newSupply, ...supplies]);
-      toast({
-        title: "Insumo Agregado",
-        description: `${supplyData.name} ha sido agregado exitosamente.`,
-      });
+      setIsFormOpen(false);
+      setEditingSupply(undefined);
+    } catch (error) {
+      // Los errores ya son manejados por los hooks
+      console.error("Error submitting supply:", error);
     }
-    setIsFormOpen(false);
-    setEditingSupply(undefined);
   };
 
   const handleEdit = (supply: Supply) => {
@@ -90,28 +52,16 @@ const Supplies = () => {
 
   const handleDeleteConfirm = async () => {
     if (supplyToDelete) {
-      setIsDeleting(true);
-      const supply = supplies.find((s) => s.id === supplyToDelete);
-      const result = await suppliesApi.delete(supplyToDelete);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
+      try {
+        await deleteSupply.mutateAsync(supplyToDelete);
         setDeleteDialogOpen(false);
         setSupplyToDelete(null);
-        setIsDeleting(false);
-        return;
+      } catch (error) {
+        // Los errores ya son manejados por los hooks
+        console.error("Error deleting supply:", error);
+        setDeleteDialogOpen(false);
+        setSupplyToDelete(null);
       }
-      setSupplies(supplies.filter((s) => s.id !== supplyToDelete));
-      setDeleteDialogOpen(false);
-      setSupplyToDelete(null);
-      setIsDeleting(false);
-      toast({
-        title: "Insumo Eliminado",
-        description: `${supply?.name} ha sido eliminado.`,
-      });
     }
   };
 
@@ -146,7 +96,7 @@ const Supplies = () => {
           supplies={supplies}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
-          isDeleting={isDeleting}
+          isDeleting={deleteSupply.isPending}
         />
       )}
 
