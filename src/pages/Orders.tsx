@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { OrderForm } from "@/components/OrderForm";
 import { OrderList } from "@/components/OrderList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
@@ -8,23 +8,16 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Order } from "@/types/order";
 import { ordersApi } from "@/lib/api";
+import { useOrders, useCreateOrder, useUpdateOrder, useDeleteOrder, useOrder } from "@/hooks/use-orders";
 
 const Orders = () => {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      const result = await ordersApi.getAll();
-      if (result.data) {
-        setOrders(Array.isArray(result.data) ? result.data : []);
-      }
-      setIsLoading(false);
-    };
-    fetchOrders();
-  }, []);
+  // Usar React Query hooks
+  const { data: orders = [], isLoading } = useOrders();
+  const createOrder = useCreateOrder();
+  const updateOrder = useUpdateOrder();
+  const deleteOrder = useDeleteOrder();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | undefined>();
@@ -42,51 +35,18 @@ const Orders = () => {
     // Remove undefined properties
     const { paymentMethod, ...cleanPayload } = apiPayload;
 
-    if (editingOrder) {
-      const result = await ordersApi.update(editingOrder.id, cleanPayload);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
-        return;
+    try {
+      if (editingOrder) {
+        await updateOrder.mutateAsync({ id: editingOrder.id, order: cleanPayload });
+      } else {
+        await createOrder.mutateAsync(cleanPayload);
       }
-      setOrders(
-        orders.map((o) =>
-          o.id === editingOrder.id
-            ? { ...orderData, id: o.id, createdAt: o.createdAt }
-            : o
-        )
-      );
-      toast({
-        title: "Pedido Actualizado",
-        description: `El pedido de ${orderData.clientName} ha sido actualizado.`,
-      });
-    } else {
-      const result = await ordersApi.create(cleanPayload);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
-        return;
-      }
-      const orderDataResponse = (result.data as any).order || result.data;
-      const newOrder: Order = {
-        ...orderData,
-        id: orderDataResponse.id,
-        createdAt: orderDataResponse.created_at || orderDataResponse.createdAt,
-      };
-      setOrders([newOrder, ...orders]);
-      toast({
-        title: "Pedido Creado",
-        description: `El pedido de ${orderData.clientName} ha sido creado.`,
-      });
+      setIsFormOpen(false);
+      setEditingOrder(undefined);
+    } catch (error) {
+      // Los errores ya son manejados por los hooks
+      console.error("Error submitting order:", error);
     }
-    setIsFormOpen(false);
-    setEditingOrder(undefined);
   };
 
   const handleEdit = async (order: Order) => {
@@ -121,35 +81,24 @@ const Orders = () => {
 
   const handleDeleteConfirm = async () => {
     if (orderToDelete) {
-      setIsDeleting(true);
       const order = orders.find((o) => o.id === orderToDelete);
-      const result = await ordersApi.delete(orderToDelete);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
+
+      try {
+        // Download calendar cancellation event
+        if (order) {
+          const { downloadICS } = await import("@/lib/utils");
+          downloadICS(order, 'delete');
+        }
+
+        await deleteOrder.mutateAsync(orderToDelete);
         setDeleteDialogOpen(false);
         setOrderToDelete(null);
-        setIsDeleting(false);
-        return;
+      } catch (error) {
+        // Los errores ya son manejados por los hooks
+        console.error("Error deleting order:", error);
+        setDeleteDialogOpen(false);
+        setOrderToDelete(null);
       }
-      
-      // Download calendar cancellation event
-      if (order) {
-        const { downloadICS } = await import("@/lib/utils");
-        downloadICS(order, 'delete');
-      }
-      
-      setOrders(orders.filter((o) => o.id !== orderToDelete));
-      setDeleteDialogOpen(false);
-      setOrderToDelete(null);
-      setIsDeleting(false);
-      toast({
-        title: "Pedido Eliminado",
-        description: `El pedido de ${order?.clientName} ha sido eliminado.`,
-      });
     }
   };
 
@@ -199,7 +148,7 @@ const Orders = () => {
           orders={visibleOrders}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
-          isDeleting={isDeleting || isFetchingOrder}
+          isDeleting={deleteOrder.isPending || isFetchingOrder}
         />
       )}
 

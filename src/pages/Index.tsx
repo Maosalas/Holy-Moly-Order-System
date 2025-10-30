@@ -1,86 +1,43 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Recipe, RecipeFormData } from "@/types/recipe";
 import { RecipeForm } from "@/components/RecipeForm";
 import { RecipeList } from "@/components/RecipeList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { recipesApi } from "@/lib/api";
+import { useRecipes, useCreateRecipe, useUpdateRecipe, useDeleteRecipe } from "@/hooks/use-recipes";
 
 const Index = () => {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Usar React Query hooks
+  const { data: recipesData = [], isLoading } = useRecipes();
+  const createRecipe = useCreateRecipe();
+  const updateRecipe = useUpdateRecipe();
+  const deleteRecipe = useDeleteRecipe();
 
-  useEffect(() => {
-    const fetchRecipes = async () => {
-      const result = await recipesApi.getAll();
-      console.log(result);
-      if (result.data) {
-        const recipesData = Array.isArray(result.data) ? result.data : [];
-        setRecipes(recipesData.map((r: any) => ({
-          ...r,
-          createdAt: new Date(r.created_at),
-          updatedAt: new Date(r.updated_at)
-        })));
-      }
-      setIsLoading(false);
-    };
-    fetchRecipes();
-  }, []);
+  // Transformar datos del API
+  const recipes: Recipe[] = recipesData.map((r: any) => ({
+    ...r,
+    createdAt: new Date(r.created_at || r.createdAt),
+    updatedAt: new Date(r.updated_at || r.updatedAt)
+  }));
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState<string | null>(null);
 
   const handleSubmit = async (data: RecipeFormData) => {
-    if (editingRecipe) {
-      const result = await recipesApi.update(editingRecipe.id, data);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
-        return;
+    try {
+      if (editingRecipe) {
+        await updateRecipe.mutateAsync({ id: editingRecipe.id, recipe: data });
+      } else {
+        await createRecipe.mutateAsync(data);
       }
-      setRecipes(
-        recipes.map((r) =>
-          r.id === editingRecipe.id
-            ? { ...data, id: r.id, createdAt: r.createdAt, updatedAt: new Date() }
-            : r
-        )
-      );
-        toast({
-          title: "Receta Actualizada",
-          description: `${data.name} ha sido actualizada exitosamente.`,
-        });
-    } else {
-      const result = await recipesApi.create(data);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
-        return;
-      }
-      const recipeData = (result.data as any).recipe || result.data;
-      const newRecipe: Recipe = {
-        ...data,
-        id: recipeData.id,
-        createdAt: new Date(recipeData.created_at),
-        updatedAt: new Date(recipeData.updated_at),
-      };
-      setRecipes([...recipes, newRecipe]);
-      toast({
-        title: "Receta Creada",
-        description: `${data.name} ha sido agregada exitosamente.`,
-      });
+      setIsFormOpen(false);
+      setEditingRecipe(undefined);
+    } catch (error) {
+      // Los errores ya son manejados por los hooks
+      console.error("Error submitting recipe:", error);
     }
-    setIsFormOpen(false);
-    setEditingRecipe(undefined);
   };
 
   const handleEdit = (recipe: Recipe) => {
@@ -95,28 +52,16 @@ const Index = () => {
 
   const handleDeleteConfirm = async () => {
     if (recipeToDelete) {
-      setIsDeleting(true);
-      const recipe = recipes.find((r) => r.id === recipeToDelete);
-      const result = await recipesApi.delete(recipeToDelete);
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-          variant: "destructive",
-        });
+      try {
+        await deleteRecipe.mutateAsync(recipeToDelete);
         setDeleteDialogOpen(false);
         setRecipeToDelete(null);
-        setIsDeleting(false);
-        return;
+      } catch (error) {
+        // Los errores ya son manejados por los hooks
+        console.error("Error deleting recipe:", error);
+        setDeleteDialogOpen(false);
+        setRecipeToDelete(null);
       }
-      setRecipes(recipes.filter((r) => r.id !== recipeToDelete));
-      setDeleteDialogOpen(false);
-      setRecipeToDelete(null);
-      setIsDeleting(false);
-      toast({
-        title: "Receta Eliminada",
-        description: `${recipe?.name} ha sido eliminada.`,
-      });
     }
   };
 
@@ -155,7 +100,7 @@ const Index = () => {
           recipes={recipes}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
-          isDeleting={isDeleting}
+          isDeleting={deleteRecipe.isPending}
         />
       )}
 
