@@ -132,6 +132,15 @@ const Dashboard = () => {
     return `En ${Math.ceil(diffDays / 7)} semanas`;
   };
 
+  const getPhotoUrl = (photo: string | { id: string; photoUrl: string; createdAt: string }): string => {
+    const url = typeof photo === 'string' ? photo : photo.photoUrl;
+    // Ensure base64 images have proper data URL prefix
+    if (url && !url.startsWith('data:') && !url.startsWith('http')) {
+      return `data:image/jpeg;base64,${url}`;
+    }
+    return url;
+  };
+
   const handleWhatsApp = (phoneNumber: string, clientName: string) => {
     const message = encodeURIComponent(`Hola ${clientName}! Te hablamos de Holy Moly...`);
     const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${message}`;
@@ -418,7 +427,7 @@ const Dashboard = () => {
                           <div className="flex items-center gap-3">
                             {order.clientPhotos.length > 0 ? (
                               <img
-                                src={order.clientPhotos[0]}
+                                src={getPhotoUrl(order.clientPhotos[0])}
                                 alt={order.clientName}
                                 className="w-10 h-10 rounded-full object-cover ring-2 ring-background"
                               />
@@ -464,7 +473,7 @@ const Dashboard = () => {
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="text-xs capitalize">
-                            {order.paymentMethod}
+                            {typeof order.paymentMethod === 'string' ? order.paymentMethod : order.paymentMethod.name}
                           </Badge>
                         </TableCell>
                         <TableCell>

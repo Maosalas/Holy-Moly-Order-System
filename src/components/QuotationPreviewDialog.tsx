@@ -32,10 +32,10 @@ export function QuotationPreviewDialog({
   };
 
   const recipesByType = {
-    queque: quotation.recipes.filter(r => r.recipeType === 'queque'),
-    relleno: quotation.recipes.filter(r => r.recipeType === 'relleno'),
-    cubierta: quotation.recipes.filter(r => r.recipeType === 'cubierta'),
-    unidad: quotation.recipes.filter(r => r.recipeType === 'unidad'),
+    queque: quotation.recipes.filter(r => r.recipeType.name === 'queque'),
+    relleno: quotation.recipes.filter(r => r.recipeType.name === 'relleno'),
+    cubierta: quotation.recipes.filter(r => r.recipeType.name === 'cubierta'),
+    unidad: quotation.recipes.filter(r => r.recipeType.name === 'unidad'),
   };
 
   return (

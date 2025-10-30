@@ -30,10 +30,20 @@ const Orders = () => {
   const [editingOrder, setEditingOrder] = useState<Order | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [isFetchingOrder, setIsFetchingOrder] = useState(false);
 
   const handleSubmit = async (orderData: Omit<Order, "id" | "createdAt">) => {
+    // Transform orderData for API - replace paymentMethod object with paymentMethodId
+    const apiPayload = {
+      ...orderData,
+      paymentMethodId: orderData.paymentMethod.id,
+      paymentMethod: undefined, // Remove the full object
+    };
+    // Remove undefined properties
+    const { paymentMethod, ...cleanPayload } = apiPayload;
+
     if (editingOrder) {
-      const result = await ordersApi.update(editingOrder.id, orderData);
+      const result = await ordersApi.update(editingOrder.id, cleanPayload);
       if (result.error) {
         toast({
           title: "Error",
@@ -54,7 +64,7 @@ const Orders = () => {
         description: `El pedido de ${orderData.clientName} ha sido actualizado.`,
       });
     } else {
-      const result = await ordersApi.create(orderData);
+      const result = await ordersApi.create(cleanPayload);
       if (result.error) {
         toast({
           title: "Error",
@@ -79,10 +89,29 @@ const Orders = () => {
     setEditingOrder(undefined);
   };
 
-  const handleEdit = (order: Order) => {
+  const handleEdit = async (order: Order) => {
     console.log("Editing order:", order);
-    setEditingOrder(order);
-    setIsFormOpen(true);
+    setIsFetchingOrder(true);
+    try {
+      // Fetch the full order data including client photos
+      const result = await ordersApi.getById(order.id);
+      if (result.data) {
+        setEditingOrder(result.data as Order);
+      } else {
+        // Fallback to the order from the list if fetch fails
+        setEditingOrder(order);
+        if (result.error) {
+          toast({
+            title: "Warning",
+            description: "Could not load full order data. You can still edit other fields.",
+            variant: "default",
+          });
+        }
+      }
+      setIsFormOpen(true);
+    } finally {
+      setIsFetchingOrder(false);
+    }
   };
 
   const handleDeleteClick = (id: string) => {
@@ -170,7 +199,7 @@ const Orders = () => {
           orders={visibleOrders}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
-          isDeleting={isDeleting}
+          isDeleting={isDeleting || isFetchingOrder}
         />
       )}
 

@@ -21,15 +21,28 @@ interface OrderListProps {
 export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
+
+  const getPhotoUrl = (photo: string | { id: string; photoUrl: string; createdAt: string }): string => {
+    const url = typeof photo === 'string' ? photo : photo.photoUrl;
+    // Ensure base64 images have proper data URL prefix
+    if (url && !url.startsWith('data:') && !url.startsWith('http')) {
+      return `data:image/jpeg;base64,${url}`;
+    }
+    return url;
+  };
+
   const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return orders;
     const query = searchQuery.toLowerCase();
-    return orders.filter(order =>
-      order.clientName.toLowerCase().includes(query) ||
-      order.phoneNumber.includes(query) ||
-      order.orderDetails.toLowerCase().includes(query) ||
-      order.paymentMethod.toLowerCase().includes(query)
-    );
+    return orders.filter(order => {
+      const paymentMethodName = typeof order.paymentMethod === 'string'
+        ? order.paymentMethod
+        : order.paymentMethod.name;
+      return order.clientName.toLowerCase().includes(query) ||
+        order.phoneNumber.includes(query) ||
+        order.orderDetails.toLowerCase().includes(query) ||
+        paymentMethodName.toLowerCase().includes(query);
+    });
   }, [orders, searchQuery]);
 
   const {
@@ -107,7 +120,7 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
                     <div className="flex items-center gap-2 min-w-0">
                       {order.clientPhotos.length > 0 ? (
                         <img
-                          src={order.clientPhotos[0]}
+                          src={getPhotoUrl(order.clientPhotos[0])}
                           alt={order.clientName}
                           className="w-12 h-12 rounded-full object-cover ring-2 ring-background"
                         />
@@ -257,7 +270,7 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
                         <div className="flex items-center gap-3">
                           {order.clientPhotos.length > 0 ? (
                             <img
-                              src={order.clientPhotos[0]}
+                              src={getPhotoUrl(order.clientPhotos[0])}
                               alt={order.clientName}
                               className="w-12 h-12 rounded-full object-cover ring-2 ring-background"
                             />
@@ -305,7 +318,7 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">
-                          {order.paymentMethod}
+                          {typeof order.paymentMethod === 'string' ? order.paymentMethod : order.paymentMethod.name}
                         </Badge>
                       </TableCell>
                       <TableCell>

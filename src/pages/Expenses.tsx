@@ -16,6 +16,7 @@ const Expenses = () => {
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isFetchingExpense, setIsFetchingExpense] = useState(false);
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -78,9 +79,28 @@ const Expenses = () => {
     setEditingExpense(undefined);
   };
 
-  const handleEdit = (expense: Expense) => {
-    setEditingExpense(expense);
-    setIsFormOpen(true);
+  const handleEdit = async (expense: Expense) => {
+    setIsFetchingExpense(true);
+    try {
+      // Fetch the full expense data including the receipt image
+      const result = await expensesApi.getById(expense.id);
+      if (result.data) {
+        setEditingExpense(result.data as Expense);
+      } else {
+        // Fallback to the expense from the list if fetch fails
+        setEditingExpense(expense);
+        if (result.error) {
+          toast({
+            title: "Warning",
+            description: "Could not load receipt image. You can still edit other fields.",
+            variant: "default",
+          });
+        }
+      }
+      setIsFormOpen(true);
+    } finally {
+      setIsFetchingExpense(false);
+    }
   };
 
   const handleDeleteClick = (id: string) => {
@@ -146,7 +166,7 @@ const Expenses = () => {
           expenses={expenses}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
-          isDeleting={isDeleting}
+          isDeleting={isDeleting || isFetchingExpense}
         />
       )}
 

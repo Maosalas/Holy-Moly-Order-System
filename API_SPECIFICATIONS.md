@@ -132,7 +132,7 @@ CREATE TABLE payment_methods (
 INSERT INTO payment_methods (name, description) VALUES
   ('Efectivo', 'Pago en efectivo'),
   ('Transferencia', 'Transferencia bancaria'),
-  ('Tarjeta', 'Pago con tarjeta de crédito/débito'),
+  ('Link de pago/tarjeta', 'Pago con tarjeta de crédito/débito'),
   ('SINPE', 'Pago mediante SINPE Móvil'),
   ('Otro', 'Otro método de pago');
 ```
@@ -1072,6 +1072,7 @@ Create a new order.
 ```
 
 **Notes:**
+
 - `quotationId` is **required** and references an existing quotation
 - `paymentMethodId` is **required** and references an existing payment method from `payment_methods` table
 - `costAmount` is automatically calculated from the selected quotation's `totalCost`
@@ -1173,6 +1174,7 @@ Create a new expense.
 **Response (201):** Created expense object with populated `cardType` details
 
 **Notes:**
+
 - `cardTypeId` is **required** and references an existing card type from `card_types` table
 - The card type details are populated when the expense is retrieved
 
@@ -1348,6 +1350,7 @@ Create a new quotation.
 **Response (201):** Created quotation object with populated `recipeType` details
 
 **Notes:**
+
 - `recipeTypeId` in each recipe is **required** and references an existing recipe type from `recipe_types` table
 - The recipe type details are populated when the quotation is retrieved
 - `totalCost` is automatically calculated by summing all recipe costs, supply costs, and additional expenses

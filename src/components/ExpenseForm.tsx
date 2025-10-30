@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Expense, CardType } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload , X, CreditCard, Check } from "lucide-react";
+import { Upload, X, CreditCard, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { cardTypesApi } from "@/lib/api";
 
 interface ExpenseFormProps {
   onSubmit: (expense: Expense) => void;
@@ -21,9 +22,58 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
   const [supermarketName, setSupermarketName] = useState(initialData?.supermarketName || "");
   const [purchaseDate, setPurchaseDate] = useState(initialData?.purchaseDate || "");
   const [amount, setAmount] = useState(initialData?.amount?.toString() || "");
-  const [cardType, setCardType] = useState<CardType>(initialData?.cardType || "visa");
+  const [cardTypeId, setCardTypeId] = useState<string>(initialData?.cardType?.id || "");
   const [receiptUrl, setReceiptUrl] = useState<string[]>(initialData?.receiptUrl ? [initialData.receiptUrl] : []);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cardTypes, setCardTypes] = useState<CardType[]>([]);
+  const [isLoadingCardTypes, setIsLoadingCardTypes] = useState(true);
+
+  // Update form fields when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      setSupermarketName(initialData.supermarketName || "");
+      // Format date to YYYY-MM-DD for date input
+      const formattedDate = initialData.purchaseDate ? initialData.purchaseDate.split('T')[0] : "";
+      setPurchaseDate(formattedDate);
+      setAmount(initialData.amount?.toString() || "");
+      setCardTypeId(initialData.cardType?.id || "");
+      setReceiptUrl(initialData.receiptUrl ? [initialData.receiptUrl] : []);
+    } else {
+      // Reset form when creating new expense
+      setSupermarketName("");
+      setPurchaseDate("");
+      setAmount("");
+      setReceiptUrl([]);
+      // cardTypeId will be set when card types are loaded
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    const fetchCardTypes = async () => {
+      try {
+        const result = await cardTypesApi.getAll();
+        if (result.data) {
+          const cardTypesData = Array.isArray(result.data) ? result.data : [];
+          setCardTypes(cardTypesData);
+
+          // Set default card type if not editing and card types are available
+          if (!initialData && cardTypesData.length > 0) {
+            setCardTypeId(cardTypesData[0].id);
+          }
+        }
+      } catch (error) {
+        toast({
+          title: "Error loading card types",
+          description: "Could not load card types. Please refresh the page.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingCardTypes(false);
+      }
+    };
+
+    fetchCardTypes();
+  }, [initialData, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,33 +81,46 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
-    if (!supermarketName || !purchaseDate || !amount) {
+    if (!supermarketName || !purchaseDate || !amount || !cardTypeId) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields",
         variant: "destructive",
       });
+      setIsSubmitting(false);
       return;
     }
 
-    const expense: Expense = {
+    // For API submission, we send cardTypeId, but for type compatibility we need the full object
+    const selectedCardType = cardTypes.find(ct => ct.id === cardTypeId);
+    if (!selectedCardType) {
+      toast({
+        title: "Invalid card type",
+        description: "Please select a valid card type",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    const expensePayload: any = {
       id: initialData?.id || crypto.randomUUID(),
       supermarketName,
       purchaseDate,
       amount: parseFloat(amount),
-      cardType,
+      cardTypeId, // Send cardTypeId to the API
       receiptUrl: receiptUrl.length > 0 ? receiptUrl[0] : undefined,
       createdAt: initialData?.createdAt || new Date().toISOString(),
     };
 
     try {
-      await onSubmit(expense);
+      await onSubmit(expensePayload);
 
       if (!initialData) {
         setSupermarketName("");
         setPurchaseDate("");
         setAmount("");
-        setCardType("visa");
+        setCardTypeId(cardTypes.length > 0 ? cardTypes[0].id : "");
         setReceiptUrl([]);
       }
     } finally {
@@ -103,7 +166,7 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
     };
     img.src = base64;
   };
-const removePhoto = (index: number) => {
+  const removePhoto = (index: number) => {
     setReceiptUrl(prev => prev.filter((_, i) => i !== index));
   };
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,10 +252,13 @@ const removePhoto = (index: number) => {
                     variant="outline"
                     role="combobox"
                     className="w-full justify-between"
+                    disabled={isLoadingCardTypes}
                   >
                     <span className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4" />
-                      {cardType === "visa" ? "Visa" : cardType === "amex" ? "Amex" : "Other"}
+                      {isLoadingCardTypes
+                        ? "Loading..."
+                        : cardTypes.find((ct) => ct.id === cardTypeId)?.description || "Select card type"}
                     </span>
                   </Button>
                 </PopoverTrigger>
@@ -202,23 +268,19 @@ const removePhoto = (index: number) => {
                     <CommandList>
                       <CommandEmpty>No card type found.</CommandEmpty>
                       <CommandGroup>
-                        {[
-                          { value: "visa", label: "Visa" },
-                          { value: "amex", label: "Amex" },
-                          { value: "other", label: "Other" },
-                        ].map((card) => (
+                        {cardTypes.map((card) => (
                           <CommandItem
-                            key={card.value}
-                            value={card.value}
-                            onSelect={() => setCardType(card.value as CardType)}
+                            key={card.id}
+                            value={card.name}
+                            onSelect={() => setCardTypeId(card.id)}
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                cardType === card.value ? "opacity-100" : "opacity-0"
+                                cardTypeId === card.id ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            {card.label}
+                            {card.description}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -254,8 +316,18 @@ const removePhoto = (index: number) => {
                 <div key={index} className="relative group">
                   <img
                     src={photo}
-                    alt={`Client idea ${index + 1}`}
-                    className="w-full h-24 object-cover rounded-md"
+                    alt={`Receipt ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-md border"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      // If image fails to load, show a placeholder or log error
+                      target.style.backgroundColor = '#f3f4f6';
+                      target.style.display = 'flex';
+                      target.style.alignItems = 'center';
+                      target.style.justifyContent = 'center';
+                      console.error('Failed to load image:', photo);
+                    }}
+                    loading="lazy"
                   />
                   <Button
                     type="button"

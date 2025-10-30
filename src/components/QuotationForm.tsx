@@ -4,10 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { recipesApi, quotationsApi, suppliesApi } from "@/lib/api";
+import { recipesApi, quotationsApi, suppliesApi, recipeTypesApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { Quotation, QuotationRecipe, QuotationSupply, QuotationAdditionalExpense } from "@/types/quotation";
+import type { Quotation, QuotationRecipe, QuotationSupply, QuotationAdditionalExpense, RecipeType } from "@/types/quotation";
 import type { Recipe } from "@/types/recipe";
 import type { Supply } from "@/types/supply";
 import { Loader2, Plus, Trash2, Ruler, Check, ChevronsUpDown, Package } from "lucide-react";
@@ -30,14 +30,44 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   const [additionalExpenses, setAdditionalExpenses] = useState<QuotationAdditionalExpense[]>(quotation?.additionalExpenses || []);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [supplies, setSupplies] = useState<Supply[]>([]);
+  const [recipeTypes, setRecipeTypes] = useState<RecipeType[]>([]);
   const [recipeMultipliers, setRecipeMultipliers] = useState<Record<string, Array<{ size: string, multiplier: number }>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Update form fields when quotation prop changes
   useEffect(() => {
+    if (quotation) {
+      setClientName(quotation.clientName || "");
+      setSize(quotation.size || 'pequeño');
+      setNotes(quotation.notes || "");
+      setSelectedRecipes(quotation.recipes || []);
+      setSelectedSupplies(quotation.selectedSupplies || []);
+      setAdditionalExpenses(quotation.additionalExpenses || []);
+    } else {
+      // Reset form when creating new quotation
+      setClientName("");
+      setSize('pequeño');
+      setNotes("");
+      setSelectedRecipes([]);
+      setSelectedSupplies([]);
+      setAdditionalExpenses([]);
+    }
+  }, [quotation]);
+
+  useEffect(() => {
+    loadRecipeTypes();
     loadRecipes();
     loadSupplies();
   }, []);
+
+  const loadRecipeTypes = async () => {
+    const result = await recipeTypesApi.getAll();
+    if (result.data) {
+      const recipeTypesData = Array.isArray(result.data) ? result.data : [];
+      setRecipeTypes(recipeTypesData);
+    }
+  };
 
   // Recalculate recipe quantities when size changes
   useEffect(() => {
@@ -119,9 +149,12 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     }
   };
 
-  const addRecipe = (recipeId: string, recipeType: 'queque' | 'relleno' | 'cubierta' | 'unidad') => {
+  const addRecipe = (recipeId: string, recipeTypeName: string) => {
     const recipe = recipes.find(r => r.id === recipeId);
     if (!recipe) return;
+
+    const recipeTypeObj = recipeTypes.find(rt => rt.name === recipeTypeName);
+    if (!recipeTypeObj) return;
 
     let quantity = 1;
     const multipliers = recipeMultipliers[recipeId];
@@ -132,12 +165,12 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       }
     }
 
-    const unitCost = recipeType === 'unidad' ? (recipe.unitCost || recipe.totalCost) : recipe.totalCost;
+    const unitCost = recipeTypeName === 'unidad' ? (recipe.unitCost || recipe.totalCost) : recipe.totalCost;
 
     const newRecipe: QuotationRecipe = {
       recipeId: recipe.id,
       recipeName: recipe.name,
-      recipeType,
+      recipeType: recipeTypeObj,
       unitCost: unitCost,
       quantity,
       totalCost: unitCost * quantity,
@@ -233,10 +266,20 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     e.preventDefault();
     setIsLoading(true);
 
+    // Transform recipes to send recipeTypeId instead of the full object
+    const recipesForAPI = selectedRecipes.map(recipe => ({
+      recipeId: recipe.recipeId,
+      recipeName: recipe.recipeName,
+      recipeTypeId: recipe.recipeType.id,
+      unitCost: recipe.unitCost,
+      quantity: recipe.quantity,
+      totalCost: recipe.totalCost,
+    }));
+
     const quotationData = {
       clientName,
       size,
-      recipes: selectedRecipes,
+      recipes: recipesForAPI,
       selectedSupplies,
       additionalExpenses: additionalExpenses.length > 0 ? additionalExpenses : undefined,
       totalCost: calculateTotal(),
@@ -364,7 +407,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                   </div>
 
                   {selectedRecipes
-                    .filter(r => r.recipeType === type)
+                    .filter(r => r.recipeType.name === type)
                     .map((recipe, index) => {
                       const actualIndex = selectedRecipes.findIndex(r => r === recipe);
                       return (
