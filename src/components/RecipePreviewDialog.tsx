@@ -23,7 +23,7 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
   // Aplicar migración si es necesario
   const migratedRecipe = migrateRecipeToElaborations(recipe);
   
-  const multiplierOptions = [0.5, 1, 2, 4];
+  const multiplierOptions = [0.5, 1,1.5, 2, 4];
   const [selectedMultiplier, setSelectedMultiplier] = useState<number>(1);
 
   return (
