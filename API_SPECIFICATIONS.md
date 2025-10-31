@@ -1,6 +1,80 @@
-# Bakery Management System - API Specifications & Database Schema
+# Bakery Management System - Multi-Tenant SaaS API Specifications & Database Schema
 
 ## Database Schema
+
+---
+
+## FASE 1: MULTI-TENANT DATABASE SCHEMA
+
+### Organizations Table
+
+```sql
+CREATE TABLE organizations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  logo_url TEXT,
+  subscription_status VARCHAR(50) DEFAULT 'trial' NOT NULL,
+  subscription_plan VARCHAR(50) DEFAULT 'free' NOT NULL,
+  subscription_stripe_customer_id VARCHAR(255),
+  subscription_stripe_subscription_id VARCHAR(255),
+  trial_ends_at TIMESTAMP,
+  settings JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_organizations_slug ON organizations(slug);
+CREATE INDEX idx_organizations_stripe_customer ON organizations(subscription_stripe_customer_id);
+```
+
+### Organization Members Table
+
+```sql
+CREATE TYPE organization_role AS ENUM ('owner', 'admin', 'staff', 'viewer');
+
+CREATE TABLE organization_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  role organization_role NOT NULL DEFAULT 'staff',
+  joined_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(organization_id, user_id)
+);
+
+CREATE INDEX idx_organization_members_org_id ON organization_members(organization_id);
+CREATE INDEX idx_organization_members_user_id ON organization_members(user_id);
+```
+
+### Subscription Plans Configuration
+
+```sql
+CREATE TABLE subscription_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) UNIQUE NOT NULL,
+  slug VARCHAR(100) UNIQUE NOT NULL,
+  price_monthly DECIMAL(10,2) NOT NULL,
+  price_yearly DECIMAL(10,2),
+  max_orders_per_month INTEGER,
+  max_users INTEGER,
+  max_storage_gb INTEGER,
+  features JSONB DEFAULT '{}',
+  stripe_price_id VARCHAR(255),
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Default subscription plans
+INSERT INTO subscription_plans (name, slug, price_monthly, price_yearly, max_orders_per_month, max_users, max_storage_gb, features) VALUES
+  ('Free', 'free', 0, 0, 10, 1, 1, '{"support": "community"}'),
+  ('Starter', 'starter', 29.99, 299.90, 50, 3, 5, '{"support": "email", "priority": false}'),
+  ('Professional', 'professional', 79.99, 799.90, 200, 10, 20, '{"support": "priority", "custom_branding": true}'),
+  ('Enterprise', 'enterprise', 199.99, 1999.90, -1, -1, 100, '{"support": "dedicated", "custom_branding": true, "api_access": true}');
+```
+
+---
+
+## FASE 2: ROLE AND SECURITY SYSTEM
 
 ### Users Table
 
@@ -15,10 +89,10 @@ CREATE TABLE users (
 );
 ```
 
-### User Roles Table
+### User Roles Table (Global Roles)
 
 ```sql
-CREATE TYPE app_role AS ENUM ('owner', 'cake_topper_provider');
+CREATE TYPE app_role AS ENUM ('super_admin', 'owner', 'cake_topper_provider');
 
 CREATE TABLE user_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -26,14 +100,134 @@ CREATE TABLE user_roles (
   role app_role NOT NULL,
   UNIQUE(user_id, role)
 );
+
+CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
 ```
 
-### Ingredients Table
+### Security Definer Functions
+
+```sql
+-- Function to check if user has a specific global role
+CREATE OR REPLACE FUNCTION public.has_global_role(_user_id UUID, _role app_role)
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id
+      AND role = _role
+  )
+$$;
+
+-- Function to check if user has a specific organization role
+CREATE OR REPLACE FUNCTION public.has_org_role(_user_id UUID, _org_id UUID, _role organization_role)
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.organization_members
+    WHERE user_id = _user_id
+      AND organization_id = _org_id
+      AND role = _role
+  )
+$$;
+
+-- Function to check if user is member of organization
+CREATE OR REPLACE FUNCTION public.is_org_member(_user_id UUID, _org_id UUID)
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.organization_members
+    WHERE user_id = _user_id
+      AND organization_id = _org_id
+  )
+$$;
+
+-- Function to get user's organizations
+CREATE OR REPLACE FUNCTION public.get_user_organizations(_user_id UUID)
+RETURNS TABLE (
+  organization_id UUID,
+  organization_name VARCHAR(255),
+  organization_slug VARCHAR(255),
+  user_role organization_role
+)
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT 
+    o.id,
+    o.name,
+    o.slug,
+    om.role
+  FROM public.organizations o
+  INNER JOIN public.organization_members om ON o.id = om.organization_id
+  WHERE om.user_id = _user_id
+$$;
+```
+
+### Row Level Security Policies
+
+```sql
+-- Organizations RLS
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+
+-- Users can see organizations they belong to
+CREATE POLICY "Users can view their organizations"
+  ON organizations FOR SELECT
+  USING (public.is_org_member(auth.uid(), id));
+
+-- Organization owners/admins can update their organization
+CREATE POLICY "Owners and admins can update organization"
+  ON organizations FOR UPDATE
+  USING (
+    public.has_org_role(auth.uid(), id, 'owner') OR
+    public.has_org_role(auth.uid(), id, 'admin')
+  );
+
+-- Super admins can view all organizations
+CREATE POLICY "Super admins can view all organizations"
+  ON organizations FOR SELECT
+  USING (public.has_global_role(auth.uid(), 'super_admin'));
+
+-- Organization Members RLS
+ALTER TABLE organization_members ENABLE ROW LEVEL SECURITY;
+
+-- Users can view members of their organizations
+CREATE POLICY "Users can view organization members"
+  ON organization_members FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+-- Owners and admins can manage members
+CREATE POLICY "Owners and admins can manage members"
+  ON organization_members FOR ALL
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
+```
+
+### Ingredients Table (Multi-Tenant)
 
 ```sql
 CREATE TABLE ingredients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   name VARCHAR(255) NOT NULL,
   provider VARCHAR(255) NOT NULL,
   qty_provider DECIMAL(10,2) NOT NULL,
@@ -43,15 +237,39 @@ CREATE TABLE ingredients (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE INDEX idx_ingredients_organization_id ON ingredients(organization_id);
 CREATE INDEX idx_ingredients_user_id ON ingredients(user_id);
+
+-- RLS for Ingredients
+ALTER TABLE ingredients ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view ingredients"
+  ON ingredients FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert ingredients"
+  ON ingredients FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update ingredients"
+  ON ingredients FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete ingredients"
+  ON ingredients FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
-### Recipes Table
+### Recipes Table (Multi-Tenant)
 
 ```sql
 CREATE TABLE recipes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   name VARCHAR(255) NOT NULL,
   image TEXT,
   total_cost DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -64,7 +282,30 @@ CREATE TABLE recipes (
   updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
+CREATE INDEX idx_recipes_organization_id ON recipes(organization_id);
 CREATE INDEX idx_recipes_user_id ON recipes(user_id);
+
+-- RLS for Recipes
+ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view recipes"
+  ON recipes FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert recipes"
+  ON recipes FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update recipes"
+  ON recipes FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete recipes"
+  ON recipes FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
 ### Recipe Elaborations Table
@@ -100,12 +341,13 @@ CREATE INDEX idx_recipe_ingredients_ingredient_id ON recipe_ingredients(ingredie
 
 **Note:** The `recipe_id` field is a legacy column maintained for backwards compatibility during migration. New implementations should only use `elaboration_id`.
 
-### Supplies Table
+### Supplies Table (Multi-Tenant)
 
 ```sql
 CREATE TABLE supplies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   name VARCHAR(255) NOT NULL,
   supplier_name VARCHAR(255) NOT NULL,
   quantity DECIMAL(10,2) NOT NULL,
@@ -114,7 +356,30 @@ CREATE TABLE supplies (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE INDEX idx_supplies_organization_id ON supplies(organization_id);
 CREATE INDEX idx_supplies_user_id ON supplies(user_id);
+
+-- RLS for Supplies
+ALTER TABLE supplies ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view supplies"
+  ON supplies FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert supplies"
+  ON supplies FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update supplies"
+  ON supplies FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete supplies"
+  ON supplies FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
 ### Payment Methods Table
@@ -150,8 +415,9 @@ CREATE TYPE order_status AS ENUM (
 
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  quotation_id UUID REFERENCES quotations(id) ON DELETE SET NULL NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  quotation_id UUID REFERENCES quotations(id) ON DELETE SET NULL,
   client_name VARCHAR(255) NOT NULL,
   phone_number VARCHAR(50) NOT NULL,
   order_details TEXT NOT NULL,
@@ -166,9 +432,32 @@ CREATE TABLE orders (
   updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
+CREATE INDEX idx_orders_organization_id ON orders(organization_id);
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_delivery_date ON orders(delivery_date);
 CREATE INDEX idx_orders_payment_method_id ON orders(payment_method_id);
+
+-- RLS for Orders
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view orders"
+  ON orders FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert orders"
+  ON orders FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update orders"
+  ON orders FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete orders"
+  ON orders FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
 **Note:** The `quotation_id` field has been removed from the current database implementation.
@@ -235,12 +524,13 @@ INSERT INTO card_types (name, description) VALUES
   ('Otro', 'Otro tipo de tarjeta');
 ```
 
-### Expenses Table
+### Expenses Table (Multi-Tenant)
 
 ```sql
 CREATE TABLE expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   supermarket_name VARCHAR(255) NOT NULL,
   purchase_date DATE NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
@@ -249,9 +539,32 @@ CREATE TABLE expenses (
   created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
+CREATE INDEX idx_expenses_organization_id ON expenses(organization_id);
 CREATE INDEX idx_expenses_user_id ON expenses(user_id);
 CREATE INDEX idx_expenses_purchase_date ON expenses(purchase_date);
 CREATE INDEX idx_expenses_card_type_id ON expenses(card_type_id);
+
+-- RLS for Expenses
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view expenses"
+  ON expenses FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert expenses"
+  ON expenses FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update expenses"
+  ON expenses FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete expenses"
+  ON expenses FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
 ### Recipe Types Table
@@ -273,12 +586,13 @@ INSERT INTO recipe_types (name, description) VALUES
   ('unidad', 'Receta por unidad');
 ```
 
-### Quotations Table
+### Quotations Table (Multi-Tenant)
 
 ```sql
 CREATE TABLE quotations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   client_name VARCHAR(255) NOT NULL,
   size VARCHAR(50) NOT NULL,
   total_cost DECIMAL(10,2) NOT NULL,
@@ -287,7 +601,30 @@ CREATE TABLE quotations (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE INDEX idx_quotations_organization_id ON quotations(organization_id);
 CREATE INDEX idx_quotations_user_id ON quotations(user_id);
+
+-- RLS for Quotations
+ALTER TABLE quotations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view quotations"
+  ON quotations FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert quotations"
+  ON quotations FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update quotations"
+  ON quotations FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete quotations"
+  ON quotations FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
 ### Quotation Recipes Table (Junction Table)
@@ -419,13 +756,289 @@ CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 
 ---
 
+## FASE 3: BACKEND APIs FOR MULTI-TENANT SYSTEM
+
+---
+
 ## API Endpoints
+
+### Organizations API
+
+#### GET /api/organizations
+
+Get all organizations for the authenticated user.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Sweet Bakery",
+    "slug": "sweet-bakery",
+    "logo_url": "https://...",
+    "subscription_status": "active",
+    "subscription_plan": "professional",
+    "userRole": "owner",
+    "settings": {},
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+#### GET /api/organizations/:id
+
+Get organization details.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid",
+  "name": "Sweet Bakery",
+  "slug": "sweet-bakery",
+  "logo_url": "https://...",
+  "subscription_status": "active",
+  "subscription_plan": "professional",
+  "trial_ends_at": "2024-12-31T00:00:00Z",
+  "settings": {
+    "timezone": "America/Costa_Rica",
+    "currency": "CRC"
+  },
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-01-15T00:00:00Z"
+}
+```
+
+#### POST /api/organizations
+
+Create a new organization.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "name": "Sweet Bakery",
+  "slug": "sweet-bakery"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "id": "uuid",
+  "name": "Sweet Bakery",
+  "slug": "sweet-bakery",
+  "subscription_status": "trial",
+  "subscription_plan": "free",
+  "trial_ends_at": "2024-02-01T00:00:00Z",
+  "created_at": "2024-01-01T00:00:00Z"
+}
+```
+
+#### PUT /api/organizations/:id
+
+Update organization details (owner/admin only).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "name": "Sweet Bakery Premium",
+  "logo_url": "https://...",
+  "settings": {
+    "timezone": "America/Costa_Rica",
+    "currency": "CRC"
+  }
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid",
+  "name": "Sweet Bakery Premium",
+  "slug": "sweet-bakery",
+  "logo_url": "https://...",
+  "settings": {
+    "timezone": "America/Costa_Rica",
+    "currency": "CRC"
+  },
+  "updated_at": "2024-01-15T00:00:00Z"
+}
+```
+
+#### DELETE /api/organizations/:id
+
+Delete organization (owner only).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (204):** No content
+
+---
+
+### Organization Members API
+
+#### GET /api/organizations/:orgId/members
+
+Get all members of an organization.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+
+```json
+[
+  {
+    "id": "uuid",
+    "user_id": "uuid",
+    "organization_id": "uuid",
+    "role": "owner",
+    "user": {
+      "id": "uuid",
+      "email": "owner@example.com",
+      "name": "John Doe"
+    },
+    "joined_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "uuid",
+    "user_id": "uuid",
+    "organization_id": "uuid",
+    "role": "staff",
+    "user": {
+      "id": "uuid",
+      "email": "staff@example.com",
+      "name": "Jane Smith"
+    },
+    "joined_at": "2024-01-15T00:00:00Z"
+  }
+]
+```
+
+#### POST /api/organizations/:orgId/members
+
+Invite a new member to the organization (owner/admin only).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "email": "newmember@example.com",
+  "role": "staff"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "id": "uuid",
+  "user_id": "uuid",
+  "organization_id": "uuid",
+  "role": "staff",
+  "joined_at": "2024-01-15T00:00:00Z"
+}
+```
+
+#### PUT /api/organizations/:orgId/members/:memberId
+
+Update member role (owner/admin only).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "role": "admin"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid",
+  "user_id": "uuid",
+  "organization_id": "uuid",
+  "role": "admin",
+  "joined_at": "2024-01-15T00:00:00Z"
+}
+```
+
+#### DELETE /api/organizations/:orgId/members/:memberId
+
+Remove a member from organization (owner/admin only).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (204):** No content
+
+---
+
+### Subscription Plans API
+
+#### GET /api/subscription-plans
+
+Get all available subscription plans.
+
+**Response (200):**
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Free",
+    "slug": "free",
+    "price_monthly": 0,
+    "price_yearly": 0,
+    "max_orders_per_month": 10,
+    "max_users": 1,
+    "max_storage_gb": 1,
+    "features": {
+      "support": "community"
+    }
+  },
+  {
+    "id": "uuid",
+    "name": "Professional",
+    "slug": "professional",
+    "price_monthly": 79.99,
+    "price_yearly": 799.90,
+    "max_orders_per_month": 200,
+    "max_users": 10,
+    "max_storage_gb": 20,
+    "features": {
+      "support": "priority",
+      "custom_branding": true
+    }
+  }
+]
+```
+
+---
+
+### Modified Authentication Endpoints (Multi-Tenant)
 
 ### Authentication
 
 #### POST /api/auth/signup
 
-Register a new user.
+Register a new user and create their first organization.
 
 **Request:**
 
@@ -434,7 +1047,8 @@ Register a new user.
   "email": "user@example.com",
   "password": "securePassword123",
   "name": "John Doe",
-  "role": "owner"
+  "organization_name": "My Bakery",
+  "organization_slug": "my-bakery"
 }
 ```
 
@@ -445,16 +1059,23 @@ Register a new user.
   "user": {
     "id": "uuid",
     "email": "user@example.com",
-    "name": "John Doe",
-    "role": "owner"
+    "name": "John Doe"
   },
-  "token": "jwt-token"
+  "token": "jwt-token",
+  "organization": {
+    "id": "uuid",
+    "name": "My Bakery",
+    "slug": "my-bakery",
+    "subscription_status": "trial",
+    "subscription_plan": "free",
+    "trial_ends_at": "2024-02-01T00:00:00Z"
+  }
 }
 ```
 
 #### POST /api/auth/login
 
-Authenticate user.
+Authenticate user and return their organizations.
 
 **Request:**
 
@@ -472,10 +1093,17 @@ Authenticate user.
   "user": {
     "id": "uuid",
     "email": "user@example.com",
-    "name": "John Doe",
-    "role": "owner"
+    "name": "John Doe"
   },
-  "token": "jwt-token"
+  "token": "jwt-token",
+  "organizations": [
+    {
+      "id": "uuid",
+      "name": "My Bakery",
+      "slug": "my-bakery",
+      "role": "owner"
+    }
+  ]
 }
 ```
 
@@ -495,7 +1123,7 @@ Invalidate user session.
 
 #### GET /api/auth/me
 
-Get current user info.
+Get current user info with their organizations.
 
 **Headers:** `Authorization: Bearer {token}`
 
