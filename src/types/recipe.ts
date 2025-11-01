@@ -29,13 +29,14 @@ export interface Recipe {
   elaborations: RecipeElaboration[];
   multipliers?: RecipeMultiplier[];
   totalCost: number;
-  category: string;
+  categories: Category[]; // Cambiado de category: string a categories: Category[]
   createdAt: Date;
   updatedAt: Date;
   notes: string;
   url: string;
   units?: number;
   unitCost?: number;
+  wholeCost?: number; // Costo completo (para productos que se venden enteros)
 }
 
 export type RecipeFormData = Omit<Recipe, 'id' | 'createdAt' | 'updatedAt'>;

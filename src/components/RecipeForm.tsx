@@ -26,22 +26,24 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const migratedRecipe = recipe ? migrateRecipeToElaborations(recipe) : undefined;
   
   const [name, setName] = useState(migratedRecipe?.name || "");
-  const [category, setCategory] = useState(migratedRecipe?.category || "unidad");
+  const [categories, setCategories] = useState<Category[]>(
+    migratedRecipe?.categories || (migratedRecipe as any)?.category ? [(migratedRecipe as any).category] : ["unidad"]
+  );
   const [notes, setNotes] = useState(migratedRecipe?.notes || "");
   const [url, setUrl] = useState(migratedRecipe?.url || "");
   const [unidades, setUnidades] = useState(migratedRecipe?.units || 0);
   const [image, setImage] = useState(migratedRecipe?.image || "");
 
-  // Set default images for relleno and cubierta when category changes
+  // Set default images for relleno and cubierta when categories change
   useEffect(() => {
     if (!migratedRecipe && !image) {
-      if (category === 'relleno') {
+      if (categories.includes('relleno')) {
         setImage('/src/assets/temp_relleno.png');
-      } else if (category === 'cubierta') {
+      } else if (categories.includes('cubierta')) {
         setImage('/src/assets/temp_cubierta.png');
       }
     }
-  }, [category, migratedRecipe, image]);
+  }, [categories, migratedRecipe, image]);
   const [elaborations, setElaborations] = useState<RecipeElaboration[]>(
     migratedRecipe?.elaborations && migratedRecipe.elaborations.length > 0
       ? migratedRecipe.elaborations
@@ -61,9 +63,10 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   // Default sizes for multipliers
   const defaultSizes = ["mini", "pequeño", "mediano", "grande"];
 
-  // Initialize multipliers when category changes to queque, relleno, or cubierta
+  // Initialize multipliers when categories include queque, relleno, or cubierta
   useEffect(() => {
-    if (["queque", "relleno", "cubierta"].includes(category)) {
+    const hasMultiplierCategory = categories.some(cat => ["queque", "relleno", "cubierta"].includes(cat));
+    if (hasMultiplierCategory) {
       if (multipliers.length === 0) {
         setMultipliers(
           defaultSizes.map((size) => ({
@@ -76,7 +79,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     } else {
       setMultipliers([]);
     }
-  }, [category]);
+  }, [categories]);
 
   useEffect(() => {
     const fetchIngredients = async () => {
@@ -336,11 +339,12 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         elaborations: elaborations,
         multipliers: multipliers.length > 0 ? multipliers : undefined,
         totalCost,
-        category: category,
+        categories: categories,
         notes: notes,
         url: url,
         units: unidades,
         unitCost: totalUnitCost || undefined,
+        wholeCost: totalWholeCost || undefined,
       });
     } finally {
       setIsSubmitting(false);
@@ -352,6 +356,19 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     unidades && unidades > 0
       ? Math.round((totalCost / unidades) * 1000) / 1000
       : 0;
+  const totalWholeCost = totalCost; // Costo completo sin dividir
+  
+  const toggleCategory = (cat: Category) => {
+    setCategories(prev => {
+      if (prev.includes(cat)) {
+        // No permitir eliminar si es la única categoría
+        if (prev.length === 1) return prev;
+        return prev.filter(c => c !== cat);
+      } else {
+        return [...prev, cat];
+      }
+    });
+  };
 
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
@@ -373,58 +390,35 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Tag className="h-4 w-4" />
-                      {category === "queque" ? "Queque" : category === "relleno" ? "Relleno" : category === "cubierta" ? "Cubierta" : category === "unidad" ? "Unidad" : "Otro"}
-                    </span>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Buscar categoría..." />
-                    <CommandList>
-                      <CommandEmpty>No se encontró categoría.</CommandEmpty>
-                      <CommandGroup>
-                        {[
-                          { value: "queque", label: "Queque" },
-                          { value: "relleno", label: "Relleno" },
-                          { value: "cubierta", label: "Cubierta" },
-                          { value: "unidad", label: "Unidad" },
-                          { value: "otro", label: "Otro" },
-                        ].map((cat) => (
-                          <CommandItem
-                            key={cat.value}
-                            value={cat.value}
-                            onSelect={() => setCategory(cat.value as Category)}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                category === cat.value ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {cat.label}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+          <div className="space-y-2">
+            <Label>Categorías *</Label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: "queque", label: "Queque" },
+                { value: "relleno", label: "Relleno" },
+                { value: "cubierta", label: "Cubierta" },
+                { value: "unidad", label: "Unidad" },
+                { value: "otro", label: "Otro" },
+              ].map((cat) => (
+                <Button
+                  key={cat.value}
+                  type="button"
+                  variant={categories.includes(cat.value as Category) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleCategory(cat.value as Category)}
+                  className="gap-2"
+                >
+                  {categories.includes(cat.value as Category) && (
+                    <Check className="h-4 w-4" />
+                  )}
+                  {cat.label}
+                </Button>
+              ))}
             </div>
+          </div>
 
-            {category === "unidad" && (
+          <div className="grid grid-cols-2 gap-4">
+            {categories.includes("unidad") && (
               <div className="space-y-2">
                 <Label htmlFor="unidad">Cantidad de unidades</Label>
                 <Input
@@ -451,7 +445,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
             </div>
           </div>
 
-          {["queque", "relleno", "cubierta"].includes(category) && (
+          {categories.some(cat => ["queque", "relleno", "cubierta"].includes(cat)) && (
             <div className="space-y-3">
               <Label className="text-lg font-semibold">
                 Multiplicadores por tamaño
@@ -716,7 +710,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
           </div>
 
           <div className="space-y-2 p-4 bg-muted rounded-lg">
-            {category === "unidad" || category === undefined ? (
+            {categories.includes("unidad") ? (
               <>
                 <div className="flex justify-between items-center">
                   <Label className="text-lg font-semibold">Costo total:</Label>

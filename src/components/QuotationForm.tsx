@@ -107,18 +107,20 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       setRecipes(loadedRecipes);
 
       // Load multipliers for queque, relleno and cubierta recipes
-      const multipliersToLoad = loadedRecipes.filter(r =>
-        r.category === 'queque' || r.category === 'relleno' || r.category === 'cubierta'
-      );
+      const multipliersToLoad = loadedRecipes.filter(r => {
+        const cats = r.categories || [(r as any).category];
+        return cats.some(cat => cat === 'queque' || cat === 'relleno' || cat === 'cubierta');
+      });
 
       const multiplierPromises = multipliersToLoad.map(async (recipe) => {
         let result;
+        const cats = recipe.categories || [(recipe as any).category];
 
-        if (recipe.category === 'queque') {
+        if (cats.includes('queque')) {
           result = await quotationsApi.getCakeMultipliers(recipe.id);
-        } else if (recipe.category === 'relleno') {
+        } else if (cats.includes('relleno')) {
           result = await quotationsApi.getFillingMultipliers(recipe.id);
-        } else if (recipe.category === 'cubierta') {
+        } else if (cats.includes('cubierta')) {
           result = await quotationsApi.getCoveringMultipliers(recipe.id);
         }
 
@@ -294,10 +296,10 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   };
 
   const recipesByType = {
-    queque: recipes.filter(r => r.category === 'queque'),
-    relleno: recipes.filter(r => r.category === 'relleno'),
-    cubierta: recipes.filter(r => r.category === 'cubierta'),
-    unidad: recipes.filter(r => r.category === 'unidad'),
+    queque: recipes.filter(r => (r.categories || [(r as any).category]).includes('queque')),
+    relleno: recipes.filter(r => (r.categories || [(r as any).category]).includes('relleno')),
+    cubierta: recipes.filter(r => (r.categories || [(r as any).category]).includes('cubierta')),
+    unidad: recipes.filter(r => (r.categories || [(r as any).category]).includes('unidad')),
   };
 
   return (

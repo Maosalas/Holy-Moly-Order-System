@@ -30,7 +30,7 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
     const query = searchQuery.toLowerCase();
     return migratedRecipes.filter(recipe =>
       recipe.name.toLowerCase().includes(query) ||
-      recipe.category.toLowerCase().includes(query)
+      (recipe.categories || [(recipe as any).category]).some(cat => cat?.toLowerCase().includes(query))
     );
   }, [recipes, searchQuery]);
 
@@ -118,8 +118,8 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                       <span className="font-medium">{recipe.elaborations?.length || 0} elaboración{(recipe.elaborations?.length || 0) !== 1 ? 'es' : ''}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Categoria:</span>
-                      <span className="font-medium">{recipe.category}</span>
+                      <span className="text-muted-foreground">Categorías:</span>
+                      <span className="font-medium">{(recipe.categories || [(recipe as any).category]).join(', ')}</span>
                     </div>
 
                     <div className="space-y-1 flex items-center gap-2 justify-between">
@@ -175,7 +175,7 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                   <TableHead className="font-semibold">Receta</TableHead>
                   <TableHead className="font-semibold">Elaboraciones</TableHead>
                   <TableHead className="font-semibold">Costo Total</TableHead>
-                  <TableHead className="font-semibold">Categoria</TableHead>
+                  <TableHead className="font-semibold">Categorías</TableHead>
                   <TableHead className="text-right font-semibold">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -212,9 +212,13 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="font-medium ml-1">
-                        {recipe.category}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {(recipe.categories || [(recipe as any).category]).map((cat, idx) => (
+                          <span key={idx} className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
+                            {cat}
+                          </span>
+                        ))}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">

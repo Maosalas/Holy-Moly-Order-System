@@ -55,8 +55,14 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
               <p className="font-bold text-xl mt-1">{migratedRecipe.name}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground text-sm">Categoría</Label>
-              <p className="font-bold text-xl mt-1 capitalize">{migratedRecipe.category}</p>
+              <Label className="text-muted-foreground text-sm">Categorías</Label>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {(migratedRecipe.categories || [(migratedRecipe as any).category]).map((cat, idx) => (
+                  <span key={idx} className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-sm font-medium capitalize">
+                    {cat}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -167,11 +173,19 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
                 ₡{(migratedRecipe.totalCost * selectedMultiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
-            {migratedRecipe.category === "unidad" && migratedRecipe.unitCost && (
+            {(migratedRecipe.categories || [(migratedRecipe as any).category]).includes("unidad") && migratedRecipe.unitCost && (
               <div className="flex justify-between items-center">
                 <Label className="text-lg font-semibold">Costo por Unidad:</Label>
                 <span className="text-2xl font-bold text-primary">
                   ₡{(migratedRecipe.unitCost * selectedMultiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            )}
+            {(migratedRecipe.categories || [(migratedRecipe as any).category]).some(cat => cat !== "unidad") && migratedRecipe.wholeCost && (
+              <div className="flex justify-between items-center">
+                <Label className="text-lg font-semibold">Costo Completo:</Label>
+                <span className="text-2xl font-bold text-primary">
+                  ₡{(migratedRecipe.wholeCost * selectedMultiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             )}
