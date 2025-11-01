@@ -31,6 +31,17 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [url, setUrl] = useState(migratedRecipe?.url || "");
   const [unidades, setUnidades] = useState(migratedRecipe?.units || 0);
   const [image, setImage] = useState(migratedRecipe?.image || "");
+
+  // Set default images for relleno and cubierta when category changes
+  useEffect(() => {
+    if (!migratedRecipe && !image) {
+      if (category === 'relleno') {
+        setImage('/src/assets/temp_relleno.png');
+      } else if (category === 'cubierta') {
+        setImage('/src/assets/temp_cubierta.png');
+      }
+    }
+  }, [category, migratedRecipe, image]);
   const [elaborations, setElaborations] = useState<RecipeElaboration[]>(
     migratedRecipe?.elaborations && migratedRecipe.elaborations.length > 0
       ? migratedRecipe.elaborations

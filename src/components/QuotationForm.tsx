@@ -23,6 +23,7 @@ interface QuotationFormProps {
 
 export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormProps) {
   const [clientName, setClientName] = useState(quotation?.clientName || "");
+  const [quotationType, setQuotationType] = useState<'queque' | 'unidad' | 'ambos'>('queque');
   const [size, setSize] = useState<'mini' | 'pequeño' | 'mediano' | 'grande'>(quotation?.size || 'pequeño');
   const [notes, setNotes] = useState(quotation?.notes || "");
   const [selectedRecipes, setSelectedRecipes] = useState<QuotationRecipe[]>(quotation?.recipes || []);
@@ -204,13 +205,16 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       return;
     }
 
+    // Calcular costo por unidad correctamente
+    const costPerUnit = supply.cost / supply.quantity;
+
     const newSupply: QuotationSupply = {
       supplyId: supply.id,
       supplyName: supply.name,
       quantity: 1,
       unit: supply.unit,
-      costPerUnit: supply.cost,
-      totalCost: supply.cost,
+      costPerUnit: costPerUnit,
+      totalCost: costPerUnit,
     };
 
     setSelectedSupplies([...selectedSupplies, newSupply]);
@@ -313,6 +317,56 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="quotationType">¿Qué quieres cotizar?</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      {quotationType === "queque" ? "Queque" : quotationType === "unidad" ? "Producto Individual" : "Ambos"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar tipo..." />
+                    <CommandList>
+                      <CommandEmpty>No se encontró tipo.</CommandEmpty>
+                      <CommandGroup>
+                        {[
+                          { value: "queque", label: "Queque" },
+                          { value: "unidad", label: "Producto Individual" },
+                          { value: "ambos", label: "Ambos" },
+                        ].map((t) => (
+                          <CommandItem
+                            key={t.value}
+                            value={t.value}
+                            onSelect={() => setQuotationType(t.value as any)}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                quotationType === t.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {t.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {(quotationType === 'queque' || quotationType === 'ambos') && (
+            <div className="space-y-2">
               <Label htmlFor="size">Tamaño</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -323,16 +377,16 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                   >
                     <span className="flex items-center gap-2">
                       <Ruler className="h-4 w-4" />
-                      {size === "pequeño" ? "Pequeño" : size === "mediano" ? "Mediano" : "Grande"}
+                      {size === "pequeño" ? "Pequeño" : size === "mediano" ? "Mediano" : size === "grande" ? "Grande" : "Mini"}
                     </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
                   <Command>
-                    <CommandInput placeholder="Search size..." />
+                    <CommandInput placeholder="Buscar tamaño..." />
                     <CommandList>
-                      <CommandEmpty>No size found.</CommandEmpty>
+                      <CommandEmpty>No se encontró tamaño.</CommandEmpty>
                       <CommandGroup>
                         {[
                           { value: "mini", label: "Mini" },
@@ -360,82 +414,93 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                 </PopoverContent>
               </Popover>
             </div>
-          </div>
+          )}
 
           <div className="space-y-4">
             <Label>Recetas Seleccionadas</Label>
 
-            {['queque', 'relleno', 'cubierta', 'unidad'].map((type) => (
-              <Card key={type}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold capitalize">{type}</h4>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className="w-[200px] justify-between"
-                        >
-                          <span className="flex items-center gap-2">
-                            <Plus className="h-4 w-4" />
-                            Agregar {type}
-                          </span>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder={`Search ${type}...`} />
-                          <CommandList>
-                            <CommandEmpty>No recipe found.</CommandEmpty>
-                            <CommandGroup>
-                              {recipesByType[type as keyof typeof recipesByType].map((recipe) => (
-                                <CommandItem
-                                  key={recipe.id}
-                                  value={recipe.name}
-                                  onSelect={() => addRecipe(recipe.id, type as any)}
-                                >
-                                  {recipe.name} (₡{type === 'unidad' ? (recipe.unitCost || recipe.totalCost).toFixed(2) : recipe.totalCost.toFixed(2)})
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {selectedRecipes
-                    .filter(r => r.recipeType.name === type)
-                    .map((recipe, index) => {
-                      const actualIndex = selectedRecipes.findIndex(r => r === recipe);
-                      return (
-                        <div key={actualIndex} className="flex items-center gap-3 mb-2 p-2 bg-muted rounded">
-                          <span className="flex-1">{recipe.recipeName}</span>
-                          <Input
-                            type="number"
-                            min="1"
-                            step="0.5"
-                            value={recipe.quantity}
-                            onChange={(e) => updateRecipeQuantity(actualIndex, parseFloat(e.target.value))}
-                            className="w-20"
-                          />
-                          <span className="w-24 text-right">₡{recipe.totalCost.toFixed(2)}</span>
+            {(() => {
+              let typesToShow: string[] = [];
+              if (quotationType === 'queque') {
+                typesToShow = ['queque', 'relleno', 'cubierta'];
+              } else if (quotationType === 'unidad') {
+                typesToShow = ['unidad'];
+              } else {
+                typesToShow = ['queque', 'relleno', 'cubierta', 'unidad'];
+              }
+              
+              return typesToShow.map((type) => (
+                <Card key={type}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold capitalize">{type}</h4>
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeRecipe(actualIndex)}
+                            variant="outline"
+                            role="combobox"
+                            className="w-[200px] justify-between"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <span className="flex items-center gap-2">
+                              <Plus className="h-4 w-4" />
+                              Agregar {type}
+                            </span>
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
-                        </div>
-                      );
-                    })}
-                </CardContent>
-              </Card>
-            ))}
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder={`Buscar ${type}...`} />
+                            <CommandList>
+                              <CommandEmpty>No se encontró receta.</CommandEmpty>
+                              <CommandGroup>
+                                {recipesByType[type as keyof typeof recipesByType].map((recipe) => (
+                                  <CommandItem
+                                    key={recipe.id}
+                                    value={recipe.name}
+                                    onSelect={() => addRecipe(recipe.id, type as any)}
+                                  >
+                                    {recipe.name} (₡{type === 'unidad' ? (recipe.unitCost || recipe.totalCost).toFixed(2) : recipe.totalCost.toFixed(2)})
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {selectedRecipes
+                      .filter(r => r.recipeType.name === type)
+                      .map((recipe, index) => {
+                        const actualIndex = selectedRecipes.findIndex(r => r === recipe);
+                        return (
+                          <div key={actualIndex} className="flex items-center gap-3 mb-2 p-2 bg-muted rounded">
+                            <span className="flex-1">{recipe.recipeName}</span>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="0.5"
+                              value={recipe.quantity}
+                              onChange={(e) => updateRecipeQuantity(actualIndex, parseFloat(e.target.value))}
+                              className="w-20"
+                            />
+                            <span className="w-24 text-right">₡{recipe.totalCost.toFixed(2)}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeRecipe(actualIndex)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                  </CardContent>
+                </Card>
+              ));
+            })()}
           </div>
 
           {/* Supplies Section */}
