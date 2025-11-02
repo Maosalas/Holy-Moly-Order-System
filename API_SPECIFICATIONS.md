@@ -273,11 +273,12 @@ CREATE TABLE recipes (
   name VARCHAR(255) NOT NULL,
   image TEXT,
   total_cost DECIMAL(10,2) NOT NULL DEFAULT 0,
-  category VARCHAR(255),
+  categories TEXT[] DEFAULT '{}',  -- Array of categories: 'queque', 'relleno', 'cubierta', 'unidad', 'otro'
   notes TEXT,
   url TEXT,
   units NUMERIC(10,0),
   unit_cost DECIMAL(10,2),
+  whole_cost DECIMAL(10,2),  -- Cost for the whole product (when sold as complete unit)
   created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
@@ -1280,11 +1281,12 @@ Get all recipes for authenticated user.
     "id": "uuid",
     "name": "Chocolate Cake",
     "image": "https://storage.example.com/recipes/cake.jpg",
-    "category": "queque",
+    "categories": ["queque", "unidad"],
     "notes": "Some notes",
     "url": "https://recipe-link.com",
     "units": 12,
     "unitCost": 3.82,
+    "wholeCost": 45.80,
     "elaborations": [
       {
         "id": "uuid",
@@ -1361,15 +1363,19 @@ Get all recipes for authenticated user.
 
 **Notes:**
 
+- `categories`: Array of categories that apply to this recipe (e.g., `["queque", "unidad"]`)
+  - Possible values: `"queque"`, `"relleno"`, `"cubierta"`, `"unidad"`, `"otro"`
+  - A recipe can have multiple categories (e.g., a cheesecake can be sold whole or by portions)
 - `elaborations`: Array of recipe elaborations/steps, each containing its own ingredients
 - `elaborations[].cost`: **CALCULATED FIELD** - Sum of all ingredient costs for that elaboration (not stored in DB)
 - `totalCost`: **CALCULATED FIELD** - Sum of all elaboration costs (stored in `recipes.total_cost`)
 - `unitCost`: **CALCULATED FIELD** - `totalCost / units` (stored in `recipes.unit_cost`)
-- `multipliers`: Stored in separate tables based on category:
-  - `category = 'queque'` → stored in `cake_multipliers` table
-  - `category = 'relleno'` → stored in `filling_multipliers` table
-  - `category = 'cubierta'` → stored in `covering_multipliers` table
-  - `category = 'unidad'` or `'otro'` → no multipliers stored
+- `wholeCost`: Cost for selling the entire product as a complete unit (stored in `recipes.whole_cost`)
+- `multipliers`: Stored in separate tables based on categories:
+  - If `categories` includes `'queque'` → stored in `cake_multipliers` table
+  - If `categories` includes `'relleno'` → stored in `filling_multipliers` table
+  - If `categories` includes `'cubierta'` → stored in `covering_multipliers` table
+  - If only `'unidad'` or `'otro'` → no multipliers stored
 
 #### POST /api/recipes
 
@@ -1383,10 +1389,11 @@ Create a new recipe.
 {
   "name": "Chocolate Cake",
   "image": "https://storage.example.com/recipes/cake.jpg",
-  "category": "queque",
+  "categories": ["queque", "unidad"],
   "notes": "Some notes about the recipe",
   "url": "https://recipe-link.com",
   "units": 12,
+  "wholeCost": 45.80,
   "elaborations": [
     {
       "name": "Masa de Chocolate",
@@ -1448,15 +1455,19 @@ Create a new recipe.
 
 **Notes:**
 
+- `categories`: Required array with at least one category value
+  - Possible values: `"queque"`, `"relleno"`, `"cubierta"`, `"unidad"`, `"otro"`
+  - Multiple categories can be specified (e.g., `["queque", "unidad"]` for products sold whole or by portions)
 - `elaborations`: Required array of elaborations, each with name, order, and ingredients
 - `elaborations[].ingredients`: Array of ingredients specific to that elaboration
 - **DO NOT SEND** `elaborations[].cost` in request - backend calculates it automatically
 - **DO NOT SEND** `totalCost` in request - backend calculates as sum of all elaboration costs
 - **DO NOT SEND** `unitCost` in request - backend calculates as `totalCost / units` (if units provided)
-- `multipliers`: Optional, only for categories "queque", "relleno", "cubierta"
+- `wholeCost`: Optional, cost for selling the entire product (typically used when `categories` includes "unidad")
+- `multipliers`: Optional, only when `categories` includes "queque", "relleno", or "cubierta"
   - Stored in specific tables: `cake_multipliers`, `filling_multipliers`, `covering_multipliers`
   - Each table has UNIQUE constraint on `(recipe_id, size)`
-- For "unidad" and "otro" categories, multipliers should NOT be included
+- For recipes with only "unidad" or "otro" categories, multipliers should NOT be included
 - When updating a recipe with multipliers, old multipliers are deleted and replaced with new ones
 
 **Response (201):** Same as GET response
