@@ -278,7 +278,6 @@ CREATE TABLE recipes (
   url TEXT,
   units NUMERIC(10,0),
   unit_cost DECIMAL(10,2),
-  whole_cost DECIMAL(10,2),  -- Cost for the whole product (when sold as complete unit)
   created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
@@ -1286,7 +1285,6 @@ Get all recipes for authenticated user.
     "url": "https://recipe-link.com",
     "units": 12,
     "unitCost": 3.82,
-    "wholeCost": 45.80,
     "elaborations": [
       {
         "id": "uuid",
@@ -1370,7 +1368,6 @@ Get all recipes for authenticated user.
 - `elaborations[].cost`: **CALCULATED FIELD** - Sum of all ingredient costs for that elaboration (not stored in DB)
 - `totalCost`: **CALCULATED FIELD** - Sum of all elaboration costs (stored in `recipes.total_cost`)
 - `unitCost`: **CALCULATED FIELD** - `totalCost / units` (stored in `recipes.unit_cost`)
-- `wholeCost`: Cost for selling the entire product as a complete unit (stored in `recipes.whole_cost`)
 - `multipliers`: Stored in separate tables based on categories:
   - If `categories` includes `'queque'` → stored in `cake_multipliers` table
   - If `categories` includes `'relleno'` → stored in `filling_multipliers` table
@@ -1393,7 +1390,6 @@ Create a new recipe.
   "notes": "Some notes about the recipe",
   "url": "https://recipe-link.com",
   "units": 12,
-  "wholeCost": 45.80,
   "elaborations": [
     {
       "name": "Masa de Chocolate",
@@ -1463,7 +1459,6 @@ Create a new recipe.
 - **DO NOT SEND** `elaborations[].cost` in request - backend calculates it automatically
 - **DO NOT SEND** `totalCost` in request - backend calculates as sum of all elaboration costs
 - **DO NOT SEND** `unitCost` in request - backend calculates as `totalCost / units` (if units provided)
-- `wholeCost`: Optional, cost for selling the entire product (typically used when `categories` includes "unidad")
 - `multipliers`: Optional, only when `categories` includes "queque", "relleno", or "cubierta"
   - Stored in specific tables: `cake_multipliers`, `filling_multipliers`, `covering_multipliers`
   - Each table has UNIQUE constraint on `(recipe_id, size)`
