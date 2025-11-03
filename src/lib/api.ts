@@ -166,6 +166,12 @@ export const ordersApi = {
       body: JSON.stringify(order),
     }),
 
+  updateTopper: (id: string, data: { topperDetails?: string; topperPhotos?: string[] }) =>
+    apiFetch(`/orders/${id}/topper`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   delete: (id: string) =>
     apiFetch(`/orders/${id}`, {
       method: "DELETE",

@@ -196,12 +196,43 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
 
           {/* Cake Topper */}
           {order.needsCakeTopper && (
-            <div className="space-y-2 pt-4 border-t">
+            <div className="space-y-3 pt-4 border-t">
               <div className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-semibold text-sm text-muted-foreground">Cake Topper</h3>
+                <h3 className="font-semibold text-sm text-muted-foreground">Información del Cake Topper</h3>
               </div>
-              <TopperUploadDialog clientName={order.clientName} />
+              
+              {order.topperDetails && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Detalles:</p>
+                  <p className="text-sm bg-muted p-3 rounded-lg whitespace-pre-wrap">{order.topperDetails}</p>
+                </div>
+              )}
+              
+              {order.topperPhotos && order.topperPhotos.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Fotos de referencia:</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {order.topperPhotos.map((photo, index) => (
+                      <img
+                        key={index}
+                        src={photo}
+                        alt={`Topper reference ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {(!order.topperDetails && (!order.topperPhotos || order.topperPhotos.length === 0)) && (
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-sm text-muted-foreground italic">No hay información del topper disponible aún.</p>
+                  <div className="mt-2">
+                    <TopperUploadDialog clientName={order.clientName} />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

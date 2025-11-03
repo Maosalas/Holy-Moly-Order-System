@@ -423,6 +423,8 @@ CREATE TABLE orders (
   order_details TEXT NOT NULL,
   delivery_date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   needs_cake_topper BOOLEAN DEFAULT false,
+  topper_details TEXT,
+  topper_photos JSONB DEFAULT '[]'::jsonb,
   cost_amount DECIMAL(10,2) NOT NULL,
   charge_amount DECIMAL(10,2) NOT NULL,
   payment_method_id UUID REFERENCES payment_methods(id) ON DELETE SET NULL NOT NULL,
@@ -436,6 +438,10 @@ CREATE INDEX idx_orders_organization_id ON orders(organization_id);
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_delivery_date ON orders(delivery_date);
 CREATE INDEX idx_orders_payment_method_id ON orders(payment_method_id);
+
+-- Add comments for documentation
+COMMENT ON COLUMN orders.topper_details IS 'Details and specifications for the cake topper (nullable)';
+COMMENT ON COLUMN orders.topper_photos IS 'Array of photo URLs for topper references stored as JSONB (nullable)';
 
 -- RLS for Orders
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
@@ -1722,6 +1728,11 @@ Get all orders for authenticated user.
       }
     ],
     "needsCakeTopper": true,
+    "topperDetails": "Custom topper with name 'Jane' in gold color with glitter finish",
+    "topperPhotos": [
+      "https://storage.example.com/orders/topper1.jpg",
+      "https://storage.example.com/orders/topper2.jpg"
+    ],
     "costAmount": 150.00,
     "chargeAmount": 300.00,
     "paymentMethod": {
@@ -1776,6 +1787,11 @@ Create a new order.
     "https://storage.example.com/photo2.jpg"
   ],
   "needsCakeTopper": true,
+  "topperDetails": "Custom topper with name 'Jane' in gold color",
+  "topperPhotos": [
+    "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+    "https://storage.example.com/topper2.jpg"
+  ],
   "costAmount": 150.00,
   "chargeAmount": 300.00,
   "paymentMethodId": "uuid",
@@ -1791,6 +1807,9 @@ Create a new order.
 - `costAmount` is automatically calculated from the selected quotation's `totalCost`
 - `clientPhotos` accepts both base64-encoded images and URLs
 - Photos are stored in `order_photos` table with individual records
+- `needsCakeTopper`: Boolean indicating if the order requires a cake topper
+- `topperDetails`: Optional text field with topper specifications (only when `needsCakeTopper` is true)
+- `topperPhotos`: Optional array of topper reference photos, accepts both base64-encoded images and URLs
 - `statuses` is sent as array of strings, stored in `order_statuses` table with timestamps
 - Server validates that `downPayment` ≤ `chargeAmount`
 - The quotation's details and payment method details are populated when the order is retrieved
@@ -1806,6 +1825,45 @@ Update an order.
 **Request:** Same as POST
 
 **Response (200):** Updated order object
+
+#### PATCH /api/orders/:id/topper
+
+Update only the topper information for an existing order.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "topperDetails": "Updated topper details with new specifications",
+  "topperPhotos": [
+    "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+    "https://storage.example.com/topper-new.jpg"
+  ]
+}
+```
+
+**Notes:**
+
+- Both fields are optional in the request
+- `topperPhotos` accepts both base64-encoded images and URLs
+- This endpoint is useful for updating topper information after the order has been created
+- Can be used by both order creators and cake topper providers
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid",
+  "topperDetails": "Updated topper details with new specifications",
+  "topperPhotos": [
+    "https://storage.example.com/orders/topper1.jpg",
+    "https://storage.example.com/orders/topper2.jpg"
+  ],
+  "updatedAt": "2024-01-16T10:30:00Z"
+}
+```
 
 #### PATCH /api/orders/:id/status
 
