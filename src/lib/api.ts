@@ -1,5 +1,5 @@
-const API_BASE_URL = "https://api-holymoly.networksalas.com/api";
-// const API_BASE_URL = "http://localhost:3000/api"; // For local development
+// const API_BASE_URL = "https://api-holymoly.networksalas.com/api";
+const API_BASE_URL = "http://localhost:3000/api"; // For local development
 
 interface ApiResponse<T> {
   data?: T;

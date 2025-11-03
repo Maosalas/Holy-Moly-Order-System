@@ -214,10 +214,10 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
           recipe.name,
           recipe.type,
           recipe.quantity.toString(),
-          `₡${recipe.unitCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-          `₡${recipe.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          `CRC ${recipe.unitCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `CRC ${recipe.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]),
-        foot: [["", "", "", "Subtotal:", `₡${totalRecipes.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        foot: [["", "", "", "Subtotal:", `CRC ${totalRecipes.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
         theme: "striped",
         headStyles: { fillColor: [59, 130, 246] },
         footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
@@ -245,10 +245,10 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
           supply.name,
           supply.quantity.toString(),
           supply.unit,
-          `₡${supply.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-          `₡${supply.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          `CRC ${supply.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `CRC ${supply.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]),
-        foot: [["", "", "", "Subtotal:", `₡${totalSupplies.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        foot: [["", "", "", "Subtotal:", `CRC ${totalSupplies.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
         theme: "striped",
         headStyles: { fillColor: [59, 130, 246] },
         footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
@@ -276,10 +276,10 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
           ingredient.name,
           ingredient.quantity.toString(),
           ingredient.unit,
-          `₡${ingredient.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-          `₡${ingredient.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          `CRC ${ingredient.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `CRC ${ingredient.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]),
-        foot: [["", "", "", "Subtotal:", `₡${totalIngredients.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        foot: [["", "", "", "Subtotal:", `CRC ${totalIngredients.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
         theme: "striped",
         headStyles: { fillColor: [59, 130, 246] },
         footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
@@ -307,10 +307,10 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
           expense.name,
           expense.quantity.toString(),
           expense.unit,
-          `₡${expense.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-          `₡${expense.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          `CRC ${expense.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `CRC ${expense.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]),
-        foot: [["", "", "", "Subtotal:", `₡${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        foot: [["", "", "", "Subtotal:", `CRC ${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
         theme: "striped",
         headStyles: { fillColor: [59, 130, 246] },
         footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
@@ -327,7 +327,7 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
 
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    const totalText = `Total General: ₡${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    const totalText = `Total General: CRC ${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     doc.text(totalText, 105, yPosition, { align: "center" });
 
     // Save PDF
