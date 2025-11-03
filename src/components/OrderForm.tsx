@@ -577,8 +577,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                 <Input
                   id="chargeAmount"
                   type="number"
-                  step="0.01"
-                  min="0"
+                  step="any"
+                  min="0.1"
                   value={chargeAmount}
                   onChange={(e) => setChargeAmount(e.target.value)}
                   placeholder="0.00"
@@ -601,8 +601,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
               <Input
                 id="downPayment"
                 type="number"
-                step="0.01"
-                min="0"
+                step="any"
+                min="0.1"
                 value={downPayment}
                 onChange={(e) => setDownPayment(e.target.value)}
                 placeholder="0.00"

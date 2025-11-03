@@ -543,8 +543,8 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                             <span className="flex-1">{recipe.recipeName}</span>
                             <Input
                               type="number"
-                              min="1"
-                              step="0.5"
+                              min="0.1"
+                              step="any"
                               value={recipe.quantity}
                               onChange={(e) => updateRecipeQuantity(actualIndex, parseFloat(e.target.value))}
                               className="w-20"
@@ -646,8 +646,8 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                           <TableCell>
                             <Input
                               type="number"
-                              min="0.01"
-                              step="0.01"
+                              min="0.1"
+                              step="any"
                               value={supply.quantity}
                               onChange={(e) =>
                                 updateSupplyQuantity(supply.supplyId, parseFloat(e.target.value) || 0)
@@ -758,8 +758,8 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                           <TableCell>
                             <Input
                               type="number"
-                              min="0.01"
-                              step="0.01"
+                              min="0.1"
+                              step="any"
                               value={ingrediente.quantity}
                               onChange={(e) =>
                                 updateIngredientQuantity(ingrediente.ingredientId, parseFloat(e.target.value) || 0)
@@ -839,8 +839,8 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                           <TableCell>
                             <Input
                               type="number"
-                              min="0"
-                              step="0.01"
+                              min="0.1"
+                              step="any"
                               value={expense.unitPrice}
                               onChange={(e) => updateAdditionalExpense(index, 'unitPrice', parseFloat(e.target.value) || 0)}
                               className="w-32 mx-auto text-center"
@@ -849,8 +849,8 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                           <TableCell>
                             <Input
                               type="number"
-                              min="0.01"
-                              step="0.01"
+                              min="0.1"
+                              step="any"
                               value={expense.quantity}
                               onChange={(e) => updateAdditionalExpense(index, 'quantity', parseFloat(e.target.value) || 0)}
                               className="w-24 mx-auto text-center"

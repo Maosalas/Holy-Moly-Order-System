@@ -448,8 +448,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                 <Input
                   id="unidad"
                   type="number"
-                  min="0"
-                  step="1"
+                  min="0.1"
+                  step="any"
                   value={unidades}
                   onChange={(e) => setUnidades(Number(e.target.value))}
                   placeholder="Ingrese la cantidad de unidades"
@@ -483,8 +483,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                     <Input
                       id={`multiplier-${index}`}
                       type="number"
-                      min="0"
-                      step="0.1"
+                      min="0.1"
+                      step="any"
                       value={multiplier.multiplier}
                       onChange={(e) => {
                         const newMultipliers = [...multipliers];
@@ -676,8 +676,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                             <div className="flex-1 sm:w-28">
                               <Input
                                 type="number"
-                                min="0"
-                                step="0.01"
+                                min="0.1"
+                                step="any"
                                 value={ingredient.quantity || ""}
                                 onChange={(e) =>
                                   updateIngredientQuantityInElaboration(
@@ -816,8 +816,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                     <span className="flex-1 font-medium">{supply.supplyName}</span>
                     <Input
                       type="number"
-                      min="0.01"
-                      step="0.01"
+                      min="0.1"
+                      step="any"
                       value={supply.quantity}
                       onChange={(e) => {
                         const newQuantity = parseFloat(e.target.value) || 0;

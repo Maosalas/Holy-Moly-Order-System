@@ -117,7 +117,8 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
               <Input
                 id="quantity"
                 type="number"
-                step="0.01"
+                step="any"
+                min="0.1"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="0"
@@ -142,7 +143,8 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
             <Input
               id="cost"
               type="number"
-              step="0.01"
+              step="any"
+              min="0.1"
               value={cost}
               onChange={(e) => setCost(e.target.value)}
               placeholder="0.00"

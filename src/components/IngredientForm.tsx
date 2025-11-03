@@ -94,8 +94,8 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
               <Input
                 id="qtyProvider"
                 type="number"
-                min="0"
-                step="0.01"
+                min="0.1"
+                step="any"
                 value={qtyProvider}
                 onChange={(e) => setQtyProvider(e.target.value)}
                 placeholder="0.00"
@@ -120,8 +120,8 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
             <Input
               id="cost"
               type="number"
-              min="0"
-              step="0.01"
+              min="0.1"
+              step="any"
               value={cost}
               onChange={(e) => setCost(e.target.value)}
               placeholder="0.00"

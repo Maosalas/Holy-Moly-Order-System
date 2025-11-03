@@ -21,6 +21,7 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
 
   useEffect(() => {
     const fetchQuotation = async () => {
+      console.log("Fetching quotation for ID:", order.quotationId);
       if (order.quotationId) {
         setIsLoadingQuotation(true);
         try {
@@ -144,7 +145,7 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
           {order.quotationId && (
             <div className="space-y-3">
               <h3 className="font-semibold text-sm text-muted-foreground">Cotización</h3>
-              
+
               {isLoadingQuotation ? (
                 <div className="flex items-center justify-center p-8 border rounded-lg bg-muted/50">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -229,7 +230,7 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
                       </TableRow>
                     </TableBody>
                   </Table>
-                  
+
                   {quotation.notes && (
                     <div className="p-3 bg-muted/30 border-t">
                       <p className="text-xs text-muted-foreground mb-1">Notas:</p>
@@ -322,14 +323,14 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
                 <Package className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-sm text-muted-foreground">Información del Cake Topper</h3>
               </div>
-              
+
               {order.topperDetails && (
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Detalles:</p>
                   <p className="text-sm bg-muted p-3 rounded-lg whitespace-pre-wrap">{order.topperDetails}</p>
                 </div>
               )}
-              
+
               {order.topperPhotos && order.topperPhotos.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Fotos de referencia:</p>
@@ -345,7 +346,7 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
                   </div>
                 </div>
               )}
-              
+
               {(!order.topperDetails && (!order.topperPhotos || order.topperPhotos.length === 0)) && (
                 <div className="bg-muted/50 p-3 rounded-lg">
                   <p className="text-sm text-muted-foreground italic">No hay información del topper disponible aún.</p>
