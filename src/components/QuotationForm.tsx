@@ -261,7 +261,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       ingredientId: ingredient.id,
       ingredientName: ingredient.name,
       quantity: 1,
-      unit: ingredient.units,
+      units: ingredient.units,
       costPerUnit: costPerUnit,
       totalCost: costPerUnit,
     };
@@ -348,6 +348,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       size,
       recipes: recipesForAPI,
       selectedSupplies,
+      additionalIngredients: selectedIngredients.length > 0 ? selectedIngredients : undefined,
       additionalExpenses: additionalExpenses.length > 0 ? additionalExpenses : undefined,
       totalCost: calculateTotal(),
       notes,
