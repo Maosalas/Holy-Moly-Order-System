@@ -17,6 +17,7 @@ const Index = () => {
   // Transformar datos del API
   const recipes: Recipe[] = recipesData.map((r: any) => ({
     ...r,
+    categories: r.categories || (r.category ? [r.category] : ["unidad"]),
     createdAt: new Date(r.created_at || r.createdAt),
     updatedAt: new Date(r.updated_at || r.updatedAt)
   }));

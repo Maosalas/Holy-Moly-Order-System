@@ -26,9 +26,15 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const migratedRecipe = recipe ? migrateRecipeToElaborations(recipe) : undefined;
   
   const [name, setName] = useState(migratedRecipe?.name || "");
-  const [categories, setCategories] = useState<Category[]>(
-    migratedRecipe?.categories || (migratedRecipe as any)?.category ? [(migratedRecipe as any).category] : ["unidad"]
-  );
+  const [categories, setCategories] = useState<Category[]>(() => {
+    if (migratedRecipe?.categories && Array.isArray(migratedRecipe.categories) && migratedRecipe.categories.length > 0) {
+      return migratedRecipe.categories;
+    }
+    if ((migratedRecipe as any)?.category) {
+      return [(migratedRecipe as any).category];
+    }
+    return ["unidad"];
+  });
   const [notes, setNotes] = useState(migratedRecipe?.notes || "");
   const [url, setUrl] = useState(migratedRecipe?.url || "");
   const [unidades, setUnidades] = useState(migratedRecipe?.units || 0);
@@ -344,7 +350,6 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         url: url,
         units: unidades,
         unitCost: totalUnitCost || undefined,
-        wholeCost: totalWholeCost || undefined,
       });
     } finally {
       setIsSubmitting(false);
