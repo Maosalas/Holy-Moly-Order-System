@@ -261,7 +261,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       ingredientId: ingredient.id,
       ingredientName: ingredient.name,
       quantity: 1,
-      unit: ingredient.units,
+      units: ingredient.units,
       costPerUnit: costPerUnit,
       totalCost: costPerUnit,
     };
