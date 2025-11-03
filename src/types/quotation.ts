@@ -25,14 +25,16 @@ export interface QuotationSupply {
   costPerUnit: number;
   totalCost: number;
 }
+
 export interface QuotationIngredient {
   ingredientId: string;
   ingredientName: string;
   quantity: number;
-  unit: string;
+  units: string;
   costPerUnit: number;
   totalCost: number;
 }
+
 export interface QuotationAdditionalExpense {
   expenseName: string;
   unitPrice: number;

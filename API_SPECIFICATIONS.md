@@ -677,6 +677,42 @@ CREATE TABLE quotation_additional_expenses (
 CREATE INDEX idx_quotation_additional_expenses_quotation_id ON quotation_additional_expenses(quotation_id);
 ```
 
+### Quotation Ingredients Table (Junction Table)
+
+```sql
+CREATE TABLE quotation_ingredients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quotation_id UUID REFERENCES quotations(id) ON DELETE CASCADE NOT NULL,
+  ingredient_id UUID REFERENCES ingredients(id) ON DELETE SET NULL,
+  ingredient_name VARCHAR(255) NOT NULL,
+  quantity DECIMAL(10,2) NOT NULL,
+  units VARCHAR(50) NOT NULL,
+  cost_per_unit DECIMAL(10,2) NOT NULL,
+  total_cost DECIMAL(10,2) NOT NULL
+);
+
+CREATE INDEX idx_quotation_ingredients_quotation_id ON quotation_ingredients(quotation_id);
+CREATE INDEX idx_quotation_ingredients_ingredient_id ON quotation_ingredients(ingredient_id);
+```
+
+### Recipe Supplies Table (Junction Table)
+
+```sql
+CREATE TABLE recipe_supplies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
+  supply_id UUID REFERENCES supplies(id) ON DELETE CASCADE NOT NULL,
+  supply_name VARCHAR(255) NOT NULL,
+  quantity DECIMAL(10,2) NOT NULL,
+  unit VARCHAR(50) NOT NULL,
+  cost_per_unit DECIMAL(10,2) NOT NULL,
+  total_cost DECIMAL(10,2) NOT NULL
+);
+
+CREATE INDEX idx_recipe_supplies_recipe_id ON recipe_supplies(recipe_id);
+CREATE INDEX idx_recipe_supplies_supply_id ON recipe_supplies(supply_id);
+```
+
 ### Filling Multipliers Table
 
 ```sql
@@ -1335,6 +1371,26 @@ Get all recipes for authenticated user.
         ]
       }
     ],
+    "supplies": [
+      {
+        "id": "uuid",
+        "supplyId": "uuid",
+        "supplyName": "Caja decorativa",
+        "quantity": 1,
+        "unit": "unidad",
+        "costPerUnit": 500.00,
+        "totalCost": 500.00
+      },
+      {
+        "id": "uuid",
+        "supplyId": "uuid",
+        "supplyName": "Etiqueta personalizada",
+        "quantity": 2,
+        "unit": "unidad",
+        "costPerUnit": 100.00,
+        "totalCost": 200.00
+      }
+    ],
     "multipliers": [
       {
         "id": "uuid",
@@ -1352,7 +1408,7 @@ Get all recipes for authenticated user.
         "multiplier": 2.5
       }
     ],
-    "totalCost": 45.80,
+    "totalCost": 46.50,
     "createdAt": "2024-01-15T10:30:00Z",
     "updatedAt": "2024-01-15T10:30:00Z"
   }
@@ -1366,7 +1422,9 @@ Get all recipes for authenticated user.
   - A recipe can have multiple categories (e.g., a cheesecake can be sold whole or by portions)
 - `elaborations`: Array of recipe elaborations/steps, each containing its own ingredients
 - `elaborations[].cost`: **CALCULATED FIELD** - Sum of all ingredient costs for that elaboration (not stored in DB)
-- `totalCost`: **CALCULATED FIELD** - Sum of all elaboration costs (stored in `recipes.total_cost`)
+- `supplies`: Optional array of supplies/materials used for this recipe (e.g., packaging, decorations)
+- `supplies[].totalCost`: **CALCULATED FIELD** - `quantity * costPerUnit`
+- `totalCost`: **CALCULATED FIELD** - Sum of all elaboration costs + sum of all supply costs (stored in `recipes.total_cost`)
 - `unitCost`: **CALCULATED FIELD** - `totalCost / units` (stored in `recipes.unit_cost`)
 - `multipliers`: Stored in separate tables based on categories:
   - If `categories` includes `'queque'` → stored in `cake_multipliers` table
@@ -1432,6 +1490,24 @@ Create a new recipe.
       ]
     }
   ],
+  "supplies": [
+    {
+      "supplyId": "uuid",
+      "supplyName": "Caja decorativa",
+      "quantity": 1,
+      "unit": "unidad",
+      "costPerUnit": 500.00,
+      "totalCost": 500.00
+    },
+    {
+      "supplyId": "uuid",
+      "supplyName": "Etiqueta personalizada",
+      "quantity": 2,
+      "unit": "unidad",
+      "costPerUnit": 100.00,
+      "totalCost": 200.00
+    }
+  ],
   "multipliers": [
     {
       "size": "pequeño",
@@ -1457,13 +1533,16 @@ Create a new recipe.
 - `elaborations`: Required array of elaborations, each with name, order, and ingredients
 - `elaborations[].ingredients`: Array of ingredients specific to that elaboration
 - **DO NOT SEND** `elaborations[].cost` in request - backend calculates it automatically
-- **DO NOT SEND** `totalCost` in request - backend calculates as sum of all elaboration costs
+- `supplies`: Optional array of supplies/materials used for this recipe
+- `supplies[].totalCost`: Optional, backend can calculate it as `quantity * costPerUnit`
+- **DO NOT SEND** `totalCost` in request - backend calculates as sum of all elaboration costs + supply costs
 - **DO NOT SEND** `unitCost` in request - backend calculates as `totalCost / units` (if units provided)
 - `multipliers`: Optional, only when `categories` includes "queque", "relleno", or "cubierta"
   - Stored in specific tables: `cake_multipliers`, `filling_multipliers`, `covering_multipliers`
   - Each table has UNIQUE constraint on `(recipe_id, size)`
 - For recipes with only "unidad" or "otro" categories, multipliers should NOT be included
 - When updating a recipe with multipliers, old multipliers are deleted and replaced with new ones
+- When updating a recipe with supplies, old supplies are deleted and replaced with new ones
 
 **Response (201):** Same as GET response
 
@@ -1892,6 +1971,24 @@ Get all quotations for authenticated user.
         "totalCost": 300.00
       }
     ],
+    "additionalIngredients": [
+      {
+        "ingredientId": "uuid",
+        "ingredientName": "Chocolate especial",
+        "quantity": 0.5,
+        "units": "kg",
+        "costPerUnit": 3000.00,
+        "totalCost": 1500.00
+      },
+      {
+        "ingredientId": "uuid",
+        "ingredientName": "Fresas frescas",
+        "quantity": 1,
+        "units": "kg",
+        "costPerUnit": 800.00,
+        "totalCost": 800.00
+      }
+    ],
     "additionalExpenses": [
       {
         "expenseName": "Entrega a domicilio",
@@ -1906,7 +2003,7 @@ Get all quotations for authenticated user.
         "totalPrice": 1500.00
       }
     ],
-    "totalCost": 13300.00,
+    "totalCost": 15600.00,
     "notes": "Cliente prefiere bajo azúcar",
     "createdAt": "2024-01-15T10:30:00Z",
     "updatedAt": "2024-01-15T10:30:00Z"
@@ -1962,6 +2059,24 @@ Create a new quotation.
       "totalCost": 300.00
     }
   ],
+  "additionalIngredients": [
+    {
+      "ingredientId": "uuid",
+      "ingredientName": "Chocolate especial",
+      "quantity": 0.5,
+      "units": "kg",
+      "costPerUnit": 3000.00,
+      "totalCost": 1500.00
+    },
+    {
+      "ingredientId": "uuid",
+      "ingredientName": "Fresas frescas",
+      "quantity": 1,
+      "units": "kg",
+      "costPerUnit": 800.00,
+      "totalCost": 800.00
+    }
+  ],
   "additionalExpenses": [
     {
       "expenseName": "Entrega a domicilio",
@@ -1976,7 +2091,7 @@ Create a new quotation.
       "totalPrice": 1500.00
     }
   ],
-  "totalCost": 13300.00,
+  "totalCost": 15600.00,
   "notes": "Cliente prefiere bajo azúcar"
 }
 ```
@@ -1987,7 +2102,9 @@ Create a new quotation.
 
 - `recipeTypeId` in each recipe is **required** and references an existing recipe type from `recipe_types` table
 - The recipe type details are populated when the quotation is retrieved
-- `totalCost` is automatically calculated by summing all recipe costs, supply costs, and additional expenses
+- `additionalIngredients`: Optional array of ingredients that are not part of any recipe but needed for the quotation
+- `additionalIngredients[].totalCost`: Optional, backend can calculate it as `quantity * costPerUnit`
+- `totalCost` is automatically calculated by summing all recipe costs, supply costs, additional ingredient costs, and additional expenses
 
 #### PUT /api/quotations/:id
 
@@ -2852,6 +2969,8 @@ All foreign key relationships have indexes:
 - `idx_recipe_elaborations_recipe_id`
 - `idx_recipe_ingredients_elaboration_id`
 - `idx_recipe_ingredients_ingredient_id`
+- `idx_recipe_supplies_recipe_id`
+- `idx_recipe_supplies_supply_id`
 - `idx_supplies_user_id`
 - `idx_orders_user_id`
 - `idx_orders_delivery_date`
@@ -2866,6 +2985,8 @@ All foreign key relationships have indexes:
 - `idx_quotation_recipes_quotation_id`
 - `idx_quotation_recipes_recipe_type_id`
 - `idx_quotation_supplies_quotation_id`
+- `idx_quotation_ingredients_quotation_id`
+- `idx_quotation_ingredients_ingredient_id`
 - `idx_quotation_additional_expenses_quotation_id`
 - `idx_filling_multipliers_recipe_id`
 - `idx_covering_multipliers_recipe_id`
