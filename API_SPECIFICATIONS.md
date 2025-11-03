@@ -1,6 +1,80 @@
-# Bakery Management System - API Specifications & Database Schema
+# Bakery Management System - Multi-Tenant SaaS API Specifications & Database Schema
 
 ## Database Schema
+
+---
+
+## FASE 1: MULTI-TENANT DATABASE SCHEMA
+
+### Organizations Table
+
+```sql
+CREATE TABLE organizations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  logo_url TEXT,
+  subscription_status VARCHAR(50) DEFAULT 'trial' NOT NULL,
+  subscription_plan VARCHAR(50) DEFAULT 'free' NOT NULL,
+  subscription_stripe_customer_id VARCHAR(255),
+  subscription_stripe_subscription_id VARCHAR(255),
+  trial_ends_at TIMESTAMP,
+  settings JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_organizations_slug ON organizations(slug);
+CREATE INDEX idx_organizations_stripe_customer ON organizations(subscription_stripe_customer_id);
+```
+
+### Organization Members Table
+
+```sql
+CREATE TYPE organization_role AS ENUM ('owner', 'admin', 'staff', 'viewer');
+
+CREATE TABLE organization_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  role organization_role NOT NULL DEFAULT 'staff',
+  joined_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(organization_id, user_id)
+);
+
+CREATE INDEX idx_organization_members_org_id ON organization_members(organization_id);
+CREATE INDEX idx_organization_members_user_id ON organization_members(user_id);
+```
+
+### Subscription Plans Configuration
+
+```sql
+CREATE TABLE subscription_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) UNIQUE NOT NULL,
+  slug VARCHAR(100) UNIQUE NOT NULL,
+  price_monthly DECIMAL(10,2) NOT NULL,
+  price_yearly DECIMAL(10,2),
+  max_orders_per_month INTEGER,
+  max_users INTEGER,
+  max_storage_gb INTEGER,
+  features JSONB DEFAULT '{}',
+  stripe_price_id VARCHAR(255),
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Default subscription plans
+INSERT INTO subscription_plans (name, slug, price_monthly, price_yearly, max_orders_per_month, max_users, max_storage_gb, features) VALUES
+  ('Free', 'free', 0, 0, 10, 1, 1, '{"support": "community"}'),
+  ('Starter', 'starter', 29.99, 299.90, 50, 3, 5, '{"support": "email", "priority": false}'),
+  ('Professional', 'professional', 79.99, 799.90, 200, 10, 20, '{"support": "priority", "custom_branding": true}'),
+  ('Enterprise', 'enterprise', 199.99, 1999.90, -1, -1, 100, '{"support": "dedicated", "custom_branding": true, "api_access": true}');
+```
+
+---
+
+## FASE 2: ROLE AND SECURITY SYSTEM
 
 ### Users Table
 
@@ -15,10 +89,10 @@ CREATE TABLE users (
 );
 ```
 
-### User Roles Table
+### User Roles Table (Global Roles)
 
 ```sql
-CREATE TYPE app_role AS ENUM ('owner', 'cake_topper_provider');
+CREATE TYPE app_role AS ENUM ('super_admin', 'owner', 'cake_topper_provider');
 
 CREATE TABLE user_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -26,14 +100,134 @@ CREATE TABLE user_roles (
   role app_role NOT NULL,
   UNIQUE(user_id, role)
 );
+
+CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
 ```
 
-### Ingredients Table
+### Security Definer Functions
+
+```sql
+-- Function to check if user has a specific global role
+CREATE OR REPLACE FUNCTION public.has_global_role(_user_id UUID, _role app_role)
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id
+      AND role = _role
+  )
+$$;
+
+-- Function to check if user has a specific organization role
+CREATE OR REPLACE FUNCTION public.has_org_role(_user_id UUID, _org_id UUID, _role organization_role)
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.organization_members
+    WHERE user_id = _user_id
+      AND organization_id = _org_id
+      AND role = _role
+  )
+$$;
+
+-- Function to check if user is member of organization
+CREATE OR REPLACE FUNCTION public.is_org_member(_user_id UUID, _org_id UUID)
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.organization_members
+    WHERE user_id = _user_id
+      AND organization_id = _org_id
+  )
+$$;
+
+-- Function to get user's organizations
+CREATE OR REPLACE FUNCTION public.get_user_organizations(_user_id UUID)
+RETURNS TABLE (
+  organization_id UUID,
+  organization_name VARCHAR(255),
+  organization_slug VARCHAR(255),
+  user_role organization_role
+)
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT 
+    o.id,
+    o.name,
+    o.slug,
+    om.role
+  FROM public.organizations o
+  INNER JOIN public.organization_members om ON o.id = om.organization_id
+  WHERE om.user_id = _user_id
+$$;
+```
+
+### Row Level Security Policies
+
+```sql
+-- Organizations RLS
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+
+-- Users can see organizations they belong to
+CREATE POLICY "Users can view their organizations"
+  ON organizations FOR SELECT
+  USING (public.is_org_member(auth.uid(), id));
+
+-- Organization owners/admins can update their organization
+CREATE POLICY "Owners and admins can update organization"
+  ON organizations FOR UPDATE
+  USING (
+    public.has_org_role(auth.uid(), id, 'owner') OR
+    public.has_org_role(auth.uid(), id, 'admin')
+  );
+
+-- Super admins can view all organizations
+CREATE POLICY "Super admins can view all organizations"
+  ON organizations FOR SELECT
+  USING (public.has_global_role(auth.uid(), 'super_admin'));
+
+-- Organization Members RLS
+ALTER TABLE organization_members ENABLE ROW LEVEL SECURITY;
+
+-- Users can view members of their organizations
+CREATE POLICY "Users can view organization members"
+  ON organization_members FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+-- Owners and admins can manage members
+CREATE POLICY "Owners and admins can manage members"
+  ON organization_members FOR ALL
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
+```
+
+### Ingredients Table (Multi-Tenant)
 
 ```sql
 CREATE TABLE ingredients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   name VARCHAR(255) NOT NULL,
   provider VARCHAR(255) NOT NULL,
   qty_provider DECIMAL(10,2) NOT NULL,
@@ -43,19 +237,43 @@ CREATE TABLE ingredients (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE INDEX idx_ingredients_organization_id ON ingredients(organization_id);
 CREATE INDEX idx_ingredients_user_id ON ingredients(user_id);
+
+-- RLS for Ingredients
+ALTER TABLE ingredients ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view ingredients"
+  ON ingredients FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert ingredients"
+  ON ingredients FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update ingredients"
+  ON ingredients FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete ingredients"
+  ON ingredients FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
-### Recipes Table
+### Recipes Table (Multi-Tenant)
 
 ```sql
 CREATE TABLE recipes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   name VARCHAR(255) NOT NULL,
   image TEXT,
   total_cost DECIMAL(10,2) NOT NULL DEFAULT 0,
-  category VARCHAR(255),
+  categories TEXT[] DEFAULT '{}',  -- Array of categories: 'queque', 'relleno', 'cubierta', 'unidad', 'otro'
   notes TEXT,
   url TEXT,
   units NUMERIC(10,0),
@@ -64,7 +282,30 @@ CREATE TABLE recipes (
   updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
+CREATE INDEX idx_recipes_organization_id ON recipes(organization_id);
 CREATE INDEX idx_recipes_user_id ON recipes(user_id);
+
+-- RLS for Recipes
+ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view recipes"
+  ON recipes FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert recipes"
+  ON recipes FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update recipes"
+  ON recipes FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete recipes"
+  ON recipes FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
 ### Recipe Elaborations Table
@@ -100,12 +341,13 @@ CREATE INDEX idx_recipe_ingredients_ingredient_id ON recipe_ingredients(ingredie
 
 **Note:** The `recipe_id` field is a legacy column maintained for backwards compatibility during migration. New implementations should only use `elaboration_id`.
 
-### Supplies Table
+### Supplies Table (Multi-Tenant)
 
 ```sql
 CREATE TABLE supplies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   name VARCHAR(255) NOT NULL,
   supplier_name VARCHAR(255) NOT NULL,
   quantity DECIMAL(10,2) NOT NULL,
@@ -114,7 +356,30 @@ CREATE TABLE supplies (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE INDEX idx_supplies_organization_id ON supplies(organization_id);
 CREATE INDEX idx_supplies_user_id ON supplies(user_id);
+
+-- RLS for Supplies
+ALTER TABLE supplies ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view supplies"
+  ON supplies FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert supplies"
+  ON supplies FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update supplies"
+  ON supplies FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete supplies"
+  ON supplies FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
 ### Payment Methods Table
@@ -150,13 +415,16 @@ CREATE TYPE order_status AS ENUM (
 
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  quotation_id UUID REFERENCES quotations(id) ON DELETE SET NULL NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  quotation_id UUID REFERENCES quotations(id) ON DELETE SET NULL,
   client_name VARCHAR(255) NOT NULL,
   phone_number VARCHAR(50) NOT NULL,
   order_details TEXT NOT NULL,
   delivery_date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   needs_cake_topper BOOLEAN DEFAULT false,
+  topper_details TEXT,
+  topper_photos JSONB DEFAULT '[]'::jsonb,
   cost_amount DECIMAL(10,2) NOT NULL,
   charge_amount DECIMAL(10,2) NOT NULL,
   payment_method_id UUID REFERENCES payment_methods(id) ON DELETE SET NULL NOT NULL,
@@ -166,9 +434,36 @@ CREATE TABLE orders (
   updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
+CREATE INDEX idx_orders_organization_id ON orders(organization_id);
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_delivery_date ON orders(delivery_date);
 CREATE INDEX idx_orders_payment_method_id ON orders(payment_method_id);
+
+-- Add comments for documentation
+COMMENT ON COLUMN orders.topper_details IS 'Details and specifications for the cake topper (nullable)';
+COMMENT ON COLUMN orders.topper_photos IS 'Array of photo URLs for topper references stored as JSONB (nullable)';
+
+-- RLS for Orders
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view orders"
+  ON orders FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert orders"
+  ON orders FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update orders"
+  ON orders FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete orders"
+  ON orders FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
 **Note:** The `quotation_id` field has been removed from the current database implementation.
@@ -235,12 +530,13 @@ INSERT INTO card_types (name, description) VALUES
   ('Otro', 'Otro tipo de tarjeta');
 ```
 
-### Expenses Table
+### Expenses Table (Multi-Tenant)
 
 ```sql
 CREATE TABLE expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   supermarket_name VARCHAR(255) NOT NULL,
   purchase_date DATE NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
@@ -249,9 +545,32 @@ CREATE TABLE expenses (
   created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
+CREATE INDEX idx_expenses_organization_id ON expenses(organization_id);
 CREATE INDEX idx_expenses_user_id ON expenses(user_id);
 CREATE INDEX idx_expenses_purchase_date ON expenses(purchase_date);
 CREATE INDEX idx_expenses_card_type_id ON expenses(card_type_id);
+
+-- RLS for Expenses
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view expenses"
+  ON expenses FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert expenses"
+  ON expenses FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update expenses"
+  ON expenses FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete expenses"
+  ON expenses FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
 ### Recipe Types Table
@@ -273,12 +592,13 @@ INSERT INTO recipe_types (name, description) VALUES
   ('unidad', 'Receta por unidad');
 ```
 
-### Quotations Table
+### Quotations Table (Multi-Tenant)
 
 ```sql
 CREATE TABLE quotations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   client_name VARCHAR(255) NOT NULL,
   size VARCHAR(50) NOT NULL,
   total_cost DECIMAL(10,2) NOT NULL,
@@ -287,7 +607,30 @@ CREATE TABLE quotations (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE INDEX idx_quotations_organization_id ON quotations(organization_id);
 CREATE INDEX idx_quotations_user_id ON quotations(user_id);
+
+-- RLS for Quotations
+ALTER TABLE quotations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Organization members can view quotations"
+  ON quotations FOR SELECT
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can insert quotations"
+  ON quotations FOR INSERT
+  WITH CHECK (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Organization members can update quotations"
+  ON quotations FOR UPDATE
+  USING (public.is_org_member(auth.uid(), organization_id));
+
+CREATE POLICY "Owners and admins can delete quotations"
+  ON quotations FOR DELETE
+  USING (
+    public.has_org_role(auth.uid(), organization_id, 'owner') OR
+    public.has_org_role(auth.uid(), organization_id, 'admin')
+  );
 ```
 
 ### Quotation Recipes Table (Junction Table)
@@ -338,6 +681,42 @@ CREATE TABLE quotation_additional_expenses (
 );
 
 CREATE INDEX idx_quotation_additional_expenses_quotation_id ON quotation_additional_expenses(quotation_id);
+```
+
+### Quotation Ingredients Table (Junction Table)
+
+```sql
+CREATE TABLE quotation_ingredients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quotation_id UUID REFERENCES quotations(id) ON DELETE CASCADE NOT NULL,
+  ingredient_id UUID REFERENCES ingredients(id) ON DELETE SET NULL,
+  ingredient_name VARCHAR(255) NOT NULL,
+  quantity DECIMAL(10,2) NOT NULL,
+  units VARCHAR(50) NOT NULL,
+  cost_per_unit DECIMAL(10,2) NOT NULL,
+  total_cost DECIMAL(10,2) NOT NULL
+);
+
+CREATE INDEX idx_quotation_ingredients_quotation_id ON quotation_ingredients(quotation_id);
+CREATE INDEX idx_quotation_ingredients_ingredient_id ON quotation_ingredients(ingredient_id);
+```
+
+### Recipe Supplies Table (Junction Table)
+
+```sql
+CREATE TABLE recipe_supplies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
+  supply_id UUID REFERENCES supplies(id) ON DELETE CASCADE NOT NULL,
+  supply_name VARCHAR(255) NOT NULL,
+  quantity DECIMAL(10,2) NOT NULL,
+  unit VARCHAR(50) NOT NULL,
+  cost_per_unit DECIMAL(10,2) NOT NULL,
+  total_cost DECIMAL(10,2) NOT NULL
+);
+
+CREATE INDEX idx_recipe_supplies_recipe_id ON recipe_supplies(recipe_id);
+CREATE INDEX idx_recipe_supplies_supply_id ON recipe_supplies(supply_id);
 ```
 
 ### Filling Multipliers Table
@@ -419,13 +798,289 @@ CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 
 ---
 
+## FASE 3: BACKEND APIs FOR MULTI-TENANT SYSTEM
+
+---
+
 ## API Endpoints
+
+### Organizations API
+
+#### GET /api/organizations
+
+Get all organizations for the authenticated user.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Sweet Bakery",
+    "slug": "sweet-bakery",
+    "logo_url": "https://...",
+    "subscription_status": "active",
+    "subscription_plan": "professional",
+    "userRole": "owner",
+    "settings": {},
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+#### GET /api/organizations/:id
+
+Get organization details.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid",
+  "name": "Sweet Bakery",
+  "slug": "sweet-bakery",
+  "logo_url": "https://...",
+  "subscription_status": "active",
+  "subscription_plan": "professional",
+  "trial_ends_at": "2024-12-31T00:00:00Z",
+  "settings": {
+    "timezone": "America/Costa_Rica",
+    "currency": "CRC"
+  },
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-01-15T00:00:00Z"
+}
+```
+
+#### POST /api/organizations
+
+Create a new organization.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "name": "Sweet Bakery",
+  "slug": "sweet-bakery"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "id": "uuid",
+  "name": "Sweet Bakery",
+  "slug": "sweet-bakery",
+  "subscription_status": "trial",
+  "subscription_plan": "free",
+  "trial_ends_at": "2024-02-01T00:00:00Z",
+  "created_at": "2024-01-01T00:00:00Z"
+}
+```
+
+#### PUT /api/organizations/:id
+
+Update organization details (owner/admin only).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "name": "Sweet Bakery Premium",
+  "logo_url": "https://...",
+  "settings": {
+    "timezone": "America/Costa_Rica",
+    "currency": "CRC"
+  }
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid",
+  "name": "Sweet Bakery Premium",
+  "slug": "sweet-bakery",
+  "logo_url": "https://...",
+  "settings": {
+    "timezone": "America/Costa_Rica",
+    "currency": "CRC"
+  },
+  "updated_at": "2024-01-15T00:00:00Z"
+}
+```
+
+#### DELETE /api/organizations/:id
+
+Delete organization (owner only).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (204):** No content
+
+---
+
+### Organization Members API
+
+#### GET /api/organizations/:orgId/members
+
+Get all members of an organization.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+
+```json
+[
+  {
+    "id": "uuid",
+    "user_id": "uuid",
+    "organization_id": "uuid",
+    "role": "owner",
+    "user": {
+      "id": "uuid",
+      "email": "owner@example.com",
+      "name": "John Doe"
+    },
+    "joined_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "uuid",
+    "user_id": "uuid",
+    "organization_id": "uuid",
+    "role": "staff",
+    "user": {
+      "id": "uuid",
+      "email": "staff@example.com",
+      "name": "Jane Smith"
+    },
+    "joined_at": "2024-01-15T00:00:00Z"
+  }
+]
+```
+
+#### POST /api/organizations/:orgId/members
+
+Invite a new member to the organization (owner/admin only).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "email": "newmember@example.com",
+  "role": "staff"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "id": "uuid",
+  "user_id": "uuid",
+  "organization_id": "uuid",
+  "role": "staff",
+  "joined_at": "2024-01-15T00:00:00Z"
+}
+```
+
+#### PUT /api/organizations/:orgId/members/:memberId
+
+Update member role (owner/admin only).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "role": "admin"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid",
+  "user_id": "uuid",
+  "organization_id": "uuid",
+  "role": "admin",
+  "joined_at": "2024-01-15T00:00:00Z"
+}
+```
+
+#### DELETE /api/organizations/:orgId/members/:memberId
+
+Remove a member from organization (owner/admin only).
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (204):** No content
+
+---
+
+### Subscription Plans API
+
+#### GET /api/subscription-plans
+
+Get all available subscription plans.
+
+**Response (200):**
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Free",
+    "slug": "free",
+    "price_monthly": 0,
+    "price_yearly": 0,
+    "max_orders_per_month": 10,
+    "max_users": 1,
+    "max_storage_gb": 1,
+    "features": {
+      "support": "community"
+    }
+  },
+  {
+    "id": "uuid",
+    "name": "Professional",
+    "slug": "professional",
+    "price_monthly": 79.99,
+    "price_yearly": 799.90,
+    "max_orders_per_month": 200,
+    "max_users": 10,
+    "max_storage_gb": 20,
+    "features": {
+      "support": "priority",
+      "custom_branding": true
+    }
+  }
+]
+```
+
+---
+
+### Modified Authentication Endpoints (Multi-Tenant)
 
 ### Authentication
 
 #### POST /api/auth/signup
 
-Register a new user.
+Register a new user and create their first organization.
 
 **Request:**
 
@@ -434,7 +1089,8 @@ Register a new user.
   "email": "user@example.com",
   "password": "securePassword123",
   "name": "John Doe",
-  "role": "owner"
+  "organization_name": "My Bakery",
+  "organization_slug": "my-bakery"
 }
 ```
 
@@ -445,16 +1101,23 @@ Register a new user.
   "user": {
     "id": "uuid",
     "email": "user@example.com",
-    "name": "John Doe",
-    "role": "owner"
+    "name": "John Doe"
   },
-  "token": "jwt-token"
+  "token": "jwt-token",
+  "organization": {
+    "id": "uuid",
+    "name": "My Bakery",
+    "slug": "my-bakery",
+    "subscription_status": "trial",
+    "subscription_plan": "free",
+    "trial_ends_at": "2024-02-01T00:00:00Z"
+  }
 }
 ```
 
 #### POST /api/auth/login
 
-Authenticate user.
+Authenticate user and return their organizations.
 
 **Request:**
 
@@ -472,10 +1135,17 @@ Authenticate user.
   "user": {
     "id": "uuid",
     "email": "user@example.com",
-    "name": "John Doe",
-    "role": "owner"
+    "name": "John Doe"
   },
-  "token": "jwt-token"
+  "token": "jwt-token",
+  "organizations": [
+    {
+      "id": "uuid",
+      "name": "My Bakery",
+      "slug": "my-bakery",
+      "role": "owner"
+    }
+  ]
 }
 ```
 
@@ -495,7 +1165,7 @@ Invalidate user session.
 
 #### GET /api/auth/me
 
-Get current user info.
+Get current user info with their organizations.
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -652,7 +1322,7 @@ Get all recipes for authenticated user.
     "id": "uuid",
     "name": "Chocolate Cake",
     "image": "https://storage.example.com/recipes/cake.jpg",
-    "category": "queque",
+    "categories": ["queque", "unidad"],
     "notes": "Some notes",
     "url": "https://recipe-link.com",
     "units": 12,
@@ -707,6 +1377,26 @@ Get all recipes for authenticated user.
         ]
       }
     ],
+    "supplies": [
+      {
+        "id": "uuid",
+        "supplyId": "uuid",
+        "supplyName": "Caja decorativa",
+        "quantity": 1,
+        "unit": "unidad",
+        "costPerUnit": 500.00,
+        "totalCost": 500.00
+      },
+      {
+        "id": "uuid",
+        "supplyId": "uuid",
+        "supplyName": "Etiqueta personalizada",
+        "quantity": 2,
+        "unit": "unidad",
+        "costPerUnit": 100.00,
+        "totalCost": 200.00
+      }
+    ],
     "multipliers": [
       {
         "id": "uuid",
@@ -724,7 +1414,7 @@ Get all recipes for authenticated user.
         "multiplier": 2.5
       }
     ],
-    "totalCost": 45.80,
+    "totalCost": 46.50,
     "createdAt": "2024-01-15T10:30:00Z",
     "updatedAt": "2024-01-15T10:30:00Z"
   }
@@ -733,15 +1423,20 @@ Get all recipes for authenticated user.
 
 **Notes:**
 
+- `categories`: Array of categories that apply to this recipe (e.g., `["queque", "unidad"]`)
+  - Possible values: `"queque"`, `"relleno"`, `"cubierta"`, `"unidad"`, `"otro"`
+  - A recipe can have multiple categories (e.g., a cheesecake can be sold whole or by portions)
 - `elaborations`: Array of recipe elaborations/steps, each containing its own ingredients
 - `elaborations[].cost`: **CALCULATED FIELD** - Sum of all ingredient costs for that elaboration (not stored in DB)
-- `totalCost`: **CALCULATED FIELD** - Sum of all elaboration costs (stored in `recipes.total_cost`)
+- `supplies`: Optional array of supplies/materials used for this recipe (e.g., packaging, decorations)
+- `supplies[].totalCost`: **CALCULATED FIELD** - `quantity * costPerUnit`
+- `totalCost`: **CALCULATED FIELD** - Sum of all elaboration costs + sum of all supply costs (stored in `recipes.total_cost`)
 - `unitCost`: **CALCULATED FIELD** - `totalCost / units` (stored in `recipes.unit_cost`)
-- `multipliers`: Stored in separate tables based on category:
-  - `category = 'queque'` → stored in `cake_multipliers` table
-  - `category = 'relleno'` → stored in `filling_multipliers` table
-  - `category = 'cubierta'` → stored in `covering_multipliers` table
-  - `category = 'unidad'` or `'otro'` → no multipliers stored
+- `multipliers`: Stored in separate tables based on categories:
+  - If `categories` includes `'queque'` → stored in `cake_multipliers` table
+  - If `categories` includes `'relleno'` → stored in `filling_multipliers` table
+  - If `categories` includes `'cubierta'` → stored in `covering_multipliers` table
+  - If only `'unidad'` or `'otro'` → no multipliers stored
 
 #### POST /api/recipes
 
@@ -755,7 +1450,7 @@ Create a new recipe.
 {
   "name": "Chocolate Cake",
   "image": "https://storage.example.com/recipes/cake.jpg",
-  "category": "queque",
+  "categories": ["queque", "unidad"],
   "notes": "Some notes about the recipe",
   "url": "https://recipe-link.com",
   "units": 12,
@@ -801,6 +1496,24 @@ Create a new recipe.
       ]
     }
   ],
+  "supplies": [
+    {
+      "supplyId": "uuid",
+      "supplyName": "Caja decorativa",
+      "quantity": 1,
+      "unit": "unidad",
+      "costPerUnit": 500.00,
+      "totalCost": 500.00
+    },
+    {
+      "supplyId": "uuid",
+      "supplyName": "Etiqueta personalizada",
+      "quantity": 2,
+      "unit": "unidad",
+      "costPerUnit": 100.00,
+      "totalCost": 200.00
+    }
+  ],
   "multipliers": [
     {
       "size": "pequeño",
@@ -820,16 +1533,22 @@ Create a new recipe.
 
 **Notes:**
 
+- `categories`: Required array with at least one category value
+  - Possible values: `"queque"`, `"relleno"`, `"cubierta"`, `"unidad"`, `"otro"`
+  - Multiple categories can be specified (e.g., `["queque", "unidad"]` for products sold whole or by portions)
 - `elaborations`: Required array of elaborations, each with name, order, and ingredients
 - `elaborations[].ingredients`: Array of ingredients specific to that elaboration
 - **DO NOT SEND** `elaborations[].cost` in request - backend calculates it automatically
-- **DO NOT SEND** `totalCost` in request - backend calculates as sum of all elaboration costs
+- `supplies`: Optional array of supplies/materials used for this recipe
+- `supplies[].totalCost`: Optional, backend can calculate it as `quantity * costPerUnit`
+- **DO NOT SEND** `totalCost` in request - backend calculates as sum of all elaboration costs + supply costs
 - **DO NOT SEND** `unitCost` in request - backend calculates as `totalCost / units` (if units provided)
-- `multipliers`: Optional, only for categories "queque", "relleno", "cubierta"
+- `multipliers`: Optional, only when `categories` includes "queque", "relleno", or "cubierta"
   - Stored in specific tables: `cake_multipliers`, `filling_multipliers`, `covering_multipliers`
   - Each table has UNIQUE constraint on `(recipe_id, size)`
-- For "unidad" and "otro" categories, multipliers should NOT be included
+- For recipes with only "unidad" or "otro" categories, multipliers should NOT be included
 - When updating a recipe with multipliers, old multipliers are deleted and replaced with new ones
+- When updating a recipe with supplies, old supplies are deleted and replaced with new ones
 
 **Response (201):** Same as GET response
 
@@ -1009,6 +1728,11 @@ Get all orders for authenticated user.
       }
     ],
     "needsCakeTopper": true,
+    "topperDetails": "Custom topper with name 'Jane' in gold color with glitter finish",
+    "topperPhotos": [
+      "https://storage.example.com/orders/topper1.jpg",
+      "https://storage.example.com/orders/topper2.jpg"
+    ],
     "costAmount": 150.00,
     "chargeAmount": 300.00,
     "paymentMethod": {
@@ -1063,6 +1787,11 @@ Create a new order.
     "https://storage.example.com/photo2.jpg"
   ],
   "needsCakeTopper": true,
+  "topperDetails": "Custom topper with name 'Jane' in gold color",
+  "topperPhotos": [
+    "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+    "https://storage.example.com/topper2.jpg"
+  ],
   "costAmount": 150.00,
   "chargeAmount": 300.00,
   "paymentMethodId": "uuid",
@@ -1078,6 +1807,9 @@ Create a new order.
 - `costAmount` is automatically calculated from the selected quotation's `totalCost`
 - `clientPhotos` accepts both base64-encoded images and URLs
 - Photos are stored in `order_photos` table with individual records
+- `needsCakeTopper`: Boolean indicating if the order requires a cake topper
+- `topperDetails`: Optional text field with topper specifications (only when `needsCakeTopper` is true)
+- `topperPhotos`: Optional array of topper reference photos, accepts both base64-encoded images and URLs
 - `statuses` is sent as array of strings, stored in `order_statuses` table with timestamps
 - Server validates that `downPayment` ≤ `chargeAmount`
 - The quotation's details and payment method details are populated when the order is retrieved
@@ -1093,6 +1825,45 @@ Update an order.
 **Request:** Same as POST
 
 **Response (200):** Updated order object
+
+#### PATCH /api/orders/:id/topper
+
+Update only the topper information for an existing order.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "topperDetails": "Updated topper details with new specifications",
+  "topperPhotos": [
+    "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+    "https://storage.example.com/topper-new.jpg"
+  ]
+}
+```
+
+**Notes:**
+
+- Both fields are optional in the request
+- `topperPhotos` accepts both base64-encoded images and URLs
+- This endpoint is useful for updating topper information after the order has been created
+- Can be used by both order creators and cake topper providers
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid",
+  "topperDetails": "Updated topper details with new specifications",
+  "topperPhotos": [
+    "https://storage.example.com/orders/topper1.jpg",
+    "https://storage.example.com/orders/topper2.jpg"
+  ],
+  "updatedAt": "2024-01-16T10:30:00Z"
+}
+```
 
 #### PATCH /api/orders/:id/status
 
@@ -1258,6 +2029,24 @@ Get all quotations for authenticated user.
         "totalCost": 300.00
       }
     ],
+    "additionalIngredients": [
+      {
+        "ingredientId": "uuid",
+        "ingredientName": "Chocolate especial",
+        "quantity": 0.5,
+        "units": "kg",
+        "costPerUnit": 3000.00,
+        "totalCost": 1500.00
+      },
+      {
+        "ingredientId": "uuid",
+        "ingredientName": "Fresas frescas",
+        "quantity": 1,
+        "units": "kg",
+        "costPerUnit": 800.00,
+        "totalCost": 800.00
+      }
+    ],
     "additionalExpenses": [
       {
         "expenseName": "Entrega a domicilio",
@@ -1272,7 +2061,7 @@ Get all quotations for authenticated user.
         "totalPrice": 1500.00
       }
     ],
-    "totalCost": 13300.00,
+    "totalCost": 15600.00,
     "notes": "Cliente prefiere bajo azúcar",
     "createdAt": "2024-01-15T10:30:00Z",
     "updatedAt": "2024-01-15T10:30:00Z"
@@ -1328,6 +2117,24 @@ Create a new quotation.
       "totalCost": 300.00
     }
   ],
+  "additionalIngredients": [
+    {
+      "ingredientId": "uuid",
+      "ingredientName": "Chocolate especial",
+      "quantity": 0.5,
+      "units": "kg",
+      "costPerUnit": 3000.00,
+      "totalCost": 1500.00
+    },
+    {
+      "ingredientId": "uuid",
+      "ingredientName": "Fresas frescas",
+      "quantity": 1,
+      "units": "kg",
+      "costPerUnit": 800.00,
+      "totalCost": 800.00
+    }
+  ],
   "additionalExpenses": [
     {
       "expenseName": "Entrega a domicilio",
@@ -1342,7 +2149,7 @@ Create a new quotation.
       "totalPrice": 1500.00
     }
   ],
-  "totalCost": 13300.00,
+  "totalCost": 15600.00,
   "notes": "Cliente prefiere bajo azúcar"
 }
 ```
@@ -1353,7 +2160,9 @@ Create a new quotation.
 
 - `recipeTypeId` in each recipe is **required** and references an existing recipe type from `recipe_types` table
 - The recipe type details are populated when the quotation is retrieved
-- `totalCost` is automatically calculated by summing all recipe costs, supply costs, and additional expenses
+- `additionalIngredients`: Optional array of ingredients that are not part of any recipe but needed for the quotation
+- `additionalIngredients[].totalCost`: Optional, backend can calculate it as `quantity * costPerUnit`
+- `totalCost` is automatically calculated by summing all recipe costs, supply costs, additional ingredient costs, and additional expenses
 
 #### PUT /api/quotations/:id
 
@@ -2218,6 +3027,8 @@ All foreign key relationships have indexes:
 - `idx_recipe_elaborations_recipe_id`
 - `idx_recipe_ingredients_elaboration_id`
 - `idx_recipe_ingredients_ingredient_id`
+- `idx_recipe_supplies_recipe_id`
+- `idx_recipe_supplies_supply_id`
 - `idx_supplies_user_id`
 - `idx_orders_user_id`
 - `idx_orders_delivery_date`
@@ -2232,6 +3043,8 @@ All foreign key relationships have indexes:
 - `idx_quotation_recipes_quotation_id`
 - `idx_quotation_recipes_recipe_type_id`
 - `idx_quotation_supplies_quotation_id`
+- `idx_quotation_ingredients_quotation_id`
+- `idx_quotation_ingredients_ingredient_id`
 - `idx_quotation_additional_expenses_quotation_id`
 - `idx_filling_multipliers_recipe_id`
 - `idx_covering_multipliers_recipe_id`

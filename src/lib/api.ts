@@ -1,5 +1,5 @@
-const API_BASE_URL = "https://api-holymoly.networksalas.com/api";
-// const API_BASE_URL = "http://localhost:3000/api"; // For local development
+// const API_BASE_URL = "https://api-holymoly.networksalas.com/api";
+const API_BASE_URL = "http://localhost:3000/api"; // For local development
 
 interface ApiResponse<T> {
   data?: T;
@@ -166,6 +166,12 @@ export const ordersApi = {
       body: JSON.stringify(order),
     }),
 
+  updateTopper: (id: string, data: { topperDetails?: string; topperPhotos?: string[] }) =>
+    apiFetch(`/orders/${id}/topper`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   delete: (id: string) =>
     apiFetch(`/orders/${id}`, {
       method: "DELETE",
@@ -271,6 +277,8 @@ export const paymentMethodsApi = {
 // Quotations API
 export const quotationsApi = {
   getAll: () => apiFetch("/quotations", { method: "GET" }),
+
+  getById: (id: string) => apiFetch(`/quotations/${id}`, { method: "GET" }),
 
   create: (quotation: any) =>
     apiFetch("/quotations", {
