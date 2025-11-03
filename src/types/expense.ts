@@ -8,6 +8,8 @@ export interface CardType {
 
 export interface Expense {
   id: string;
+  organizationId: string;
+  userId?: string;
   supermarketName: string;
   purchaseDate: string;
   amount: number;

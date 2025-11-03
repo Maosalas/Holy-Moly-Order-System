@@ -1209,9 +1209,11 @@ Refresh access token using refresh token.
 
 #### GET /api/ingredients
 
-Get all ingredients for authenticated user.
+Get all ingredients for authenticated user's current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Response (200):**
 
@@ -1219,6 +1221,8 @@ Get all ingredients for authenticated user.
 [
   {
     "id": "uuid",
+    "organizationId": "uuid",
+    "userId": "uuid",
     "name": "Flour",
     "provider": "Supplier Co",
     "qtyProvider": 5.0,
@@ -1232,9 +1236,11 @@ Get all ingredients for authenticated user.
 
 #### POST /api/ingredients
 
-Create a new ingredient.
+Create a new ingredient in the current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Request:**
 
@@ -1253,6 +1259,8 @@ Create a new ingredient.
 ```json
 {
   "id": "uuid",
+  "organizationId": "uuid",
+  "userId": "uuid",
   "name": "Flour",
   "provider": "Supplier Co",
   "qtyProvider": 5.0,
@@ -1262,6 +1270,8 @@ Create a new ingredient.
   "updatedAt": "2024-01-15T10:30:00Z"
 }
 ```
+
+**Note:** The `organizationId` is automatically set from the `X-Organization-Id` header. The `userId` is set from the authenticated user.
 
 #### PUT /api/ingredients/:id
 
@@ -1310,9 +1320,11 @@ Delete an ingredient.
 
 #### GET /api/recipes
 
-Get all recipes for authenticated user.
+Get all recipes for authenticated user's current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Response (200):**
 
@@ -1320,6 +1332,8 @@ Get all recipes for authenticated user.
 [
   {
     "id": "uuid",
+    "organizationId": "uuid",
+    "userId": "uuid",
     "name": "Chocolate Cake",
     "image": "https://storage.example.com/recipes/cake.jpg",
     "categories": ["queque", "unidad"],
@@ -1622,9 +1636,11 @@ For each recipe that needs migration:
 
 #### GET /api/supplies
 
-Get all supplies for authenticated user.
+Get all supplies for authenticated user's current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Response (200):**
 
@@ -1632,6 +1648,8 @@ Get all supplies for authenticated user.
 [
   {
     "id": "uuid",
+    "organizationId": "uuid",
+    "userId": "uuid",
     "name": "Cake Box",
     "supplierName": "Packaging Co",
     "quantity": 100,
@@ -1686,9 +1704,11 @@ Delete a supply.
 
 #### GET /api/orders
 
-Get all orders for authenticated user.
+Get all orders for authenticated user's current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Query Parameters:**
 
@@ -1702,6 +1722,8 @@ Get all orders for authenticated user.
 [
   {
     "id": "uuid",
+    "organizationId": "uuid",
+    "userId": "uuid",
     "quotationId": "uuid-quotation",
     "quotation": {
       "id": "uuid-quotation",
@@ -1769,9 +1791,11 @@ Get all orders for authenticated user.
 
 #### POST /api/orders
 
-Create a new order.
+Create a new order in the current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Request:**
 
@@ -1973,9 +1997,11 @@ Delete an expense.
 
 #### GET /api/quotations
 
-Get all quotations for authenticated user.
+Get all quotations for authenticated user's current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Response (200):**
 
@@ -1983,6 +2009,8 @@ Get all quotations for authenticated user.
 [
   {
     "id": "uuid",
+    "organizationId": "uuid",
+    "userId": "uuid",
     "clientName": "María González",
     "size": "mediano",
     "recipes": [
@@ -2071,9 +2099,11 @@ Get all quotations for authenticated user.
 
 #### POST /api/quotations
 
-Create a new quotation.
+Create a new quotation in the current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Request:**
 
