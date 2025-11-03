@@ -1,11 +1,14 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Order } from "@/types/order";
 import { Quotation, QuotationRecipe, QuotationSupply, QuotationIngredient, QuotationAdditionalExpense } from "@/types/quotation";
 import { useEffect, useState } from "react";
 import { quotationsApi } from "@/lib/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileDown } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface ShoppingListDialogProps {
   open: boolean;
@@ -176,14 +179,178 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
   const totalRecipes = recipes.reduce((sum, item) => sum + item.totalCost, 0);
   const grandTotal = totalSupplies + totalIngredients + totalExpenses + totalRecipes;
 
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    let yPosition = 20;
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Lista de Compras Consolidada", 105, yPosition, { align: "center" });
+    
+    yPosition += 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `${selectedOrders.length} pedido${selectedOrders.length !== 1 ? 's' : ''} seleccionado${selectedOrders.length !== 1 ? 's' : ''}`,
+      105,
+      yPosition,
+      { align: "center" }
+    );
+    
+    yPosition += 15;
+
+    // Recipes
+    if (recipes.length > 0) {
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Recetas", 14, yPosition);
+      yPosition += 5;
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [["Nombre", "Tipo", "Cantidad", "Costo Unitario", "Total"]],
+        body: recipes.map(recipe => [
+          recipe.name,
+          recipe.type,
+          recipe.quantity.toString(),
+          `₡${recipe.unitCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `₡${recipe.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+        ]),
+        foot: [["", "", "", "Subtotal:", `₡${totalRecipes.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        theme: "striped",
+        headStyles: { fillColor: [59, 130, 246] },
+        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Supplies
+    if (supplies.length > 0) {
+      if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Suministros", 14, yPosition);
+      yPosition += 5;
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [["Nombre", "Cantidad", "Unidad", "Costo por Unidad", "Total"]],
+        body: supplies.map(supply => [
+          supply.name,
+          supply.quantity.toString(),
+          supply.unit,
+          `₡${supply.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `₡${supply.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+        ]),
+        foot: [["", "", "", "Subtotal:", `₡${totalSupplies.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        theme: "striped",
+        headStyles: { fillColor: [59, 130, 246] },
+        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Additional Ingredients
+    if (ingredients.length > 0) {
+      if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Ingredientes Adicionales", 14, yPosition);
+      yPosition += 5;
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [["Nombre", "Cantidad", "Unidad", "Costo por Unidad", "Total"]],
+        body: ingredients.map(ingredient => [
+          ingredient.name,
+          ingredient.quantity.toString(),
+          ingredient.unit,
+          `₡${ingredient.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `₡${ingredient.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+        ]),
+        foot: [["", "", "", "Subtotal:", `₡${totalIngredients.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        theme: "striped",
+        headStyles: { fillColor: [59, 130, 246] },
+        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Other Expenses
+    if (expenses.length > 0) {
+      if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Otros Gastos", 14, yPosition);
+      yPosition += 5;
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [["Nombre", "Cantidad", "Unidad", "Precio Unitario", "Total"]],
+        body: expenses.map(expense => [
+          expense.name,
+          expense.quantity.toString(),
+          expense.unit,
+          `₡${expense.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `₡${expense.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+        ]),
+        foot: [["", "", "", "Subtotal:", `₡${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        theme: "striped",
+        headStyles: { fillColor: [59, 130, 246] },
+        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Grand Total
+    if (yPosition > 270) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    const totalText = `Total General: ₡${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    doc.text(totalText, 105, yPosition, { align: "center" });
+
+    // Save PDF
+    const fileName = `Lista_Compras_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Lista de Compras Consolidada</DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            {selectedOrders.length} pedido{selectedOrders.length !== 1 ? 's' : ''} seleccionado{selectedOrders.length !== 1 ? 's' : ''}
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-2xl">Lista de Compras Consolidada</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                {selectedOrders.length} pedido{selectedOrders.length !== 1 ? 's' : ''} seleccionado{selectedOrders.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <Button onClick={generatePDF} className="gap-2" disabled={isLoading}>
+              <FileDown className="h-4 w-4" />
+              Descargar PDF
+            </Button>
+          </div>
         </DialogHeader>
 
         {isLoading ? (
