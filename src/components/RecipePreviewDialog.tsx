@@ -181,14 +181,6 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
                 </span>
               </div>
             )}
-            {(migratedRecipe.categories || [(migratedRecipe as any).category]).some(cat => cat !== "unidad") && migratedRecipe.wholeCost && (
-              <div className="flex justify-between items-center">
-                <Label className="text-lg font-semibold">Costo Completo:</Label>
-                <span className="text-2xl font-bold text-primary">
-                  ₡{(migratedRecipe.wholeCost * selectedMultiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </DialogContent>

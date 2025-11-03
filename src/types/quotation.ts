@@ -24,6 +24,15 @@ export interface QuotationSupply {
   totalCost: number;
 }
 
+export interface QuotationIngredient {
+  ingredientId: string;
+  ingredientName: string;
+  quantity: number;
+  units: string;
+  costPerUnit: number;
+  totalCost: number;
+}
+
 export interface QuotationAdditionalExpense {
   expenseName: string;
   unitPrice: number;
@@ -37,6 +46,7 @@ export interface Quotation {
   size: 'mini' | 'pequeño' | 'mediano' | 'grande';
   recipes: QuotationRecipe[];
   selectedSupplies: QuotationSupply[];
+  additionalIngredients?: QuotationIngredient[];
   additionalExpenses?: QuotationAdditionalExpense[];
   totalCost: number;
   notes?: string;
