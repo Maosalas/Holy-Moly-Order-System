@@ -348,6 +348,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       size,
       recipes: recipesForAPI,
       selectedSupplies,
+      additionalIngredients: selectedIngredients.length > 0 ? selectedIngredients : undefined,
       additionalExpenses: additionalExpenses.length > 0 ? additionalExpenses : undefined,
       totalCost: calculateTotal(),
       notes,
