@@ -46,6 +46,7 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
 
     try {
       await onSubmit({
+        organizationId: "temp-org-id", // TODO: Replace with actual org ID from auth context
         name: name.trim(),
         provider: provider.trim(),
         qtyProvider: parseFloat(qtyProvider),

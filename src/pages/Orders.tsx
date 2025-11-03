@@ -112,7 +112,7 @@ const Orders = () => {
   };
 
   // Filter orders based on user role
-  const visibleOrders = user?.role === "cake_topper_provider"
+  const visibleOrders = user?.roles?.includes("cake_topper_provider")
     ? orders.filter(order => order.needsCakeTopper)
     : orders;
 
@@ -123,10 +123,10 @@ const Orders = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold">
-            {user?.role === "cake_topper_provider" ? "Pedidos de Toppers" : "Pedidos de Clientes"}
+            {user?.roles?.includes("cake_topper_provider") ? "Pedidos de Toppers" : "Pedidos de Clientes"}
           </h2>
           <p className="text-muted-foreground mt-1">
-            {user?.role === "cake_topper_provider" 
+            {user?.roles?.includes("cake_topper_provider") 
               ? "Pedidos que requieren toppers para pasteles" 
               : "Administra todos los pedidos de tus clientes"}
           </p>

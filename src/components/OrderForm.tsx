@@ -290,6 +290,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     }
 
     const orderData: Omit<Order, "id" | "createdAt"> = {
+      organizationId: "temp-org-id", // TODO: Replace with actual org ID from auth context
       quotationId: selectedQuotationId,
       clientName: clientName.trim(),
       phoneNumber: phoneNumber.trim(),

@@ -35,7 +35,7 @@ function AppSidebar() {
   const collapsed = state === "collapsed";
 
   // Filter menu items based on role
-  const visibleMenuItems = user?.role === "cake_topper_provider" 
+  const visibleMenuItems = user?.roles?.includes("cake_topper_provider") 
     ? menuItems.filter(item => item.url === "/orders")
     : menuItems;
 
@@ -92,7 +92,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium truncate">{user?.name}</span>
                 <span className="text-xs text-muted-foreground capitalize">
-                  ({user?.role === "cake_topper_provider" ? "Topper" : "Owner"})
+                  ({user?.roles?.includes("cake_topper_provider") ? "Topper" : "Owner"})
                 </span>
               </div>
               <Button variant="outline" size="sm" onClick={logout} className="gap-1 sm:gap-2">

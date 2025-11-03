@@ -59,6 +59,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
 
     const supply: Supply = {
       id: initialData?.id || crypto.randomUUID(),
+      organizationId: "temp-org-id", // TODO: Replace with actual org ID from auth context
       name: name.trim(),
       supplierName: supplierName.trim(),
       quantity: parsedQuantity,

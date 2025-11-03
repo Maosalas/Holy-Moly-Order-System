@@ -358,6 +358,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
 
     try {
       await onSubmit({
+        organizationId: "temp-org-id", // TODO: Replace with actual org ID from auth context
         name: name.trim(),
         image: image || undefined,
         elaborations: elaborations,
