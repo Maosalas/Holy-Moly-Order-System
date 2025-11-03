@@ -1891,6 +1891,66 @@ Delete an order.
 
 ---
 
+### Orders - Shopping List (Frontend Only Feature)
+
+#### Overview
+
+The shopping list functionality allows users to:
+1. Select multiple orders from the orders list using checkboxes
+2. Generate a consolidated shopping list based on the quotations linked to those orders
+3. View the consolidated items grouped by category (Recipes, Supplies, Additional Ingredients, Other Expenses)
+
+#### Implementation Details
+
+**Frontend Implementation:**
+- **Component:** `ShoppingListDialog.tsx`
+- **Location:** Orders page (`/orders`)
+- **User Interface:**
+  - Checkboxes in the OrderList table/cards for multi-selection
+  - Badge showing count of selected orders
+  - "Generar Lista de Compras" button (visible when orders are selected)
+  
+**Data Processing:**
+- When the dialog opens, it fetches all quotations associated with the selected orders
+- Consolidates items by grouping similar items and summing quantities
+- Groups items into four categories:
+  1. **Recipes** (`QuotationRecipe[]`) - grouped by recipe name and type
+  2. **Supplies** (`QuotationSupply[]`) - grouped by supply name and unit
+  3. **Additional Ingredients** (`QuotationIngredient[]`) - grouped by ingredient name and unit
+  4. **Other Expenses** (`QuotationAdditionalExpense[]`) - grouped by expense name
+
+**Consolidation Logic:**
+- Items with the same name and unit are combined
+- Quantities are summed
+- Total costs are calculated
+- Items are sorted alphabetically by name
+
+**Display Format:**
+- Each category is shown in a separate table with:
+  - Item name
+  - Quantity
+  - Unit/Type
+  - Unit cost
+  - Total cost
+  - Subtotal per category
+- Grand total at the bottom showing sum of all categories
+
+**API Dependencies:**
+- Uses existing `GET /api/quotations/:id` endpoint to fetch quotation details
+- No new backend endpoints required
+- All consolidation and calculation logic is handled in the frontend
+
+**Database Changes:**
+- No database changes required
+- This feature uses existing data structures
+
+**Notes:**
+- Only orders with linked quotations (`quotationId`) will have their data included in the shopping list
+- Orders without quotations will be selected but won't contribute items to the shopping list
+- The feature respects user roles - cake topper providers only see orders that need toppers
+
+---
+
 ### Expenses
 
 #### GET /api/expenses

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MessageCircle, Edit, Trash2, Calendar, Package, Search } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -16,11 +17,33 @@ interface OrderListProps {
   onEdit?: (order: Order) => void;
   onDelete?: (id: string) => void;
   isDeleting?: boolean;
+  selectedOrderIds?: string[];
+  onSelectionChange?: (orderIds: string[]) => void;
 }
 
-export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListProps) => {
+export const OrderList = ({ orders, onEdit, onDelete, isDeleting, selectedOrderIds = [], onSelectionChange }: OrderListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
+
+  const handleSelectOrder = (orderId: string) => {
+    if (!onSelectionChange) return;
+    
+    if (selectedOrderIds.includes(orderId)) {
+      onSelectionChange(selectedOrderIds.filter(id => id !== orderId));
+    } else {
+      onSelectionChange([...selectedOrderIds, orderId]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (!onSelectionChange) return;
+    
+    if (selectedOrderIds.length === paginatedItems.length) {
+      onSelectionChange([]);
+    } else {
+      onSelectionChange(paginatedItems.map(order => order.id));
+    }
+  };
 
   const getPhotoUrl = (photo: string | { id: string; photoUrl: string; createdAt: string }): string => {
     const url = typeof photo === 'string' ? photo : photo.photoUrl;
@@ -117,6 +140,13 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
               <CardContent className="p-4">
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
+                    {onSelectionChange && (
+                      <Checkbox
+                        checked={selectedOrderIds.includes(order.id)}
+                        onCheckedChange={() => handleSelectOrder(order.id)}
+                        className="mt-3"
+                      />
+                    )}
                     <div className="flex items-center gap-2 min-w-0">
                       {order.clientPhotos.length > 0 ? (
                         <img
@@ -250,6 +280,14 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  {onSelectionChange && (
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedOrderIds.length === paginatedItems.length && paginatedItems.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className="font-semibold">Cliente</TableHead>
                   <TableHead className="font-semibold">Fecha de entrega</TableHead>
                   <TableHead className="font-semibold">Monto y cobro</TableHead>
@@ -266,6 +304,14 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting }: OrderListPro
 
                   return (
                     <TableRow key={order.id} className="hover:bg-muted/30">
+                      {onSelectionChange && (
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedOrderIds.includes(order.id)}
+                            onCheckedChange={() => handleSelectOrder(order.id)}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell>
                         <div className="flex items-center gap-3">
                           {order.clientPhotos.length > 0 ? (
