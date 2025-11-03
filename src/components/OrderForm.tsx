@@ -50,6 +50,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [downPayment, setDownPayment] = useState(initialData?.downPayment?.toString() || "0");
   const [suppliesNeeded, setSuppliesNeeded] = useState(initialData?.suppliesNeeded || "");
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
+  const [topperDetails, setTopperDetails] = useState(initialData?.topperDetails || "");
+  const [topperPhotos, setTopperPhotos] = useState<string[]>(initialData?.topperPhotos || []);
   const [statuses, setStatuses] = useState<OrderStatus[]>(
     initialData?.statuses
       ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
@@ -114,6 +116,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       setDownPayment(initialData.downPayment?.toString() || "0");
       setSuppliesNeeded(initialData.suppliesNeeded || "");
       setNeedsCakeTopper(initialData.needsCakeTopper || false);
+      setTopperDetails(initialData.topperDetails || "");
+      setTopperPhotos(initialData.topperPhotos || []);
       setStatuses(
         initialData.statuses
           ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
@@ -132,6 +136,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       setDownPayment("0");
       setSuppliesNeeded("");
       setNeedsCakeTopper(false);
+      setTopperDetails("");
+      setTopperPhotos([]);
       setStatuses(["waiting_for_payment"]);
     }
   }, [initialData]);
@@ -296,6 +302,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       downPayment: downPmt,
       suppliesNeeded: suppliesNeeded.trim(),
       needsCakeTopper,
+      topperDetails: needsCakeTopper ? topperDetails.trim() : undefined,
+      topperPhotos: needsCakeTopper ? topperPhotos : undefined,
       statuses: (statuses.length > 0 ? statuses : ["waiting-for-payment"]) as OrderStatus[],
     };
 
@@ -322,6 +330,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       setDownPayment("0");
       setSuppliesNeeded("");
       setNeedsCakeTopper(false);
+      setTopperDetails("");
+      setTopperPhotos([]);
       setStatuses(["waiting_for_payment"]);
     } finally {
       setIsSubmitting(false);
@@ -567,8 +577,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                 <Input
                   id="chargeAmount"
                   type="number"
-                  step="0.01"
-                  min="0"
+                  step="any"
+                  min="0.1"
                   value={chargeAmount}
                   onChange={(e) => setChargeAmount(e.target.value)}
                   placeholder="0.00"
@@ -591,8 +601,8 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
               <Input
                 id="downPayment"
                 type="number"
-                step="0.01"
-                min="0"
+                step="any"
+                min="0.1"
                 value={downPayment}
                 onChange={(e) => setDownPayment(e.target.value)}
                 placeholder="0.00"
@@ -646,9 +656,76 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
             {needsCakeTopper && (
               <div className="p-4 border rounded-lg bg-muted/50">
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-base font-semibold">Detalles</Label>
-                  <TopperUploadDialog clientName={clientName || "Client"} />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">Detalles del Topper</Label>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="topperDetails">Descripción</Label>
+                    <Textarea
+                      id="topperDetails"
+                      value={topperDetails}
+                      onChange={(e) => setTopperDetails(e.target.value)}
+                      placeholder="Describa los detalles del topper aquí..."
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Fotos de referencia del topper</Label>
+                    <div className="flex items-center gap-2">
+                      <Button type="button" variant="outline" size="sm" className="relative" asChild>
+                        <label className="cursor-pointer">
+                          <Upload className="mr-2 h-4 w-4" />
+                          Subir Fotos
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={(e) => {
+                              const files = e.target.files;
+                              if (files) {
+                                Array.from(files).forEach(file => {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    compressImage(reader.result as string, (compressed) => {
+                                      setTopperPhotos(prev => [...prev, compressed]);
+                                    });
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
+                              }
+                            }}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </label>
+                      </Button>
+                    </div>
+                    
+                    {topperPhotos.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {topperPhotos.map((photo, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={photo}
+                              alt={`Topper reference ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-md"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => setTopperPhotos(prev => prev.filter((_, i) => i !== index))}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

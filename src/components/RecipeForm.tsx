@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, X, Upload, ImageIcon, Check, ChevronsUpDown, Tag, Divide, GripVertical, Trash2 } from "lucide-react";
+import { Plus, X, Upload, ImageIcon, Check, ChevronsUpDown, Tag, Divide, GripVertical, Trash2, Package } from "lucide-react";
 import { Recipe, RecipeIngredient, RecipeFormData, Category, RecipeMultiplier, RecipeElaboration } from "@/types/recipe";
 import { Ingredient } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
-import { ingredientsApi } from "@/lib/api";
+import { ingredientsApi, suppliesApi } from "@/lib/api";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -26,11 +26,30 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const migratedRecipe = recipe ? migrateRecipeToElaborations(recipe) : undefined;
   
   const [name, setName] = useState(migratedRecipe?.name || "");
-  const [category, setCategory] = useState(migratedRecipe?.category || "unidad");
+  const [categories, setCategories] = useState<Category[]>(() => {
+    if (migratedRecipe?.categories && Array.isArray(migratedRecipe.categories) && migratedRecipe.categories.length > 0) {
+      return migratedRecipe.categories;
+    }
+    if ((migratedRecipe as any)?.category) {
+      return [(migratedRecipe as any).category];
+    }
+    return ["unidad"];
+  });
   const [notes, setNotes] = useState(migratedRecipe?.notes || "");
   const [url, setUrl] = useState(migratedRecipe?.url || "");
   const [unidades, setUnidades] = useState(migratedRecipe?.units || 0);
   const [image, setImage] = useState(migratedRecipe?.image || "");
+
+  // Set default images for relleno and cubierta when categories change
+  useEffect(() => {
+    if (!migratedRecipe && !image) {
+      if (categories.includes('relleno')) {
+        setImage('/src/assets/temp_relleno.png');
+      } else if (categories.includes('cubierta')) {
+        setImage('/src/assets/temp_cubierta.png');
+      }
+    }
+  }, [categories, migratedRecipe, image]);
   const [elaborations, setElaborations] = useState<RecipeElaboration[]>(
     migratedRecipe?.elaborations && migratedRecipe.elaborations.length > 0
       ? migratedRecipe.elaborations
@@ -45,14 +64,19 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     migratedRecipe?.multipliers || []
   );
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
+  const [availableSupplies, setAvailableSupplies] = useState<any[]>([]);
+  const [selectedSupplies, setSelectedSupplies] = useState<any[]>(
+    migratedRecipe?.supplies || []
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Default sizes for multipliers
   const defaultSizes = ["mini", "pequeño", "mediano", "grande"];
 
-  // Initialize multipliers when category changes to queque, relleno, or cubierta
+  // Initialize multipliers when categories include queque, relleno, or cubierta
   useEffect(() => {
-    if (["queque", "relleno", "cubierta"].includes(category)) {
+    const hasMultiplierCategory = categories.some(cat => ["queque", "relleno", "cubierta"].includes(cat));
+    if (hasMultiplierCategory) {
       if (multipliers.length === 0) {
         setMultipliers(
           defaultSizes.map((size) => ({
@@ -65,7 +89,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     } else {
       setMultipliers([]);
     }
-  }, [category]);
+  }, [categories]);
 
   useEffect(() => {
     const fetchIngredients = async () => {
@@ -79,13 +103,27 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         })));
       }
     };
+    const fetchSupplies = async () => {
+      const result = await suppliesApi.getAll();
+      if (result.data) {
+        const suppliesData = Array.isArray(result.data) ? result.data : [];
+        setAvailableSupplies(suppliesData.map((s: any) => ({
+          ...s,
+          createdAt: new Date(s.created_at),
+          updatedAt: new Date(s.updated_at)
+        })));
+      }
+    };
     fetchIngredients();
+    fetchSupplies();
   }, []);
 
   const calculateTotalCost = () => {
-    return elaborations.reduce((total, elab) => {
+    const ingredientsCost = elaborations.reduce((total, elab) => {
       return total + elab.ingredients.reduce((sum, ing) => sum + ing.cost, 0);
     }, 0);
+    const suppliesCost = selectedSupplies.reduce((sum, supply) => sum + supply.totalCost, 0);
+    return ingredientsCost + suppliesCost;
   };
 
   // Elaboration management
@@ -323,9 +361,10 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         name: name.trim(),
         image: image || undefined,
         elaborations: elaborations,
+        supplies: selectedSupplies.length > 0 ? selectedSupplies : undefined,
         multipliers: multipliers.length > 0 ? multipliers : undefined,
         totalCost,
-        category: category,
+        categories: categories,
         notes: notes,
         url: url,
         units: unidades,
@@ -341,6 +380,19 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     unidades && unidades > 0
       ? Math.round((totalCost / unidades) * 1000) / 1000
       : 0;
+  const totalWholeCost = totalCost; // Costo completo sin dividir
+  
+  const toggleCategory = (cat: Category) => {
+    setCategories(prev => {
+      if (prev.includes(cat)) {
+        // No permitir eliminar si es la única categoría
+        if (prev.length === 1) return prev;
+        return prev.filter(c => c !== cat);
+      } else {
+        return [...prev, cat];
+      }
+    });
+  };
 
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
@@ -362,65 +414,42 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Tag className="h-4 w-4" />
-                      {category === "queque" ? "Queque" : category === "relleno" ? "Relleno" : category === "cubierta" ? "Cubierta" : category === "unidad" ? "Unidad" : "Otro"}
-                    </span>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Buscar categoría..." />
-                    <CommandList>
-                      <CommandEmpty>No se encontró categoría.</CommandEmpty>
-                      <CommandGroup>
-                        {[
-                          { value: "queque", label: "Queque" },
-                          { value: "relleno", label: "Relleno" },
-                          { value: "cubierta", label: "Cubierta" },
-                          { value: "unidad", label: "Unidad" },
-                          { value: "otro", label: "Otro" },
-                        ].map((cat) => (
-                          <CommandItem
-                            key={cat.value}
-                            value={cat.value}
-                            onSelect={() => setCategory(cat.value as Category)}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                category === cat.value ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {cat.label}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+          <div className="space-y-2">
+            <Label>Categorías *</Label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: "queque", label: "Queque" },
+                { value: "relleno", label: "Relleno" },
+                { value: "cubierta", label: "Cubierta" },
+                { value: "unidad", label: "Unidad" },
+                { value: "otro", label: "Otro" },
+              ].map((cat) => (
+                <Button
+                  key={cat.value}
+                  type="button"
+                  variant={categories.includes(cat.value as Category) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleCategory(cat.value as Category)}
+                  className="gap-2"
+                >
+                  {categories.includes(cat.value as Category) && (
+                    <Check className="h-4 w-4" />
+                  )}
+                  {cat.label}
+                </Button>
+              ))}
             </div>
+          </div>
 
-            {category === "unidad" && (
+          <div className="grid grid-cols-2 gap-4">
+            {categories.includes("unidad") && (
               <div className="space-y-2">
                 <Label htmlFor="unidad">Cantidad de unidades</Label>
                 <Input
                   id="unidad"
                   type="number"
-                  min="0"
-                  step="1"
+                  min="0.1"
+                  step="any"
                   value={unidades}
                   onChange={(e) => setUnidades(Number(e.target.value))}
                   placeholder="Ingrese la cantidad de unidades"
@@ -440,7 +469,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
             </div>
           </div>
 
-          {["queque", "relleno", "cubierta"].includes(category) && (
+          {categories.some(cat => ["queque", "relleno", "cubierta"].includes(cat)) && (
             <div className="space-y-3">
               <Label className="text-lg font-semibold">
                 Multiplicadores por tamaño
@@ -454,8 +483,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                     <Input
                       id={`multiplier-${index}`}
                       type="number"
-                      min="0"
-                      step="0.1"
+                      min="0.1"
+                      step="any"
                       value={multiplier.multiplier}
                       onChange={(e) => {
                         const newMultipliers = [...multipliers];
@@ -647,8 +676,8 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                             <div className="flex-1 sm:w-28">
                               <Input
                                 type="number"
-                                min="0"
-                                step="0.01"
+                                min="0.1"
+                                step="any"
                                 value={ingredient.quantity || ""}
                                 onChange={(e) =>
                                   updateIngredientQuantityInElaboration(
@@ -704,8 +733,122 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
             </Accordion>
           </div>
 
+          {/* Supplies Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base font-semibold">Insumos (Opcional)</Label>
+                <p className="text-sm text-muted-foreground mt-1">Agregue insumos necesarios para esta receta</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    className="flex-1 h-11 bg-background border-2 hover:border-primary/50 transition-colors justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Escoja un insumo a agregar...
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar insumos..." />
+                    <CommandList>
+                      <CommandEmpty>
+                        {availableSupplies.length === 0
+                          ? "No hay insumos disponibles. Agregue insumos primero."
+                          : "No se encontró insumo."}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {availableSupplies.map((supply) => (
+                          <CommandItem
+                            key={supply.id}
+                            value={supply.name}
+                            onSelect={() => {
+                              const alreadyAdded = selectedSupplies.find(s => s.supplyId === supply.id);
+                              if (alreadyAdded) {
+                                toast({
+                                  title: "Insumo ya agregado",
+                                  description: `${supply.name} ya está en la lista.`,
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              const costPerUnit = supply.cost / supply.quantity;
+                              setSelectedSupplies([...selectedSupplies, {
+                                supplyId: supply.id,
+                                supplyName: supply.name,
+                                quantity: 1,
+                                unit: supply.unit,
+                                costPerUnit: costPerUnit,
+                                totalCost: costPerUnit,
+                              }]);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between w-full gap-4">
+                              <span className="font-medium">{supply.name}</span>
+                              <span className="text-muted-foreground text-sm">
+                                ₡{supply.cost.toFixed(2)} / {supply.unit}
+                              </span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {selectedSupplies.length > 0 && (
+              <div className="space-y-2">
+                {selectedSupplies.map((supply) => (
+                  <div key={supply.supplyId} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                    <span className="flex-1 font-medium">{supply.supplyName}</span>
+                    <Input
+                      type="number"
+                      min="0.1"
+                      step="any"
+                      value={supply.quantity}
+                      onChange={(e) => {
+                        const newQuantity = parseFloat(e.target.value) || 0;
+                        setSelectedSupplies(prev =>
+                          prev.map(s =>
+                            s.supplyId === supply.supplyId
+                              ? { ...s, quantity: newQuantity, totalCost: s.costPerUnit * newQuantity }
+                              : s
+                          )
+                        );
+                      }}
+                      className="w-24 text-center"
+                    />
+                    <span className="text-sm text-muted-foreground w-16">{supply.unit}</span>
+                    <span className="w-24 text-right font-medium">₡{supply.totalCost.toFixed(2)}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedSupplies(prev => prev.filter(s => s.supplyId !== supply.supplyId))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-2 p-4 bg-muted rounded-lg">
-            {category === "unidad" || category === undefined ? (
+            {categories.includes("unidad") ? (
               <>
                 <div className="flex justify-between items-center">
                   <Label className="text-lg font-semibold">Costo total:</Label>

@@ -14,6 +14,16 @@ export interface RecipeElaboration {
   ingredients: RecipeIngredient[];
 }
 
+export interface RecipeSupply {
+  id?: string;
+  supplyId: string;
+  supplyName: string;
+  quantity: number;
+  unit: string;
+  costPerUnit: number;
+  totalCost: number;
+}
+
 export interface RecipeMultiplier {
   id?: string;
   size: string;
@@ -27,9 +37,10 @@ export interface Recipe {
   name: string;
   image?: string;
   elaborations: RecipeElaboration[];
+  supplies?: RecipeSupply[];
   multipliers?: RecipeMultiplier[];
   totalCost: number;
-  category: string;
+  categories: Category[]; // Cambiado de category: string a categories: Category[]
   createdAt: Date;
   updatedAt: Date;
   notes: string;

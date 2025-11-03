@@ -42,6 +42,8 @@ export interface Order {
   deliveryDate: Date;
   clientPhotos: (string | ClientPhoto)[]; // Can be strings when creating, objects when fetched
   needsCakeTopper: boolean;
+  topperDetails?: string;
+  topperPhotos?: string[];
   costAmount: number;
   chargeAmount: number;
   paymentMethod: PaymentMethod;

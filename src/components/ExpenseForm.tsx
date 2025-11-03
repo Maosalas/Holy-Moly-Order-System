@@ -234,7 +234,8 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
               <Input
                 id="amount"
                 type="number"
-                step="0.01"
+                step="any"
+                min="0.1"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 value={amount}

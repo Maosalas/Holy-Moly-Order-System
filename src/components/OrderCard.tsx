@@ -95,8 +95,29 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
           {order.orderDetails}
         </p>
 
-        {order.needsCakeTopper && (
+        {order.needsCakeTopper && (order.topperDetails || (order.topperPhotos && order.topperPhotos.length > 0)) && (
           <div className="pt-2 border-t">
+            <p className="text-xs font-semibold mb-2">Cake Topper Info</p>
+            {order.topperDetails && (
+              <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{order.topperDetails}</p>
+            )}
+            {order.topperPhotos && order.topperPhotos.length > 0 && (
+              <div className="grid grid-cols-3 gap-1">
+                {order.topperPhotos.slice(0, 3).map((photo, index) => (
+                  <img
+                    key={index}
+                    src={photo}
+                    alt={`Topper ${index + 1}`}
+                    className="w-full h-16 object-cover rounded"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {order.needsCakeTopper && (
+          <div className="pt-2">
             <TopperUploadDialog clientName={order.clientName} />
           </div>
         )}

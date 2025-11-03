@@ -2,8 +2,10 @@ import { useState } from "react";
 import { OrderForm } from "@/components/OrderForm";
 import { OrderList } from "@/components/OrderList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
+import { ShoppingListDialog } from "@/components/ShoppingListDialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, ShoppingCart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Order } from "@/types/order";
@@ -24,6 +26,8 @@ const Orders = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [isFetchingOrder, setIsFetchingOrder] = useState(false);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [shoppingListOpen, setShoppingListOpen] = useState(false);
 
   const handleSubmit = async (orderData: Omit<Order, "id" | "createdAt">) => {
     // Transform orderData for API - replace paymentMethod object with paymentMethodId
@@ -112,6 +116,8 @@ const Orders = () => {
     ? orders.filter(order => order.needsCakeTopper)
     : orders;
 
+  const selectedOrders = orders.filter(order => selectedOrderIds.includes(order.id));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -125,16 +131,34 @@ const Orders = () => {
               : "Administra todos los pedidos de tus clientes"}
           </p>
         </div>
-        {!isFormOpen && (
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            size="lg"
-            className="gap-2"
-          >
-            <Plus className="h-5 w-5" />
-            Nuevo Pedido
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {selectedOrderIds.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-base px-3 py-1">
+                {selectedOrderIds.length} seleccionado{selectedOrderIds.length !== 1 ? 's' : ''}
+              </Badge>
+              <Button
+                onClick={() => setShoppingListOpen(true)}
+                variant="default"
+                size="lg"
+                className="gap-2"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                Generar Lista de Compras
+              </Button>
+            </div>
+          )}
+          {!isFormOpen && (
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              size="lg"
+              className="gap-2"
+            >
+              <Plus className="h-5 w-5" />
+              Nuevo Pedido
+            </Button>
+          )}
+        </div>
       </div>
 
       {isFormOpen ? (
@@ -149,8 +173,16 @@ const Orders = () => {
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
           isDeleting={deleteOrder.isPending || isFetchingOrder}
+          selectedOrderIds={selectedOrderIds}
+          onSelectionChange={setSelectedOrderIds}
         />
       )}
+
+      <ShoppingListDialog
+        open={shoppingListOpen}
+        onOpenChange={setShoppingListOpen}
+        selectedOrders={selectedOrders}
+      />
 
       <DeleteConfirmDialog
         open={deleteDialogOpen}
