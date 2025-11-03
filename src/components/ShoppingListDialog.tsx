@@ -10,32 +10,6 @@ import { Loader2, FileDown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-// Font that supports ₡ symbol
-const loadCustomFont = async (doc: jsPDF) => {
-  try {
-    // Fetch Roboto font from Google Fonts (supports ₡ symbol)
-    const fontUrl = "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff";
-    const response = await fetch(fontUrl);
-    const fontBlob = await response.blob();
-    
-    return new Promise<void>((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64Font = (reader.result as string).split(',')[1];
-        doc.addFileToVFS("Roboto-Regular.ttf", base64Font);
-        doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
-        doc.setFont("Roboto");
-        resolve();
-      };
-      reader.readAsDataURL(fontBlob);
-    });
-  } catch (error) {
-    console.error("Error loading font:", error);
-    // Fallback to default font
-    doc.setFont("helvetica");
-  }
-};
-
 interface ShoppingListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -205,12 +179,8 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
   const totalRecipes = recipes.reduce((sum, item) => sum + item.totalCost, 0);
   const grandTotal = totalSupplies + totalIngredients + totalExpenses + totalRecipes;
 
-  const generatePDF = async () => {
+  const generatePDF = () => {
     const doc = new jsPDF();
-    
-    // Load custom font that supports ₡
-    await loadCustomFont(doc);
-    
     let yPosition = 20;
 
     // Title
@@ -244,14 +214,13 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
           recipe.name,
           recipe.type,
           recipe.quantity.toString(),
-          `₡${recipe.unitCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-          `₡${recipe.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          `CRC ${recipe.unitCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `CRC ${recipe.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]),
-        foot: [["", "", "", "Subtotal:", `₡${totalRecipes.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        foot: [["", "", "", "Subtotal:", `CRC ${totalRecipes.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
         theme: "striped",
-        headStyles: { fillColor: [59, 130, 246], font: "Roboto" },
-        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold", font: "Roboto" },
-        styles: { font: "Roboto" },
+        headStyles: { fillColor: [59, 130, 246] },
+        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
       });
 
       yPosition = (doc as any).lastAutoTable.finalY + 10;
@@ -276,14 +245,13 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
           supply.name,
           supply.quantity.toString(),
           supply.unit,
-          `₡${supply.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-          `₡${supply.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          `CRC ${supply.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `CRC ${supply.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]),
-        foot: [["", "", "", "Subtotal:", `₡${totalSupplies.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        foot: [["", "", "", "Subtotal:", `CRC ${totalSupplies.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
         theme: "striped",
-        headStyles: { fillColor: [59, 130, 246], font: "Roboto" },
-        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold", font: "Roboto" },
-        styles: { font: "Roboto" },
+        headStyles: { fillColor: [59, 130, 246] },
+        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
       });
 
       yPosition = (doc as any).lastAutoTable.finalY + 10;
@@ -308,14 +276,13 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
           ingredient.name,
           ingredient.quantity.toString(),
           ingredient.unit,
-          `₡${ingredient.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-          `₡${ingredient.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          `CRC ${ingredient.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `CRC ${ingredient.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]),
-        foot: [["", "", "", "Subtotal:", `₡${totalIngredients.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        foot: [["", "", "", "Subtotal:", `CRC ${totalIngredients.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
         theme: "striped",
-        headStyles: { fillColor: [59, 130, 246], font: "Roboto" },
-        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold", font: "Roboto" },
-        styles: { font: "Roboto" },
+        headStyles: { fillColor: [59, 130, 246] },
+        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
       });
 
       yPosition = (doc as any).lastAutoTable.finalY + 10;
@@ -340,14 +307,13 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
           expense.name,
           expense.quantity.toString(),
           expense.unit,
-          `₡${expense.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-          `₡${expense.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          `CRC ${expense.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          `CRC ${expense.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]),
-        foot: [["", "", "", "Subtotal:", `₡${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
+        foot: [["", "", "", "Subtotal:", `CRC ${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]],
         theme: "striped",
-        headStyles: { fillColor: [59, 130, 246], font: "Roboto" },
-        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold", font: "Roboto" },
-        styles: { font: "Roboto" },
+        headStyles: { fillColor: [59, 130, 246] },
+        footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold" },
       });
 
       yPosition = (doc as any).lastAutoTable.finalY + 10;
@@ -360,8 +326,8 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
     }
 
     doc.setFontSize(16);
-    doc.setFont("Roboto", "bold");
-    const totalText = `Total General: ₡${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    doc.setFont("helvetica", "bold");
+    const totalText = `Total General: CRC ${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     doc.text(totalText, 105, yPosition, { align: "center" });
 
     // Save PDF
