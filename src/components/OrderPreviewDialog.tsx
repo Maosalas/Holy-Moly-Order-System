@@ -1,8 +1,12 @@
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Calendar, Phone, Package, DollarSign, CreditCard } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Eye, Calendar, Phone, Package, DollarSign, CreditCard, Loader2 } from "lucide-react";
 import { Order } from "@/types/order";
+import { Quotation } from "@/types/quotation";
+import { quotationsApi } from "@/lib/api";
 import { TopperUploadDialog } from "./TopperUploadDialog";
 
 interface OrderPreviewDialogProps {
@@ -12,6 +16,28 @@ interface OrderPreviewDialogProps {
 export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
   const deliveryDate = new Date(order.deliveryDate);
   const remainingBalance = order.chargeAmount - order.downPayment;
+  const [quotation, setQuotation] = useState<Quotation | null>(null);
+  const [isLoadingQuotation, setIsLoadingQuotation] = useState(false);
+
+  useEffect(() => {
+    const fetchQuotation = async () => {
+      if (order.quotationId) {
+        setIsLoadingQuotation(true);
+        try {
+          const response = await quotationsApi.getById(order.quotationId);
+          if (response.data) {
+            setQuotation(response.data as Quotation);
+          }
+        } catch (error) {
+          console.error("Error fetching quotation:", error);
+        } finally {
+          setIsLoadingQuotation(false);
+        }
+      }
+    };
+
+    fetchQuotation();
+  }, [order.quotationId]);
 
   const getPhotoUrl = (photo: string | { id: string; photoUrl: string; createdAt: string }): string => {
     // Debug logging - see the full object structure
@@ -114,13 +140,108 @@ export const OrderPreviewDialog = ({ order }: OrderPreviewDialogProps) => {
             </p>
           </div>
 
-          {/* Quotation Reference */}
+          {/* Quotation Details */}
           {order.quotationId && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h3 className="font-semibold text-sm text-muted-foreground">Cotización</h3>
-              <p className="text-sm bg-muted px-3 py-2 rounded-lg">
-                ID: {order.quotationId}
-              </p>
+              
+              {isLoadingQuotation ? (
+                <div className="flex items-center justify-center p-8 border rounded-lg bg-muted/50">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">Cargando cotización...</span>
+                </div>
+              ) : quotation ? (
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Artículo</TableHead>
+                        <TableHead className="text-right">Cantidad</TableHead>
+                        <TableHead className="text-right">Precio Unit.</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {/* Recipes */}
+                      {quotation.recipes.map((recipe, index) => (
+                        <TableRow key={`recipe-${index}`}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{recipe.recipeName}</p>
+                              <p className="text-xs text-muted-foreground">{recipe.recipeType.name}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">{recipe.quantity}</TableCell>
+                          <TableCell className="text-right">₡{recipe.unitCost.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium">₡{recipe.totalCost.toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+
+                      {/* Supplies */}
+                      {quotation.selectedSupplies.map((supply, index) => (
+                        <TableRow key={`supply-${index}`}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{supply.supplyName}</p>
+                              <p className="text-xs text-muted-foreground">Insumo</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">{supply.quantity} {supply.unit}</TableCell>
+                          <TableCell className="text-right">₡{supply.costPerUnit.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium">₡{supply.totalCost.toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+
+                      {/* Additional Ingredients */}
+                      {quotation.additionalIngredients?.map((ingredient, index) => (
+                        <TableRow key={`ingredient-${index}`}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{ingredient.ingredientName}</p>
+                              <p className="text-xs text-muted-foreground">Ingrediente adicional</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">{ingredient.quantity} {ingredient.units}</TableCell>
+                          <TableCell className="text-right">₡{ingredient.costPerUnit.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium">₡{ingredient.totalCost.toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+
+                      {/* Additional Expenses */}
+                      {quotation.additionalExpenses?.map((expense, index) => (
+                        <TableRow key={`expense-${index}`}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{expense.expenseName}</p>
+                              <p className="text-xs text-muted-foreground">Gasto adicional</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">{expense.quantity}</TableCell>
+                          <TableCell className="text-right">₡{expense.unitPrice.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium">₡{expense.totalPrice.toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+
+                      {/* Total */}
+                      <TableRow className="bg-muted/50">
+                        <TableCell colSpan={3} className="font-semibold text-right">Total Cotización</TableCell>
+                        <TableCell className="text-right font-bold text-lg">₡{quotation.totalCost.toLocaleString()}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                  
+                  {quotation.notes && (
+                    <div className="p-3 bg-muted/30 border-t">
+                      <p className="text-xs text-muted-foreground mb-1">Notas:</p>
+                      <p className="text-sm">{quotation.notes}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm bg-muted px-3 py-2 rounded-lg">
+                  ID: {order.quotationId}
+                </p>
+              )}
             </div>
           )}
 

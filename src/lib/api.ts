@@ -278,6 +278,8 @@ export const paymentMethodsApi = {
 export const quotationsApi = {
   getAll: () => apiFetch("/quotations", { method: "GET" }),
 
+  getById: (id: string) => apiFetch(`/quotations/${id}`, { method: "GET" }),
+
   create: (quotation: any) =>
     apiFetch("/quotations", {
       method: "POST",
