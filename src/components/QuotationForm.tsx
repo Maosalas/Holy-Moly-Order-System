@@ -4,16 +4,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { recipesApi, quotationsApi, suppliesApi, recipeTypesApi } from "@/lib/api";
+import { recipesApi, quotationsApi, suppliesApi, recipeTypesApi, ingredientsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { Quotation, QuotationRecipe, QuotationSupply, QuotationAdditionalExpense, RecipeType } from "@/types/quotation";
+import type { Quotation, QuotationRecipe, QuotationSupply, QuotationAdditionalExpense, RecipeType, QuotationIngredient } from "@/types/quotation";
 import type { Recipe } from "@/types/recipe";
 import type { Supply } from "@/types/supply";
 import { Loader2, Plus, Trash2, Ruler, Check, ChevronsUpDown, Package } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { Ingredient } from "@/types/ingredient";
+import { set } from "date-fns";
 
 interface QuotationFormProps {
   quotation?: Quotation;
@@ -26,11 +28,18 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
   const [quotationType, setQuotationType] = useState<'queque' | 'unidad' | 'ambos'>('queque');
   const [size, setSize] = useState<'mini' | 'pequeño' | 'mediano' | 'grande'>(quotation?.size || 'pequeño');
   const [notes, setNotes] = useState(quotation?.notes || "");
+
   const [selectedRecipes, setSelectedRecipes] = useState<QuotationRecipe[]>(quotation?.recipes || []);
   const [selectedSupplies, setSelectedSupplies] = useState<QuotationSupply[]>(quotation?.selectedSupplies || []);
+
   const [additionalExpenses, setAdditionalExpenses] = useState<QuotationAdditionalExpense[]>(quotation?.additionalExpenses || []);
+
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [supplies, setSupplies] = useState<Supply[]>([]);
+
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [selectedIngredients, setSelectedIngredients] = useState<QuotationIngredient[]>(quotation?.additionalIngredients || []);
+
   const [recipeTypes, setRecipeTypes] = useState<RecipeType[]>([]);
   const [recipeMultipliers, setRecipeMultipliers] = useState<Record<string, Array<{ size: string, multiplier: number }>>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +54,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
       setSelectedRecipes(quotation.recipes || []);
       setSelectedSupplies(quotation.selectedSupplies || []);
       setAdditionalExpenses(quotation.additionalExpenses || []);
+      setSelectedIngredients(quotation.additionalIngredients || []);
     } else {
       // Reset form when creating new quotation
       setClientName("");
@@ -60,6 +70,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     loadRecipeTypes();
     loadRecipes();
     loadSupplies();
+    loadIngredients();
   }, []);
 
   const loadRecipeTypes = async () => {
@@ -152,6 +163,17 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     }
   };
 
+  const loadIngredients = async () => {
+    // Implement if needed
+    const result = await ingredientsApi.getAll();
+    if (result.data) {
+      const ingredientsData = Array.isArray(result.data) ? result.data : [];
+      setIngredients(ingredientsData.map((i: any) => ({
+        ...i,
+        createdAt: i.created_at
+      })));
+    }
+  }
   const addRecipe = (recipeId: string, recipeTypeName: string) => {
     const recipe = recipes.find(r => r.id === recipeId);
     if (!recipe) return;
@@ -222,6 +244,30 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     setSelectedSupplies([...selectedSupplies, newSupply]);
   };
 
+  const addIngredient = (ingredientId: string) => {
+    const ingredient = ingredients.find(i => i.id === ingredientId);
+    if (!ingredient) return;
+    const alreadyAdded = selectedIngredients.find(i => i.ingredientId === ingredientId);
+    if (alreadyAdded) {
+      toast({
+        title: "Ingrediente ya fue agregado",
+        description: `${ingredient.name} ya esta en la lista de ingredientes seleccionados.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    const costPerUnit = ingredient.cost / ingredient.qtyProvider;
+    const newIngredient: QuotationIngredient = {
+      ingredientId: ingredient.id,
+      ingredientName: ingredient.name,
+      quantity: 1,
+      unit: ingredient.units,
+      costPerUnit: costPerUnit,
+      totalCost: costPerUnit,
+    };
+    setSelectedIngredients([...selectedIngredients, newIngredient]);
+  }
+
   const updateSupplyQuantity = (supplyId: string, quantity: number) => {
     setSelectedSupplies(prev =>
       prev.map(s =>
@@ -232,8 +278,22 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     );
   };
 
+  const updateIngredientQuantity = (ingredientId: string, quantity: number) => {
+    setSelectedIngredients(prev =>
+      prev.map(i =>
+        i.ingredientId === ingredientId
+          ? { ...i, quantity, totalCost: i.costPerUnit * quantity }
+          : i
+      )
+    );
+  };
+
+
   const removeSupply = (supplyId: string) => {
     setSelectedSupplies(prev => prev.filter(s => s.supplyId !== supplyId));
+  };
+  const removeIngredient = (ingredientId: string) => {
+    setSelectedIngredients(prev => prev.filter(i => i.ingredientId !== ingredientId));
   };
 
   const addAdditionalExpense = () => {
@@ -265,7 +325,8 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     const recipesTotal = selectedRecipes.reduce((sum, r) => sum + r.totalCost, 0);
     const suppliesTotal = selectedSupplies.reduce((sum, s) => sum + s.totalCost, 0);
     const expensesTotal = additionalExpenses.reduce((sum, e) => sum + e.totalPrice, 0);
-    return recipesTotal + suppliesTotal + expensesTotal;
+    const ingredientsTotal = selectedIngredients.reduce((sum, i) => sum + i.totalCost, 0);
+    return recipesTotal + suppliesTotal + expensesTotal + ingredientsTotal;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -430,7 +491,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
               } else {
                 typesToShow = ['queque', 'relleno', 'cubierta', 'unidad'];
               }
-              
+
               return typesToShow.map((type) => (
                 <Card key={type}>
                   <CardContent className="pt-6">
@@ -617,6 +678,119 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
               </Card>
             )}
           </div>
+          {/* Ingredients Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base font-semibold">Ingredientes</Label>
+                <p className="text-sm text-muted-foreground mt-1">Seleccione múltiples ingredientes necesarios</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    className="flex-1 h-11 bg-background border-2 hover:border-primary/50 transition-colors justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Escoja un ingrediente a agregar...
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Busca ingredientes..." />
+                    <CommandList>
+                      <CommandEmpty>
+                        {ingredients.length === 0
+                          ? "No hay ingredientes a la mano. Agregue ingredientes en la página de ingredientes primero."
+                          : "No se encontraron ingredientes."}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {ingredients.map((ingrediente) => (
+                          <CommandItem
+                            key={ingrediente.id}
+                            value={ingrediente.name}
+                            onSelect={() => addIngredient(ingrediente.id)}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between w-full gap-4">
+                              <span className="font-medium">{ingrediente.name}</span>
+                              <span className="text-muted-foreground text-sm">
+                                ₡{ingrediente.cost} / {ingrediente.qtyProvider}
+                              </span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {selectedIngredients.length > 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ingrediente</TableHead>
+                        <TableHead className="text-center">Cantidad</TableHead>
+                        <TableHead className="text-right">Costo por Unidad</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedIngredients.map((ingrediente) => (
+                        <TableRow key={ingrediente.ingredientId}>
+                          <TableCell className="font-medium">
+                            {ingrediente.ingredientName}
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              value={ingrediente.quantity}
+                              onChange={(e) =>
+                                updateIngredientQuantity(ingrediente.ingredientId, parseFloat(e.target.value) || 0)
+                              }
+                              className="w-24 mx-auto text-center"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            ₡{ingrediente.costPerUnit.toFixed(2)} / {ingrediente.quantity}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            ₡{ingrediente.totalCost.toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeIngredient(ingrediente.ingredientId)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
 
           {/* Additional Expenses Section */}
           <div className="space-y-4">

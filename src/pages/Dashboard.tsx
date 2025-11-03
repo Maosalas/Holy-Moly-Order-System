@@ -124,7 +124,7 @@ const Dashboard = () => {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         {user?.role === "owner" && (
           <>
             <Card>
@@ -221,13 +221,20 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
-                <span className="h-4 w-4 text-muted-foreground flex items-center justify-center">₡</span>
+                <div className="space-y-1">
+                  <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
+                  <div className="text-xl font-bold">₡{totalExpenses.toLocaleString()}</div>
+                </div>
+                <div className="space-y-1 text-right">
+                  <CardTitle className="text-sm font-medium">Ganancias</CardTitle>
+                  <div className={`text-xl font-bold ${totalSales - totalExpenses >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    ₡{(totalSales - totalExpenses).toLocaleString()}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold mb-3">₡{totalExpenses.toLocaleString()}</div>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="w-full gap-2">
@@ -265,19 +272,7 @@ const Dashboard = () => {
                     </div>
                   </PopoverContent>
                 </Popover>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Ganancias</CardTitle>
-                <span className="h-4 w-4 text-green-600 dark:text-green-400 flex items-center justify-center font-bold">₡</span>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold mb-1 ${totalSales - totalExpenses >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  ₡{(totalSales - totalExpenses).toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-2 text-center">
                   {totalSales - totalExpenses >= 0 ? 'Ganancia neta' : 'Pérdida neta'}
                 </p>
               </CardContent>

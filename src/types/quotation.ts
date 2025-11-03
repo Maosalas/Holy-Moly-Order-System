@@ -1,3 +1,5 @@
+import { Ingredient } from "./ingredient";
+
 export interface RecipeType {
   id: string;
   name: string;
@@ -23,7 +25,14 @@ export interface QuotationSupply {
   costPerUnit: number;
   totalCost: number;
 }
-
+export interface QuotationIngredient {
+  ingredientId: string;
+  ingredientName: string;
+  quantity: number;
+  unit: string;
+  costPerUnit: number;
+  totalCost: number;
+}
 export interface QuotationAdditionalExpense {
   expenseName: string;
   unitPrice: number;
@@ -38,6 +47,7 @@ export interface Quotation {
   recipes: QuotationRecipe[];
   selectedSupplies: QuotationSupply[];
   additionalExpenses?: QuotationAdditionalExpense[];
+  additionalIngredients?: QuotationIngredient[];
   totalCost: number;
   notes?: string;
   createdAt: Date;
