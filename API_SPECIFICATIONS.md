@@ -804,231 +804,682 @@ CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 
 ## API Endpoints
 
+### Standard API Response Structure
+
+All API endpoints follow this consistent response structure:
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "data": { ... }
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "ErrorType",
+  "message": "Human readable message",
+  "details": { ... } // Optional, for validation errors
+}
+```
+
+**HTTP Status Codes:**
+
+| Code | Description |
+|------|-------------|
+| 200 | OK - Request successful |
+| 201 | Created - Resource created successfully |
+| 400 | Bad Request - Validation error or invalid data |
+| 401 | Unauthorized - Missing or invalid authentication token |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Resource not found |
+| 409 | Conflict - Duplicate resource (e.g., slug, member) |
+| 500 | Internal Server Error - Server error |
+
+**Organization Roles:**
+- **owner**: Full control of the organization
+- **admin**: Can manage members and data
+- **staff**: Can create/edit data, cannot manage members
+- **viewer**: Read-only access
+
+**Global Roles (app_role):**
+- **super_admin**: Complete system access
+- **owner**: Business owner (can have multiple organizations)
+- **cake_topper_provider**: External topper provider
+
+---
+
 ### Organizations API
 
 #### GET /api/organizations
 
 Get all organizations for the authenticated user.
 
-**Headers:** `Authorization: Bearer {token}`
-
-**Response (200):**
-
-```json
-[
-  {
-    "id": "uuid",
-    "name": "Sweet Bakery",
-    "slug": "sweet-bakery",
-    "logo_url": "https://...",
-    "subscription_status": "active",
-    "subscription_plan": "professional",
-    "userRole": "owner",
-    "settings": {},
-    "created_at": "2024-01-01T00:00:00Z"
-  }
-]
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
 ```
 
-#### GET /api/organizations/:id
-
-Get organization details.
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Response (200):**
-
+**Success Response (200):**
 ```json
 {
-  "id": "uuid",
-  "name": "Sweet Bakery",
-  "slug": "sweet-bakery",
-  "logo_url": "https://...",
-  "subscription_status": "active",
-  "subscription_plan": "professional",
-  "trial_ends_at": "2024-12-31T00:00:00Z",
-  "settings": {
-    "timezone": "America/Costa_Rica",
-    "currency": "CRC"
-  },
-  "created_at": "2024-01-01T00:00:00Z",
-  "updated_at": "2024-01-15T00:00:00Z"
+  "success": true,
+  "data": [
+    {
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "organization_name": "Holy Moly Bakery",
+      "organization_slug": "holy-moly",
+      "user_role": "owner",
+      "joined_at": "2025-01-15T10:30:00.000Z"
+    },
+    {
+      "organization_id": "550e8400-e29b-41d4-a716-446655440002",
+      "organization_name": "Sweet Dreams Bakery",
+      "organization_slug": "sweet-dreams",
+      "user_role": "admin",
+      "joined_at": "2025-02-20T14:45:00.000Z"
+    }
+  ]
 }
 ```
+
+**Empty Response (200):**
+```json
+{
+  "success": true,
+  "data": []
+}
+```
+
+**Error Response (401):**
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+---
 
 #### POST /api/organizations
 
-Create a new organization.
+Create a new organization. The authenticated user automatically becomes the 'owner'.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
 
-**Request:**
-
+**Request Body:**
 ```json
 {
-  "name": "Sweet Bakery",
-  "slug": "sweet-bakery"
+  "name": "New Bakery Business",
+  "slug": "new-bakery"
 }
 ```
 
-**Response (201):**
-
+**Success Response (201):**
 ```json
 {
-  "id": "uuid",
-  "name": "Sweet Bakery",
-  "slug": "sweet-bakery",
-  "subscription_status": "trial",
-  "subscription_plan": "free",
-  "trial_ends_at": "2024-02-01T00:00:00Z",
-  "created_at": "2024-01-01T00:00:00Z"
-}
-```
-
-#### PUT /api/organizations/:id
-
-Update organization details (owner/admin only).
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Request:**
-
-```json
-{
-  "name": "Sweet Bakery Premium",
-  "logo_url": "https://...",
-  "settings": {
-    "timezone": "America/Costa_Rica",
-    "currency": "CRC"
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440003",
+    "name": "New Bakery Business",
+    "slug": "new-bakery",
+    "logo_url": null,
+    "subscription_status": "trial",
+    "subscription_plan": "free",
+    "subscription_stripe_customer_id": null,
+    "subscription_stripe_subscription_id": null,
+    "trial_ends_at": "2025-12-04T00:00:00.000Z",
+    "settings": {},
+    "created_at": "2025-11-04T10:30:00.000Z",
+    "updated_at": "2025-11-04T10:30:00.000Z"
   }
 }
 ```
 
-**Response (200):**
-
+**Validation Error (400):**
 ```json
 {
-  "id": "uuid",
-  "name": "Sweet Bakery Premium",
-  "slug": "sweet-bakery",
-  "logo_url": "https://...",
-  "settings": {
-    "timezone": "America/Costa_Rica",
-    "currency": "CRC"
-  },
-  "updated_at": "2024-01-15T00:00:00Z"
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "name": "Name is required and must be between 1-255 characters",
+    "slug": "Slug is required, must be lowercase, alphanumeric with hyphens, and unique"
+  }
 }
 ```
 
-#### DELETE /api/organizations/:id
+**Duplicate Slug (409):**
+```json
+{
+  "success": false,
+  "error": "ConflictError",
+  "message": "Organization slug 'new-bakery' already exists"
+}
+```
 
-Delete organization (owner only).
+**Unauthorized (401):**
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
 
-**Headers:** `Authorization: Bearer {token}`
+---
 
-**Response (204):** No content
+#### GET /api/organizations/:id
+
+Get details of a specific organization. Only members can access.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Holy Moly Bakery",
+    "slug": "holy-moly",
+    "logo_url": "https://example.com/logos/holy-moly.png",
+    "subscription_status": "active",
+    "subscription_plan": "professional",
+    "subscription_stripe_customer_id": "cus_123456789",
+    "subscription_stripe_subscription_id": "sub_987654321",
+    "trial_ends_at": null,
+    "settings": {
+      "currency": "USD",
+      "timezone": "America/Chicago",
+      "notifications_enabled": true
+    },
+    "created_at": "2025-01-15T10:30:00.000Z",
+    "updated_at": "2025-11-04T08:20:00.000Z"
+  }
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Organization not found or you don't have access"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You are not a member of this organization"
+}
+```
+
+**Unauthorized (401):**
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+---
+
+#### PUT /api/organizations/:id
+
+Update organization details. Only 'owner' can update.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body (all fields optional):**
+```json
+{
+  "name": "Holy Moly Bakery & Cafe",
+  "logo_url": "https://example.com/logos/new-logo.png",
+  "settings": {
+    "currency": "USD",
+    "timezone": "America/New_York",
+    "notifications_enabled": true,
+    "auto_backup": true
+  }
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Holy Moly Bakery & Cafe",
+    "slug": "holy-moly",
+    "logo_url": "https://example.com/logos/new-logo.png",
+    "subscription_status": "active",
+    "subscription_plan": "professional",
+    "subscription_stripe_customer_id": "cus_123456789",
+    "subscription_stripe_subscription_id": "sub_987654321",
+    "trial_ends_at": null,
+    "settings": {
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "notifications_enabled": true,
+      "auto_backup": true
+    },
+    "created_at": "2025-01-15T10:30:00.000Z",
+    "updated_at": "2025-11-04T10:35:00.000Z"
+  }
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only organization owners can update organization details"
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Organization not found"
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "name": "Name must be between 1-255 characters"
+  }
+}
+```
 
 ---
 
 ### Organization Members API
 
-#### GET /api/organizations/:orgId/members
+#### GET /api/organizations/:id/members
 
-Get all members of an organization.
+Get all members of an organization. Only members can access.
 
-**Headers:** `Authorization: Bearer {token}`
-
-**Response (200):**
-
-```json
-[
-  {
-    "id": "uuid",
-    "user_id": "uuid",
-    "organization_id": "uuid",
-    "role": "owner",
-    "user": {
-      "id": "uuid",
-      "email": "owner@example.com",
-      "name": "John Doe"
-    },
-    "joined_at": "2024-01-01T00:00:00Z"
-  },
-  {
-    "id": "uuid",
-    "user_id": "uuid",
-    "organization_id": "uuid",
-    "role": "staff",
-    "user": {
-      "id": "uuid",
-      "email": "staff@example.com",
-      "name": "Jane Smith"
-    },
-    "joined_at": "2024-01-15T00:00:00Z"
-  }
-]
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
 ```
 
-#### POST /api/organizations/:orgId/members
-
-Invite a new member to the organization (owner/admin only).
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Request:**
-
+**Success Response (200):**
 ```json
 {
-  "email": "newmember@example.com",
+  "success": true,
+  "data": [
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440001",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440001",
+      "role": "owner",
+      "joined_at": "2025-01-15T10:30:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440001",
+        "name": "John Smith",
+        "email": "john@holymoly.com"
+      }
+    },
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440002",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440002",
+      "role": "admin",
+      "joined_at": "2025-02-10T14:20:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440002",
+        "name": "Maria Garcia",
+        "email": "maria@holymoly.com"
+      }
+    },
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440003",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440003",
+      "role": "staff",
+      "joined_at": "2025-03-05T09:15:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440003",
+        "name": "Carlos Rodriguez",
+        "email": "carlos@holymoly.com"
+      }
+    }
+  ]
+}
+```
+
+**Empty Response (200):**
+```json
+{
+  "success": true,
+  "data": []
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You are not a member of this organization"
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Organization not found"
+}
+```
+
+---
+
+#### POST /api/organizations/:id/members
+
+Add a new member to the organization. Only 'owner' and 'admin' can add members.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "user_id": "770e8400-e29b-41d4-a716-446655440004",
   "role": "staff"
 }
 ```
 
-**Response (201):**
+**Valid Roles:** `"owner"`, `"admin"`, `"staff"`, `"viewer"`
 
+**Success Response (201):**
 ```json
 {
-  "id": "uuid",
-  "user_id": "uuid",
-  "organization_id": "uuid",
-  "role": "staff",
-  "joined_at": "2024-01-15T00:00:00Z"
+  "success": true,
+  "data": {
+    "id": "660e8400-e29b-41d4-a716-446655440004",
+    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "770e8400-e29b-41d4-a716-446655440004",
+    "role": "staff",
+    "joined_at": "2025-11-04T10:40:00.000Z",
+    "user": {
+      "id": "770e8400-e29b-41d4-a716-446655440004",
+      "name": "Ana Martinez",
+      "email": "ana@example.com"
+    }
+  }
 }
 ```
 
-#### PUT /api/organizations/:orgId/members/:memberId
+**Member Already Exists (409):**
+```json
+{
+  "success": false,
+  "error": "ConflictError",
+  "message": "User is already a member of this organization"
+}
+```
 
-Update member role (owner/admin only).
+**User Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "User not found"
+}
+```
 
-**Headers:** `Authorization: Bearer {token}`
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only owners and admins can add members"
+}
+```
 
-**Request:**
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "user_id": "Valid user UUID is required",
+    "role": "Role must be one of: owner, admin, staff, viewer"
+  }
+}
+```
 
+---
+
+#### PUT /api/organizations/:orgId/members/:userId
+
+Update a member's role. Only 'owner' and 'admin' can update roles.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
 ```json
 {
   "role": "admin"
 }
 ```
 
-**Response (200):**
-
+**Success Response (200):**
 ```json
 {
-  "id": "uuid",
-  "user_id": "uuid",
-  "organization_id": "uuid",
-  "role": "admin",
-  "joined_at": "2024-01-15T00:00:00Z"
+  "success": true,
+  "data": {
+    "id": "660e8400-e29b-41d4-a716-446655440002",
+    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "770e8400-e29b-41d4-a716-446655440002",
+    "role": "admin",
+    "joined_at": "2025-02-10T14:20:00.000Z",
+    "user": {
+      "id": "770e8400-e29b-41d4-a716-446655440002",
+      "name": "Maria Garcia",
+      "email": "maria@holymoly.com"
+    }
+  }
 }
 ```
 
-#### DELETE /api/organizations/:orgId/members/:memberId
+**Member Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Member not found in this organization"
+}
+```
 
-Remove a member from organization (owner/admin only).
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only owners and admins can update member roles"
+}
+```
 
-**Headers:** `Authorization: Bearer {token}`
+**Cannot Modify Last Owner (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Cannot change role of the last owner. Assign another owner first."
+}
+```
 
-**Response (204):** No content
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid role",
+  "details": {
+    "role": "Role must be one of: owner, admin, staff, viewer"
+  }
+}
+```
+
+---
+
+#### DELETE /api/organizations/:orgId/members/:userId
+
+Remove a member from the organization. Only 'owner' and 'admin' can remove members.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Member removed successfully",
+  "data": {
+    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "770e8400-e29b-41d4-a716-446655440003"
+  }
+}
+```
+
+**Member Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Member not found in this organization"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only owners and admins can remove members"
+}
+```
+
+**Cannot Remove Last Owner (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Cannot remove the last owner. Assign another owner first or delete the organization."
+}
+```
+
+**Cannot Self-Remove (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You cannot remove yourself from the organization. Ask another owner or admin to remove you."
+}
+```
+
+---
+
+### User Roles API
+
+#### GET /api/users/:id/roles
+
+Get global roles for a user (super_admin, owner, cake_topper_provider). Only 'super_admin' users or the user themselves can access.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "880e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440001",
+      "role": "super_admin",
+      "created_at": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "880e8400-e29b-41d4-a716-446655440002",
+      "user_id": "770e8400-e29b-41d4-a716-446655440001",
+      "role": "owner",
+      "created_at": "2025-01-15T10:30:00.000Z"
+    }
+  ]
+}
+```
+
+**No Roles (200):**
+```json
+{
+  "success": true,
+  "data": []
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You can only view your own roles unless you are a super admin"
+}
+```
+
+**User Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "User not found"
+}
+```
 
 ---
 
