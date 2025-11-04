@@ -53,14 +53,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const stored = localStorage.getItem(AUTH_STORAGE_KEY);
       if (stored) {
         const authData = JSON.parse(stored);
+        console.log("🔐 Checking auth - stored data:", authData);
         // Verify token with backend
         const result = await authApi.getCurrentUser();
+        console.log("🔐 Current user from API:", result.data);
         if (result.data) {
-          setAuthState({ user: result.data as User, isAuthenticated: true });
+          const user = result.data as User;
+          console.log("✅ User authenticated - roles:", user.roles);
+          setAuthState({ user, isAuthenticated: true });
         } else {
+          console.log("❌ Auth verification failed");
           localStorage.removeItem(AUTH_STORAGE_KEY);
           setAuthState({ user: null, isAuthenticated: false });
         }
+      } else {
+        console.log("ℹ️ No stored auth found");
       }
     };
     checkAuth();
