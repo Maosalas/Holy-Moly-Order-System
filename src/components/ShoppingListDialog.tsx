@@ -186,15 +186,36 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
     const doc = new jsPDF();
     let yPosition = 10;
 
-    // Add logo
+    // Add logo with proportional sizing
     const logoToUse = currentOrganization?.logoUrl || defaultLogo;
     try {
-      doc.addImage(logoToUse, 'PNG', 14, yPosition, 30, 30);
+      const img = new Image();
+      img.src = logoToUse;
+      
+      // Calculate proportional dimensions (max width: 40mm, max height: 30mm)
+      const maxWidth = 40;
+      const maxHeight = 30;
+      let imgWidth = maxWidth;
+      let imgHeight = maxHeight;
+      
+      // If image is loaded, calculate actual proportions
+      if (img.width && img.height) {
+        const aspectRatio = img.width / img.height;
+        if (aspectRatio > maxWidth / maxHeight) {
+          imgWidth = maxWidth;
+          imgHeight = maxWidth / aspectRatio;
+        } else {
+          imgHeight = maxHeight;
+          imgWidth = maxHeight * aspectRatio;
+        }
+      }
+      
+      doc.addImage(logoToUse, 'PNG', 14, yPosition, imgWidth, imgHeight);
+      yPosition += Math.max(imgHeight, 30) + 5;
     } catch (error) {
-      console.error('Error adding logo to PDF:', error);
+      console.error("Error adding logo to PDF:", error);
+      yPosition += 35;
     }
-    
-    yPosition += 35;
 
     // Title
     doc.setFontSize(18);

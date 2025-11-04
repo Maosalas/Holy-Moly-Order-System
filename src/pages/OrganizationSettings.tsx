@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import defaultLogo from "@/assets/Orderly-logo.png";
 
 export default function OrganizationSettings() {
-  const { currentOrganization, updateOrganization, isLoading } = useOrganization();
+  const { currentOrganization, updateOrganization, isLoading, fetchOrganizations } = useOrganization();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [name, setName] = useState(currentOrganization?.name || "");
@@ -75,6 +75,8 @@ export default function OrganizationSettings() {
 
     if (success) {
       setLogoFile(null);
+      // Recargar las organizaciones para actualizar el logo en todo el sistema
+      await fetchOrganizations();
     }
   };
 
