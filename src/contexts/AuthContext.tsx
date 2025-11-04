@@ -58,7 +58,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const result = await authApi.getCurrentUser();
         console.log("🔐 Current user from API:", result.data);
         if (result.data) {
-          const user = result.data as User;
+          const apiUser = result.data as any;
+          // Transform backend response to match frontend User type
+          const user: User = {
+            id: apiUser.id,
+            email: apiUser.email,
+            name: apiUser.name,
+            roles: apiUser.roles || (apiUser.role ? [apiUser.role] : [])
+          };
           console.log("✅ User authenticated - roles:", user.roles);
           setAuthState({ user, isAuthenticated: true });
         } else {
@@ -80,8 +87,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: result.error };
     }
 
-    const { user, token } = result.data as any;
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, token }));
+    const apiResponse = result.data as any;
+    // Transform backend response to match frontend User type
+    const user: User = {
+      id: apiResponse.user.id,
+      email: apiResponse.user.email,
+      name: apiResponse.user.name,
+      roles: apiResponse.user.roles || (apiResponse.user.role ? [apiResponse.user.role] : [])
+    };
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, token: apiResponse.token }));
     setAuthState({ user, isAuthenticated: true });
     
     return { success: true };
@@ -94,8 +108,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: result.error };
     }
 
-    const { user, token } = result.data as any;
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, token }));
+    const apiResponse = result.data as any;
+    // Transform backend response to match frontend User type
+    const user: User = {
+      id: apiResponse.user.id,
+      email: apiResponse.user.email,
+      name: apiResponse.user.name,
+      roles: apiResponse.user.roles || (apiResponse.user.role ? [apiResponse.user.role] : [])
+    };
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, token: apiResponse.token }));
     setAuthState({ user, isAuthenticated: true });
 
     return { success: true };
