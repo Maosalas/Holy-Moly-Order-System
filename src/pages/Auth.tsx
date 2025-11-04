@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import logo from "@/assets/Orderly-logo.png";
 import { organizationsApi } from "@/lib/api";
+import logo from "@/assets/Orderly-logo.png";
 
 const Auth = () => {
   const navigate = useNavigate();
