@@ -411,3 +411,61 @@ export const userRolesApi = {
   getUserRoles: (userId: string) =>
     apiFetch(`/users/${userId}/roles`, { method: "GET" }, false),
 };
+
+// Subscription Plans API
+export const subscriptionPlansApi = {
+  getAll: (activeOnly: boolean = true) =>
+    apiFetch(`/subscription-plans?active_only=${activeOnly}`, { method: "GET" }),
+
+  getById: (id: string) =>
+    apiFetch(`/subscription-plans/${id}`, { method: "GET" }),
+
+  create: (data: any) =>
+    apiFetch("/super-admin/subscription-plans", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, false),
+
+  update: (id: string, data: any) =>
+    apiFetch(`/super-admin/subscription-plans/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }, false),
+
+  delete: (id: string) =>
+    apiFetch(`/super-admin/subscription-plans/${id}`, {
+      method: "DELETE",
+    }, false),
+};
+
+// Super Admin API
+export const superAdminApi = {
+  // Organizations
+  createOrganization: (data: any) =>
+    apiFetch("/super-admin/organizations", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, false),
+
+  getAllOrganizations: (params?: { page?: number; limit?: number; status?: string; plan?: string; search?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.plan) queryParams.append("plan", params.plan);
+    if (params?.search) queryParams.append("search", params.search);
+    
+    return apiFetch(`/super-admin/organizations?${queryParams.toString()}`, { method: "GET" }, false);
+  },
+
+  updateOrganizationSubscription: (orgId: string, data: any) =>
+    apiFetch(`/super-admin/organizations/${orgId}/subscription`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, false),
+
+  impersonateOrganization: (orgId: string) =>
+    apiFetch(`/super-admin/organizations/${orgId}/impersonate`, {
+      method: "POST",
+    }, false),
+};
