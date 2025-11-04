@@ -1206,6 +1206,63 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+#### GET /api/organizations/:orgId/members/:userId
+
+Get detailed information about a specific member of an organization. Only members of the organization can access.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "660e8400-e29b-41d4-a716-446655440002",
+    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "770e8400-e29b-41d4-a716-446655440002",
+    "role": "admin",
+    "joined_at": "2025-02-10T14:20:00.000Z",
+    "user": {
+      "id": "770e8400-e29b-41d4-a716-446655440002",
+      "name": "Maria Garcia",
+      "email": "maria@holymoly.com"
+    }
+  }
+}
+```
+
+**Member Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Member not found in this organization"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You are not a member of this organization"
+}
+```
+
+**Organization Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Organization not found"
+}
+```
+
+---
+
 #### POST /api/organizations/:id/members
 
 Add a new member to the organization. Only 'owner' and 'admin' can add members.
