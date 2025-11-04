@@ -229,7 +229,22 @@ export default function OrganizationMembers() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {new Date(member.joinedAt).toLocaleDateString()}
+                      {(() => {
+                        try {
+                          const date = new Date(member.joinedAt);
+                          if (isNaN(date.getTime())) {
+                            return "N/A";
+                          }
+                          return date.toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric"
+                          });
+                        } catch (error) {
+                          console.error("Error formatting date:", error);
+                          return "N/A";
+                        }
+                      })()}
                     </TableCell>
                     {canManage && (
                       <TableCell className="text-right">

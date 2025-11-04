@@ -115,18 +115,24 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const membersData = result.data as any[];
       
       // Transform API response to match OrganizationMember type
-      const transformedMembers: OrganizationMember[] = membersData.map((member: any) => ({
-        id: member.id,
-        organizationId: member.organization_id,
-        userId: member.user_id,
-        role: member.role,
-        joinedAt: new Date(member.joined_at),
-        user: member.user ? {
-          id: member.user.id,
-          name: member.user.name,
-          email: member.user.email,
-        } : undefined,
-      }));
+      const transformedMembers: OrganizationMember[] = membersData.map((member: any) => {
+        // Handle different date field naming conventions from backend
+        const joinedAtValue = member.joined_at || member.joinedAt || member.created_at || member.createdAt;
+        console.log("🔍 Member data:", member, "joinedAt value:", joinedAtValue);
+
+        return {
+          id: member.id,
+          organizationId: member.organization_id || member.organizationId,
+          userId: member.user_id || member.userId,
+          role: member.role,
+          joinedAt: joinedAtValue ? new Date(joinedAtValue) : new Date(),
+          user: member.user ? {
+            id: member.user.id,
+            name: member.user.name,
+            email: member.user.email,
+          } : undefined,
+        };
+      });
 
       setMembers(transformedMembers);
     } catch (error) {
