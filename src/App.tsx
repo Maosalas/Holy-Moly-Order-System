@@ -16,6 +16,8 @@ import Expenses from "./pages/Expenses";
 import Quotations from "./pages/Quotations";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import OrganizationSettings from "./pages/OrganizationSettings";
+import OrganizationMembers from "./pages/OrganizationMembers";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +48,8 @@ const App = () => (
               <Route path="/orders" element={<ProtectedRoute><AppLayout><Orders /></AppLayout></ProtectedRoute>} />
               <Route path="/expenses" element={<ProtectedRoute><AppLayout><Expenses /></AppLayout></ProtectedRoute>} />
               <Route path="/quotations" element={<ProtectedRoute><AppLayout><Quotations /></AppLayout></ProtectedRoute>} />
+              <Route path="/organization/settings" element={<ProtectedRoute><AppLayout><OrganizationSettings /></AppLayout></ProtectedRoute>} />
+              <Route path="/organization/members" element={<ProtectedRoute><AppLayout><OrganizationMembers /></AppLayout></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

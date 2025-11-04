@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { cardTypesApi } from "@/lib/api";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface ExpenseFormProps {
   onSubmit: (expense: Expense) => void;
@@ -19,6 +20,7 @@ interface ExpenseFormProps {
 
 const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
   const { toast } = useToast();
+  const { currentOrganization } = useOrganization();
   const [supermarketName, setSupermarketName] = useState(initialData?.supermarketName || "");
   const [purchaseDate, setPurchaseDate] = useState(initialData?.purchaseDate || "");
   const [amount, setAmount] = useState(initialData?.amount?.toString() || "");
@@ -105,6 +107,7 @@ const ExpenseForm = ({ onSubmit, initialData, onCancel }: ExpenseFormProps) => {
 
     const expensePayload: any = {
       id: initialData?.id || crypto.randomUUID(),
+      organizationId: currentOrganization?.id || "",
       supermarketName,
       purchaseDate,
       amount: parseFloat(amount),

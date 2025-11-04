@@ -16,6 +16,7 @@ import type { Order, OrderStatus, PaymentMethod } from "@/types/order";
 import type { Quotation } from "@/types/quotation";
 import { quotationsApi, paymentMethodsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface OrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "createdAt">) => void;
@@ -25,6 +26,7 @@ interface OrderFormProps {
 
 export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) => {
   const { toast } = useToast();
+  const { currentOrganization } = useOrganization();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedQuotationId, setSelectedQuotationId] = useState<string>(initialData?.quotationId || "");
@@ -290,7 +292,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     }
 
     const orderData: Omit<Order, "id" | "createdAt"> = {
-      organizationId: "temp-org-id", // TODO: Replace with actual org ID from auth context
+      organizationId: currentOrganization?.id || "",
       quotationId: selectedQuotationId,
       clientName: clientName.trim(),
       phoneNumber: phoneNumber.trim(),
