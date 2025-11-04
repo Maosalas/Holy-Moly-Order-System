@@ -9,6 +9,8 @@ import { quotationsApi } from "@/lib/api";
 import { Loader2, FileDown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import defaultLogo from "@/assets/Orderly-logo.png";
 
 interface ShoppingListDialogProps {
   open: boolean;
@@ -35,6 +37,7 @@ interface ConsolidatedRecipe {
 export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: ShoppingListDialogProps) => {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { currentOrganization } = useOrganization();
 
   useEffect(() => {
     if (open && selectedOrders.length > 0) {
@@ -181,7 +184,17 @@ export const ShoppingListDialog = ({ open, onOpenChange, selectedOrders }: Shopp
 
   const generatePDF = () => {
     const doc = new jsPDF();
-    let yPosition = 20;
+    let yPosition = 10;
+
+    // Add logo
+    const logoToUse = currentOrganization?.logoUrl || defaultLogo;
+    try {
+      doc.addImage(logoToUse, 'PNG', 14, yPosition, 30, 30);
+    } catch (error) {
+      console.error('Error adding logo to PDF:', error);
+    }
+    
+    yPosition += 35;
 
     // Title
     doc.setFontSize(18);
