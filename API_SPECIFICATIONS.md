@@ -1648,12 +1648,14 @@ Authorization: Bearer <jwt_token>
       "id": "880e8400-e29b-41d4-a716-446655440001",
       "user_id": "770e8400-e29b-41d4-a716-446655440001",
       "role": "super_admin",
+      "organization_id": null,
       "created_at": "2025-01-01T00:00:00.000Z"
     },
     {
       "id": "880e8400-e29b-41d4-a716-446655440002",
       "user_id": "770e8400-e29b-41d4-a716-446655440001",
       "role": "owner",
+      "organization_id": null,
       "created_at": "2025-01-15T10:30:00.000Z"
     }
   ]
@@ -1688,31 +1690,247 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+#### POST /api/users/:id/roles
+
+Assign a global role to a user. Only 'super_admin' can assign roles.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "role": "super_admin",
+  "organization_id": null
+}
+```
+
+**Valid Global Roles:** `"super_admin"`, `"owner"`, `"cake_topper_provider"`
+
+**Note:** The `organization_id` field is optional and should be null for global roles. It's included for future extensibility.
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "880e8400-e29b-41d4-a716-446655440003",
+    "user_id": "770e8400-e29b-41d4-a716-446655440002",
+    "role": "super_admin",
+    "organization_id": null,
+    "created_at": "2025-11-04T10:45:00.000Z"
+  }
+}
+```
+
+**Role Already Assigned (409):**
+```json
+{
+  "success": false,
+  "error": "ConflictError",
+  "message": "User already has this role"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only super admins can assign global roles"
+}
+```
+
+**User Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "User not found"
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "role": "Role must be one of: super_admin, owner, cake_topper_provider"
+  }
+}
+```
+
+---
+
+#### DELETE /api/users/:userId/roles/:roleId
+
+Remove a global role from a user. Only 'super_admin' can remove roles.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Role removed successfully"
+}
+```
+
+**Role Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Role assignment not found"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only super admins can remove global roles"
+}
+```
+
+**Cannot Remove Own Super Admin Role (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You cannot remove your own super_admin role. Ask another super admin to do it."
+}
+```
+
+---
+
 ### Subscription Plans API
 
 #### GET /api/subscription-plans
 
-Get all available subscription plans.
+Get all subscription plans. By default returns only active plans. Super admins can see all plans including inactive ones.
 
-**Response (200):**
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
 
+**Query Parameters:**
+- `active_only` (boolean, optional): Filter to show only active plans. Default: `true`. Super admins can set to `false` to see all plans.
+
+**Success Response (200):**
 ```json
-[
-  {
-    "id": "uuid",
-    "name": "Free",
-    "slug": "free",
-    "price_monthly": 0,
-    "price_yearly": 0,
-    "max_orders_per_month": 10,
-    "max_users": 1,
-    "max_storage_gb": 1,
-    "features": {
-      "support": "community"
+{
+  "success": true,
+  "data": [
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440001",
+      "name": "Free",
+      "slug": "free",
+      "price_monthly": 0,
+      "price_yearly": 0,
+      "max_orders_per_month": 10,
+      "max_users": 1,
+      "max_storage_gb": 1,
+      "features": {
+        "support": "community"
+      },
+      "stripe_price_id": null,
+      "active": true,
+      "created_at": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440002",
+      "name": "Starter",
+      "slug": "starter",
+      "price_monthly": 29.99,
+      "price_yearly": 299.90,
+      "max_orders_per_month": 50,
+      "max_users": 3,
+      "max_storage_gb": 5,
+      "features": {
+        "support": "email",
+        "priority": false
+      },
+      "stripe_price_id": "price_1234567890",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440003",
+      "name": "Professional",
+      "slug": "professional",
+      "price_monthly": 79.99,
+      "price_yearly": 799.90,
+      "max_orders_per_month": 200,
+      "max_users": 10,
+      "max_storage_gb": 20,
+      "features": {
+        "support": "priority",
+        "custom_branding": true
+      },
+      "stripe_price_id": "price_0987654321",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440004",
+      "name": "Enterprise",
+      "slug": "enterprise",
+      "price_monthly": 199.99,
+      "price_yearly": 1999.90,
+      "max_orders_per_month": -1,
+      "max_users": -1,
+      "max_storage_gb": 100,
+      "features": {
+        "support": "dedicated",
+        "custom_branding": true,
+        "api_access": true
+      },
+      "stripe_price_id": "price_1122334455",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00.000Z"
     }
-  },
-  {
-    "id": "uuid",
+  ]
+}
+```
+
+**Empty Response (200):**
+```json
+{
+  "success": true,
+  "data": []
+}
+```
+
+**Note:** A value of `-1` for `max_orders_per_month` or `max_users` indicates unlimited.
+
+---
+
+#### GET /api/subscription-plans/:id
+
+Get details of a specific subscription plan.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "990e8400-e29b-41d4-a716-446655440003",
     "name": "Professional",
     "slug": "professional",
     "price_monthly": 79.99,
@@ -1723,9 +1941,277 @@ Get all available subscription plans.
     "features": {
       "support": "priority",
       "custom_branding": true
-    }
+    },
+    "stripe_price_id": "price_0987654321",
+    "active": true,
+    "created_at": "2025-01-01T00:00:00.000Z"
   }
-]
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Subscription plan not found"
+}
+```
+
+---
+
+#### POST /api/subscription-plans
+
+Create a new subscription plan. Only 'super_admin' can create plans.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "name": "Premium",
+  "slug": "premium",
+  "price_monthly": 149.99,
+  "price_yearly": 1499.90,
+  "max_orders_per_month": 500,
+  "max_users": 25,
+  "max_storage_gb": 50,
+  "features": {
+    "support": "priority",
+    "custom_branding": true,
+    "api_access": true,
+    "advanced_analytics": true
+  },
+  "stripe_price_id": "price_premium_123",
+  "active": true
+}
+```
+
+**Field Descriptions:**
+- `name` (string, required): Display name of the plan (max 100 chars)
+- `slug` (string, required): URL-friendly identifier (lowercase, alphanumeric with hyphens, max 100 chars)
+- `price_monthly` (decimal, required): Monthly price in dollars
+- `price_yearly` (decimal, optional): Yearly price in dollars
+- `max_orders_per_month` (integer, optional): Maximum orders per month (-1 for unlimited)
+- `max_users` (integer, optional): Maximum users allowed (-1 for unlimited)
+- `max_storage_gb` (integer, optional): Maximum storage in GB
+- `features` (object, optional): JSON object with plan features
+- `stripe_price_id` (string, optional): Stripe price ID for billing integration
+- `active` (boolean, optional): Whether the plan is active. Default: `true`
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "990e8400-e29b-41d4-a716-446655440005",
+    "name": "Premium",
+    "slug": "premium",
+    "price_monthly": 149.99,
+    "price_yearly": 1499.90,
+    "max_orders_per_month": 500,
+    "max_users": 25,
+    "max_storage_gb": 50,
+    "features": {
+      "support": "priority",
+      "custom_branding": true,
+      "api_access": true,
+      "advanced_analytics": true
+    },
+    "stripe_price_id": "price_premium_123",
+    "active": true,
+    "created_at": "2025-11-04T11:00:00.000Z"
+  }
+}
+```
+
+**Duplicate Slug or Name (409):**
+```json
+{
+  "success": false,
+  "error": "ConflictError",
+  "message": "A subscription plan with this slug or name already exists"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only super admins can create subscription plans"
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "name": "Name is required and must be between 1-100 characters",
+    "slug": "Slug is required, must be lowercase, alphanumeric with hyphens, and between 1-100 characters",
+    "price_monthly": "Monthly price is required and must be a positive number"
+  }
+}
+```
+
+---
+
+#### PUT /api/subscription-plans/:id
+
+Update an existing subscription plan. Only 'super_admin' can update plans.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body (all fields optional):**
+```json
+{
+  "name": "Premium Plus",
+  "price_monthly": 159.99,
+  "price_yearly": 1599.90,
+  "max_orders_per_month": 600,
+  "max_users": 30,
+  "max_storage_gb": 75,
+  "features": {
+    "support": "dedicated",
+    "custom_branding": true,
+    "api_access": true,
+    "advanced_analytics": true,
+    "white_label": true
+  },
+  "stripe_price_id": "price_premium_456",
+  "active": true
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "990e8400-e29b-41d4-a716-446655440005",
+    "name": "Premium Plus",
+    "slug": "premium",
+    "price_monthly": 159.99,
+    "price_yearly": 1599.90,
+    "max_orders_per_month": 600,
+    "max_users": 30,
+    "max_storage_gb": 75,
+    "features": {
+      "support": "dedicated",
+      "custom_branding": true,
+      "api_access": true,
+      "advanced_analytics": true,
+      "white_label": true
+    },
+    "stripe_price_id": "price_premium_456",
+    "active": true,
+    "created_at": "2025-11-04T11:00:00.000Z"
+  }
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Subscription plan not found"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only super admins can update subscription plans"
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "price_monthly": "Monthly price must be a positive number"
+  }
+}
+```
+
+**Cannot Modify Slug (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Cannot modify plan slug after creation"
+}
+```
+
+---
+
+#### DELETE /api/subscription-plans/:id
+
+Delete (or deactivate) a subscription plan. Only 'super_admin' can delete plans. Plans with active subscriptions cannot be hard deleted and will be deactivated instead.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Subscription plan deleted successfully"
+}
+```
+
+**Plan Deactivated Instead (200):**
+```json
+{
+  "success": true,
+  "message": "Subscription plan has active subscriptions and has been deactivated instead of deleted"
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Subscription plan not found"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only super admins can delete subscription plans"
+}
+```
+
+**Cannot Delete (400):**
+```json
+{
+  "success": false,
+  "error": "BadRequestError",
+  "message": "Cannot delete or deactivate the free plan as it is required for new users"
+}
 ```
 
 ---
