@@ -71,12 +71,18 @@ export default function OrganizationMembers() {
   const handleAddMember = async () => {
     if (!currentOrganization || !newMemberEmail) return;
 
-    // TODO: Need to get user ID from email - this requires a backend endpoint
-    // For now, just show a message
-    console.log("Need to implement user lookup by email");
-    setIsAddDialogOpen(false);
-    setNewMemberEmail("");
-    setNewMemberRole("viewer");
+    try {
+      const result = await addMember(currentOrganization.id, newMemberEmail, newMemberRole);
+      if (result) {
+        setIsAddDialogOpen(false);
+        setNewMemberEmail("");
+        setNewMemberRole("viewer");
+        // Refresh the members list
+        fetchOrganizationMembers(currentOrganization.id);
+      }
+    } catch (error) {
+      console.error("Error adding member:", error);
+    }
   };
 
   const handleUpdateRole = async (userId: string, newRole: OrganizationRole) => {

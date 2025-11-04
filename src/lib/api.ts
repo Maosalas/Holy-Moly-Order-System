@@ -347,6 +347,13 @@ export const quotationsApi = {
 
 // Organizations API
 export const organizationsApi = {
+  // Add member by email
+  addMemberByEmail: async (organizationId: string, email: string, role: string) => {
+    return apiFetch(`/organizations/${organizationId}/members/by-email`, {
+      method: "POST",
+      body: JSON.stringify({ email, role }),
+    });
+  },
   getAll: () => apiFetch("/organizations", { method: "GET" }, false), // No org header needed
 
   getAllForSuperAdmin: () => apiFetch("/super-admin/organizations", { method: "GET" }, false), // Super admin endpoint

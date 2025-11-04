@@ -15,7 +15,7 @@ interface OrganizationContextType {
   createOrganization: (name: string, slug: string) => Promise<OrganizationWithRole | null>;
   updateOrganization: (id: string, data: Partial<OrganizationWithRole>) => Promise<boolean>;
   switchOrganization: (org: OrganizationWithRole) => void;
-  addMember: (orgId: string, userId: string, role: string) => Promise<boolean>;
+  addMember: (orgId: string, email: string, role: string) => Promise<boolean>;
   updateMemberRole: (orgId: string, userId: string, role: string) => Promise<boolean>;
   removeMember: (orgId: string, userId: string) => Promise<boolean>;
 }
@@ -251,10 +251,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     });
   };
 
-  const addMember = async (orgId: string, userId: string, role: string): Promise<boolean> => {
+  const addMember = async (orgId: string, email: string, role: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const result = await organizationsApi.addMember(orgId, { user_id: userId, role });
+      const result = await organizationsApi.addMemberByEmail(orgId, email, role);
       
       if (result.error) {
         toast({
