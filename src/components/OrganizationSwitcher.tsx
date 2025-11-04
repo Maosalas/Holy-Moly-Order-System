@@ -1,5 +1,6 @@
 import { Check, ChevronsUpDown, Building2, Plus, Settings } from "lucide-react";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -36,7 +37,10 @@ export function OrganizationSwitcher() {
   const [newOrgSlug, setNewOrgSlug] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const { organizations, currentOrganization, switchOrganization, createOrganization } = useOrganization();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  
+  const isSuperAdmin = user?.roles?.includes("super_admin");
 
   const handleCreateOrganization = async () => {
     if (!newOrgName.trim() || !newOrgSlug.trim()) return;
@@ -123,16 +127,18 @@ export function OrganizationSwitcher() {
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Configuración</span>
               </CommandItem>
-              <CommandItem
-                onSelect={() => {
-                  setOpen(false);
-                  setCreateDialogOpen(true);
-                }}
-                className="cursor-pointer"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                <span>Nueva organización</span>
-              </CommandItem>
+              {isSuperAdmin && (
+                <CommandItem
+                  onSelect={() => {
+                    setOpen(false);
+                    setCreateDialogOpen(true);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span>Nueva organización</span>
+                </CommandItem>
+              )}
             </CommandGroup>
           </CommandList>
         </Command>
