@@ -15,14 +15,53 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 export function OrganizationSwitcher() {
   const [open, setOpen] = useState(false);
-  const { organizations, currentOrganization, switchOrganization } = useOrganization();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgSlug, setNewOrgSlug] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const { organizations, currentOrganization, switchOrganization, createOrganization } = useOrganization();
   const navigate = useNavigate();
+
+  const handleCreateOrganization = async () => {
+    if (!newOrgName.trim() || !newOrgSlug.trim()) return;
+    
+    setIsCreating(true);
+    const newOrg = await createOrganization(newOrgName.trim(), newOrgSlug.trim());
+    setIsCreating(false);
+    
+    if (newOrg) {
+      setCreateDialogOpen(false);
+      setNewOrgName("");
+      setNewOrgSlug("");
+      switchOrganization(newOrg);
+    }
+  };
+
+  const handleNameChange = (name: string) => {
+    setNewOrgName(name);
+    // Auto-generate slug from name
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    setNewOrgSlug(slug);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -86,8 +125,8 @@ export function OrganizationSwitcher() {
               </CommandItem>
               <CommandItem
                 onSelect={() => {
-                  // TODO: Implementar crear organización
                   setOpen(false);
+                  setCreateDialogOpen(true);
                 }}
                 className="cursor-pointer"
               >
@@ -98,6 +137,57 @@ export function OrganizationSwitcher() {
           </CommandList>
         </Command>
       </PopoverContent>
+      
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear Nueva Organización</DialogTitle>
+            <DialogDescription>
+              Ingresa los detalles de tu nueva organización.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="org-name">Nombre de la Organización</Label>
+              <Input
+                id="org-name"
+                placeholder="Mi Empresa"
+                value={newOrgName}
+                onChange={(e) => handleNameChange(e.target.value)}
+                disabled={isCreating}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="org-slug">Slug (URL amigable)</Label>
+              <Input
+                id="org-slug"
+                placeholder="mi-empresa"
+                value={newOrgSlug}
+                onChange={(e) => setNewOrgSlug(e.target.value)}
+                disabled={isCreating}
+              />
+              <p className="text-xs text-muted-foreground">
+                Solo letras minúsculas, números y guiones
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreateDialogOpen(false)}
+              disabled={isCreating}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCreateOrganization}
+              disabled={!newOrgName.trim() || !newOrgSlug.trim() || isCreating}
+            >
+              {isCreating ? "Creando..." : "Crear Organización"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Popover>
   );
 }
