@@ -7,7 +7,7 @@ interface AuthContextType extends AuthState {
   currentOrganization: OrganizationWithRole | null;
   setCurrentOrganization: (org: OrganizationWithRole | null) => void;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, password: string, name: string, role: "owner" | "cake_topper_provider") => Promise<{ success: boolean; error?: string }>;
+  signup: (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin") => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
 
@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true };
   };
 
-  const signup = async (email: string, password: string, name: string, role: "owner" | "cake_topper_provider"): Promise<{ success: boolean; error?: string }> => {
+  const signup = async (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin"): Promise<{ success: boolean; error?: string }> => {
     const result = await authApi.signup(email, password, name, role);
     
     if (result.error) {

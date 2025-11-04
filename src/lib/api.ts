@@ -68,7 +68,7 @@ async function apiFetch<T>(
 
 // Auth API
 export const authApi = {
-  signup: (email: string, password: string, name: string, role: "owner" | "cake_topper_provider") =>
+  signup: (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin") =>
     apiFetch("/auth/signup", {
       method: "POST",
       body: JSON.stringify({ email, password, name, role }),

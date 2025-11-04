@@ -20,7 +20,7 @@ const Auth = () => {
     email: "",
     password: "",
     name: "",
-    role: "owner" as "owner" | "cake_topper_provider"
+    role: "owner" as "owner" | "cake_topper_provider" | "super_admin",
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -91,10 +91,10 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-1">
-            {/* <TabsList className="grid w-full grid-cols-2"> */}
+            <TabsList className="grid w-full grid-cols-2">
+              {/* <TabsList className="grid w-full grid-cols-2"> */}
               <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-              {/* <TabsTrigger value="signup">Registrarse</TabsTrigger> */}
+              <TabsTrigger value="signup">Registrarse</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
@@ -127,8 +127,8 @@ const Auth = () => {
               </form>
             </TabsContent>
 
-              {/* Esta es la parte del registro de una persona */}
-            {/* <TabsContent value="signup">
+            {/* Esta es la parte del registro de una persona */}
+            <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Full Name</Label>
@@ -168,7 +168,7 @@ const Auth = () => {
                   <Label htmlFor="signup-role">Account Type</Label>
                   <Select
                     value={signupForm.role}
-                    onValueChange={(value: "owner" | "cake_topper_provider") =>
+                    onValueChange={(value: "owner" | "cake_topper_provider" | "super_admin") =>
                       setSignupForm({ ...signupForm, role: value })
                     }
                   >
@@ -177,7 +177,8 @@ const Auth = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="owner">Bakery Owner</SelectItem>
-                      <SelectItem value="cake_topper_provider">Cake Topper Provider</SelectItem>
+                      <SelectItem value="cake_topper_provider">Cake Topper Provide</SelectItem>
+                      <SelectItem value="super_admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -185,8 +186,8 @@ const Auth = () => {
                   {isLoading ? "Creating account..." : "Create Account"}
                 </Button>
               </form>
-            </TabsContent> */}
-            
+            </TabsContent>
+
           </Tabs>
         </CardContent>
       </Card>
