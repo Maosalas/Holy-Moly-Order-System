@@ -39,21 +39,19 @@ const Auth = () => {
       setSignupForm({ ...signupForm, email });
     }
 
-    // Detectar @ y extraer dominio
-    if (email.includes('@')) {
-      const domain = email.split('@')[1];
-      if (domain) {
-        try {
-          const response = await organizationsApi.getLogoByDomain(domain);
-          if (response.data?.logoUrl) {
-            setOrganizationLogo(response.data.logoUrl);
-          } else {
-            setOrganizationLogo(null);
-          }
-        } catch (error) {
-          // Si no se encuentra logo, usar el default
+    // Validar que el email tenga formato válido antes de consultar
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRegex.test(email)) {
+      try {
+        const response = await organizationsApi.getLogoByEmail(email);
+        if (response.data?.logoUrl) {
+          setOrganizationLogo(response.data.logoUrl);
+        } else {
           setOrganizationLogo(null);
         }
+      } catch (error) {
+        // Si no se encuentra logo, usar el default
+        setOrganizationLogo(null);
       }
     } else {
       setOrganizationLogo(null);

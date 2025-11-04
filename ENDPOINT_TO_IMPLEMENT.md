@@ -1,24 +1,24 @@
 # Nuevo Endpoint para Implementar en el Backend
 
-## GET /api/organizations/logo-by-domain
+## GET /api/organizations/logo-by-email
 
 ### Descripción
-Este endpoint público retorna el logo de una organización basándose en el dominio del email. Se utiliza durante el proceso de login para mostrar el logo de la organización cuando el usuario escribe su email.
+Este endpoint público retorna el logo de una organización basándose en el email del usuario. Se utiliza durante el proceso de login para mostrar el logo de la organización cuando el usuario escribe su email.
 
 ### Características
 - **Público**: No requiere autenticación
 - **Método**: GET
-- **Path**: `/api/organizations/logo-by-domain`
+- **Path**: `/api/organizations/logo-by-email`
 
 ### Query Parameters
-- `domain` (string, requerido): El dominio del email (ej: "holymoly.com", "example.com")
+- `email` (string, requerido): El email completo del usuario (ej: "user@holymoly.com", "admin@example.com")
 
 ### Lógica de Negocio
 
-1. **Extraer el dominio** del query parameter
-2. **Buscar organizaciones** donde algún miembro tenga un email con ese dominio
+1. **Recibir el email completo** del query parameter
+2. **Buscar la organización** donde el usuario con ese email es miembro
 3. **Retornar el logo** de la organización encontrada
-4. Si no se encuentra ninguna organización con ese dominio, retornar `logoUrl: null`
+4. Si no se encuentra ninguna organización con ese email, retornar `logoUrl: null`
 
 ### SQL Query Sugerida
 
@@ -27,11 +27,11 @@ SELECT DISTINCT o.logo_url
 FROM organizations o
 INNER JOIN organization_members om ON o.id = om.organization_id
 INNER JOIN users u ON om.user_id = u.id
-WHERE u.email LIKE '%@' || $1
+WHERE u.email = $1
 LIMIT 1;
 ```
 
-Donde `$1` es el parámetro del dominio.
+Donde `$1` es el parámetro del email completo.
 
 ### Response Format
 
@@ -60,7 +60,7 @@ Donde `$1` es el parámetro del dominio.
 {
   "success": false,
   "error": "ValidationError",
-  "message": "Domain parameter is required"
+  "message": "Email parameter is required"
 }
 ```
 
@@ -75,8 +75,8 @@ Donde `$1` es el parámetro del dominio.
 
 ### Validaciones
 
-1. El parámetro `domain` debe estar presente
-2. El dominio debe tener un formato válido (contener al menos un punto)
+1. El parámetro `email` debe estar presente
+2. El email debe tener un formato válido (validar con regex de email)
 3. Sanitizar el input para prevenir SQL injection
 
 ### Consideraciones de Seguridad
@@ -84,42 +84,43 @@ Donde `$1` es el parámetro del dominio.
 - Este es un endpoint público, no expone información sensible
 - Solo retorna el logo (imagen en base64), no otros datos de la organización
 - Implementar rate limiting para prevenir abuso
-- Sanitizar el parámetro de dominio para evitar inyecciones
+- Sanitizar el parámetro de email para evitar inyecciones
 
 ### Ejemplo de Implementación (Pseudocódigo)
 
 ```typescript
-async function getLogoByDomain(req, res) {
-  const { domain } = req.query;
+async function getLogoByEmail(req, res) {
+  const { email } = req.query;
   
   // Validación
-  if (!domain) {
+  if (!email) {
     return res.status(400).json({
       success: false,
       error: "ValidationError",
-      message: "Domain parameter is required"
+      message: "Email parameter is required"
     });
   }
   
-  // Validar formato de dominio
-  if (!domain.includes('.')) {
+  // Validar formato de email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
     return res.status(400).json({
       success: false,
       error: "ValidationError",
-      message: "Invalid domain format"
+      message: "Invalid email format"
     });
   }
   
   try {
-    // Buscar organización por dominio de email
+    // Buscar organización por email del usuario
     const result = await db.query(
       `SELECT DISTINCT o.logo_url
        FROM organizations o
        INNER JOIN organization_members om ON o.id = om.organization_id
        INNER JOIN users u ON om.user_id = u.id
-       WHERE u.email LIKE '%@' || $1
+       WHERE u.email = $1
        LIMIT 1`,
-      [domain]
+      [email]
     );
     
     const logoUrl = result.rows[0]?.logo_url || null;
@@ -143,19 +144,19 @@ async function getLogoByDomain(req, res) {
 
 #### Test Case 1: Logo encontrado
 ```bash
-curl "http://localhost:3000/api/organizations/logo-by-domain?domain=holymoly.com"
+curl "http://localhost:3000/api/organizations/logo-by-email?email=user@holymoly.com"
 # Esperado: 200 con logoUrl en base64
 ```
 
 #### Test Case 2: Logo no encontrado
 ```bash
-curl "http://localhost:3000/api/organizations/logo-by-domain?domain=nonexistent.com"
+curl "http://localhost:3000/api/organizations/logo-by-email?email=nonexistent@example.com"
 # Esperado: 200 con logoUrl: null
 ```
 
-#### Test Case 3: Sin parámetro domain
+#### Test Case 3: Sin parámetro email
 ```bash
-curl "http://localhost:3000/api/organizations/logo-by-domain"
+curl "http://localhost:3000/api/organizations/logo-by-email"
 # Esperado: 400 ValidationError
 ```
 

@@ -1124,16 +1124,16 @@ Content-Type: application/json
 
 ---
 
-#### GET /api/organizations/logo-by-domain
+#### GET /api/organizations/logo-by-email
 
-Get organization logo by email domain. Public endpoint, no authentication required. Used during login to display the organization's logo when user types their email.
+Get organization logo by user email. Public endpoint, no authentication required. Used during login to display the organization's logo when user types their email.
 
 **Query Parameters:**
-- `domain` (string, required): Email domain (e.g., "example.com")
+- `email` (string, required): Complete user email (e.g., "user@example.com")
 
 **Example Request:**
 ```
-GET /api/organizations/logo-by-domain?domain=holymoly.com
+GET /api/organizations/logo-by-email?email=user@holymoly.com
 ```
 
 **Success Response (200):**
@@ -1161,7 +1161,7 @@ GET /api/organizations/logo-by-domain?domain=holymoly.com
 {
   "success": false,
   "error": "ValidationError",
-  "message": "Domain parameter is required"
+  "message": "Email parameter is required"
 }
 ```
 
