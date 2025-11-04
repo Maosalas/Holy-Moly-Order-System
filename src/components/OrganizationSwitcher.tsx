@@ -39,16 +39,16 @@ export function OrganizationSwitcher() {
   const { organizations, currentOrganization, switchOrganization, createOrganization } = useOrganization();
   const { user } = useAuth();
   const navigate = useNavigate();
-
+  
   const isSuperAdmin = user?.roles?.includes("super_admin");
 
   const handleCreateOrganization = async () => {
     if (!newOrgName.trim() || !newOrgSlug.trim()) return;
-
+    
     setIsCreating(true);
     const newOrg = await createOrganization(newOrgName.trim(), newOrgSlug.trim());
     setIsCreating(false);
-
+    
     if (newOrg) {
       setCreateDialogOpen(false);
       setNewOrgName("");
@@ -87,7 +87,7 @@ export function OrganizationSwitcher() {
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0 bg-popover z-50">
         <Command>
-          <CommandInput placeholder="Buscar organización..." />
+          {isSuperAdmin && <CommandInput placeholder="Buscar organización..." />}
           <CommandList>
             <CommandEmpty>No se encontraron organizaciones.</CommandEmpty>
             <CommandGroup heading="Organizaciones">
@@ -143,7 +143,7 @@ export function OrganizationSwitcher() {
           </CommandList>
         </Command>
       </PopoverContent>
-
+      
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
