@@ -12,6 +12,7 @@ interface OrganizationContextType {
   isInitializing: boolean;
   fetchOrganizations: () => Promise<void>;
   fetchOrganizationMembers: (orgId: string) => Promise<void>;
+  getMember: (orgId: string, userId: string) => Promise<OrganizationMember | null>;
   createOrganization: (name: string, slug: string) => Promise<OrganizationWithRole | null>;
   updateOrganization: (id: string, data: Partial<OrganizationWithRole>) => Promise<boolean>;
   switchOrganization: (org: OrganizationWithRole) => void;
@@ -251,6 +252,34 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     });
   };
 
+  const getMember = async (orgId: string, userId: string): Promise<OrganizationMember | null> => {
+    setIsLoading(true);
+    try {
+      const result = await organizationsApi.getMember(orgId, userId);
+      
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      return result.data as OrganizationMember;
+    } catch (error) {
+      console.error("Error fetching member:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch member details",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const addMember = async (orgId: string, email: string, role: string): Promise<boolean> => {
     setIsLoading(true);
     try {
@@ -366,6 +395,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         isInitializing,
         fetchOrganizations,
         fetchOrganizationMembers,
+        getMember,
         createOrganization,
         updateOrganization,
         switchOrganization,

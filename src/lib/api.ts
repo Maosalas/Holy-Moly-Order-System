@@ -381,6 +381,9 @@ export const organizationsApi = {
   getMembers: (orgId: string) =>
     apiFetch(`/organizations/${orgId}/members`, { method: "GET" }, false),
 
+  getMember: (orgId: string, userId: string) =>
+    apiFetch(`/organizations/${orgId}/members/${userId}`, { method: "GET" }, false),
+
   addMember: (orgId: string, data: { user_id: string; role: string }) =>
     apiFetch(`/organizations/${orgId}/members`, {
       method: "POST",
