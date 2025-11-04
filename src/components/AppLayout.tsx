@@ -4,7 +4,8 @@ import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calcul
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
-import logo from "@/assets/Basic Branding-01.png";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import defaultLogo from "@/assets/Orderly-logo.png";
 import {
   Sidebar,
   SidebarContent,
@@ -87,6 +88,8 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { user, logout } = useAuth();
+  const { currentOrganization } = useOrganization();
+  const logoSrc = currentOrganization?.logoUrl || defaultLogo;
 
   return (
     <SidebarProvider>
@@ -97,7 +100,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <div className="flex items-center min-w-0">
               <SidebarTrigger />
               <div className="ml-2 sm:ml-4 flex items-center gap-2 min-w-0">
-                <img src={logo} alt="Holy Moly Logo" className="h-8 sm:h-10 w-auto object-contain" />
+                <img src={logoSrc} alt="Organization Logo" className="h-8 sm:h-10 w-auto object-contain" />
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">

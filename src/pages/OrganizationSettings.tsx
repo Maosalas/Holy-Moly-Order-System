@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, Users, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import defaultLogo from "@/assets/Orderly-logo.png";
 
 export default function OrganizationSettings() {
   const { currentOrganization, updateOrganization, isLoading } = useOrganization();
@@ -17,7 +18,7 @@ export default function OrganizationSettings() {
   const [name, setName] = useState(currentOrganization?.name || "");
   const [logoUrl, setLogoUrl] = useState(currentOrganization?.logoUrl || "");
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string>(currentOrganization?.logoUrl || "");
+  const [logoPreview, setLogoPreview] = useState<string>(currentOrganization?.logoUrl || defaultLogo);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
