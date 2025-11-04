@@ -8,7 +8,7 @@ CREATE TYPE IF NOT EXISTS public.app_role AS ENUM ('super_admin', 'admin', 'memb
 -- Create user_roles table
 CREATE TABLE IF NOT EXISTS public.user_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   role public.app_role NOT NULL,
   organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL,
