@@ -1,4 +1,63 @@
 -- ============================================
+-- USER ROLES SYSTEM
+-- ============================================
+
+-- Create enum for roles
+CREATE TYPE IF NOT EXISTS public.app_role AS ENUM ('super_admin', 'admin', 'member');
+
+-- Create user_roles table
+CREATE TABLE IF NOT EXISTS public.user_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  role public.app_role NOT NULL,
+  organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL,
+  UNIQUE (user_id, role, organization_id)
+);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON public.user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_role ON public.user_roles(role);
+CREATE INDEX IF NOT EXISTS idx_user_roles_organization_id ON public.user_roles(organization_id);
+
+-- Enable RLS
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for user_roles
+CREATE POLICY "Users can view their own roles"
+  ON public.user_roles
+  FOR SELECT
+  USING (user_id = current_setting('request.jwt.claims', true)::json->>'sub');
+
+-- Create security definer function to check roles
+CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role public.app_role)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id
+      AND role = _role
+  )
+$$;
+
+-- Helper function to get current user ID from JWT
+CREATE OR REPLACE FUNCTION public.current_user_id()
+RETURNS UUID
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT COALESCE(
+    (current_setting('request.jwt.claims', true)::json->>'sub')::uuid,
+    NULL
+  )
+$$;
+
+-- ============================================
 -- SUBSCRIPTION PLANS TABLE AND POLICIES
 -- ============================================
 
@@ -39,25 +98,25 @@ CREATE POLICY "Anyone can view active subscription plans"
 CREATE POLICY "Super admins can view all subscription plans"
   ON public.subscription_plans
   FOR SELECT
-  USING (public.has_role(auth.uid(), 'super_admin'));
+  USING (public.has_role(public.current_user_id(), 'super_admin'));
 
 -- Super admins can create subscription plans
 CREATE POLICY "Super admins can create subscription plans"
   ON public.subscription_plans
   FOR INSERT
-  WITH CHECK (public.has_role(auth.uid(), 'super_admin'));
+  WITH CHECK (public.has_role(public.current_user_id(), 'super_admin'));
 
 -- Super admins can update subscription plans
 CREATE POLICY "Super admins can update subscription plans"
   ON public.subscription_plans
   FOR UPDATE
-  USING (public.has_role(auth.uid(), 'super_admin'));
+  USING (public.has_role(public.current_user_id(), 'super_admin'));
 
 -- Super admins can delete subscription plans (soft delete by setting active = false)
 CREATE POLICY "Super admins can delete subscription plans"
   ON public.subscription_plans
   FOR DELETE
-  USING (public.has_role(auth.uid(), 'super_admin'));
+  USING (public.has_role(public.current_user_id(), 'super_admin'));
 
 -- ============================================
 -- DEFAULT SUBSCRIPTION PLANS
