@@ -69,7 +69,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         id: org.organizationId || org.organization_id,
         name: org.organizationName || org.organization_name,
         slug: org.organizationSlug || org.organization_slug,
-        logoUrl: org.logoUrl || org.logo_url,
+        logoUrl: org.organizationLogoUrl || org.logoUrl || org.logo_url,
         subscriptionStatus: org.subscriptionStatus || org.subscription_status || "trial",
         subscriptionPlan: org.subscriptionPlan || org.subscription_plan || "free",
         subscriptionStripeCustomerId: org.subscriptionStripeCustomerId || org.subscription_stripe_customer_id,
@@ -84,12 +84,24 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       console.log("🏢 Transformed organizations:", transformedOrgs);
       setOrganizations(transformedOrgs);
 
-      // If no current organization is set and we have organizations, set the first one
-      if (!currentOrganization && transformedOrgs.length > 0) {
-        console.log("🏢 Setting first organization as current:", transformedOrgs[0]);
-        setCurrentOrganization(transformedOrgs[0]);
-      } else {
-        console.log("🏢 Current organization already set:", currentOrganization);
+      // Update current organization with fresh data from API
+      if (transformedOrgs.length > 0) {
+        if (currentOrganization) {
+          // Find and update the current organization with fresh data
+          const updatedCurrentOrg = transformedOrgs.find(org => org.id === currentOrganization.id);
+          if (updatedCurrentOrg) {
+            console.log("🏢 Updating current organization with fresh data:", updatedCurrentOrg);
+            setCurrentOrganization(updatedCurrentOrg);
+          } else {
+            // Current org not found, set first one
+            console.log("🏢 Current org not found, setting first:", transformedOrgs[0]);
+            setCurrentOrganization(transformedOrgs[0]);
+          }
+        } else {
+          // No current organization, set the first one
+          console.log("🏢 Setting first organization as current:", transformedOrgs[0]);
+          setCurrentOrganization(transformedOrgs[0]);
+        }
       }
     } catch (error) {
       console.error("Error fetching organizations:", error);
@@ -162,13 +174,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
 
       const orgData = result.data as any;
-      
+
       // Transform API response to match OrganizationWithRole type
       const newOrg: OrganizationWithRole = {
         id: orgData.id,
         name: orgData.name,
         slug: orgData.slug,
-        logoUrl: orgData.logo_url,
+        logoUrl: orgData.organizationLogoUrl || orgData.logoUrl || orgData.logo_url,
         subscriptionStatus: orgData.subscription_status,
         subscriptionPlan: orgData.subscription_plan,
         subscriptionStripeCustomerId: orgData.subscription_stripe_customer_id,

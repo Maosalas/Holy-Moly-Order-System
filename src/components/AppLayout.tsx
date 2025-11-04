@@ -89,7 +89,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { user, logout } = useAuth();
   const { currentOrganization } = useOrganization();
-  const logoSrc = currentOrganization?.logoUrl || defaultLogo;
+  const logoSrc = currentOrganization?.logoUrl || defaultLogo || "";
 
   return (
     <SidebarProvider>
