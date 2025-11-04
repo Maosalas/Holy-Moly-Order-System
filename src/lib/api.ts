@@ -349,6 +349,8 @@ export const quotationsApi = {
 export const organizationsApi = {
   getAll: () => apiFetch("/organizations", { method: "GET" }, false), // No org header needed
 
+  getAllForSuperAdmin: () => apiFetch("/super-admin/organizations", { method: "GET" }, false), // Super admin endpoint
+
   getById: (id: string) => apiFetch(`/organizations/${id}`, { method: "GET" }, false),
 
   create: (data: { name: string; slug: string }) =>
