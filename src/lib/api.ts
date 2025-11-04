@@ -400,6 +400,10 @@ export const organizationsApi = {
     apiFetch(`/organizations/${orgId}/members/${userId}`, {
       method: "DELETE",
     }, false),
+  getLogoByDomain: (domain: string) =>
+    apiFetch<{ logoUrl: string | null }>(`/organizations/logo-by-domain?domain=${encodeURIComponent(domain)}`, {
+      method: "GET",
+    }, false),
 };
 
 // User Roles API

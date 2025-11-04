@@ -1054,7 +1054,7 @@ Content-Type: application/json
 ```json
 {
   "name": "Holy Moly Bakery & Cafe",
-  "logo_url": "https://example.com/logos/new-logo.png",
+  "logo_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...",
   "settings": {
     "currency": "USD",
     "timezone": "America/New_York",
@@ -1063,6 +1063,8 @@ Content-Type: application/json
   }
 }
 ```
+
+**Note:** The `logo_url` field should contain a base64 encoded image with data URI scheme (e.g., "data:image/png;base64,iVBORw0KG...").
 
 **Success Response (200):**
 ```json
@@ -1117,6 +1119,49 @@ Content-Type: application/json
   "details": {
     "name": "Name must be between 1-255 characters"
   }
+}
+```
+
+---
+
+#### GET /api/organizations/logo-by-domain
+
+Get organization logo by email domain. Public endpoint, no authentication required. Used during login to display the organization's logo when user types their email.
+
+**Query Parameters:**
+- `domain` (string, required): Email domain (e.g., "example.com")
+
+**Example Request:**
+```
+GET /api/organizations/logo-by-domain?domain=holymoly.com
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "logoUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg..."
+  }
+}
+```
+
+**No Logo Found (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "logoUrl": null
+  }
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Domain parameter is required"
 }
 ```
 

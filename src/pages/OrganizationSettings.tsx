@@ -7,24 +7,73 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Users } from "lucide-react";
+import { ArrowLeft, Building2, Users, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function OrganizationSettings() {
   const { currentOrganization, updateOrganization, isLoading } = useOrganization();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [name, setName] = useState(currentOrganization?.name || "");
   const [logoUrl, setLogoUrl] = useState(currentOrganization?.logoUrl || "");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>(currentOrganization?.logoUrl || "");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Por favor selecciona un archivo de imagen válido",
+      });
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "La imagen no debe superar los 5MB",
+      });
+      return;
+    }
+
+    setLogoFile(file);
+
+    // Crear preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = async () => {
     if (!currentOrganization) return;
     
+    let logoBase64 = logoUrl;
+
+    // Si hay un archivo nuevo, convertir a base64
+    if (logoFile) {
+      const reader = new FileReader();
+      logoBase64 = await new Promise((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(logoFile);
+      });
+    }
+
     const success = await updateOrganization(currentOrganization.id, {
       name,
-      logoUrl,
+      logoUrl: logoBase64,
     });
 
     if (success) {
-      // Success toast is already shown in context
+      setLogoFile(null);
     }
   };
 
@@ -98,14 +147,38 @@ export default function OrganizationSettings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="logoUrl">URL del Logo</Label>
-                <Input
-                  id="logoUrl"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  disabled={!canManage}
-                  placeholder="https://ejemplo.com/logo.png"
-                />
+                <Label htmlFor="logoFile">Logo de la Organización</Label>
+                {logoPreview && (
+                  <div className="mb-4 flex justify-center">
+                    <img 
+                      src={logoPreview} 
+                      alt="Logo preview" 
+                      className="h-24 w-24 object-contain rounded-lg border border-border"
+                    />
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="logoFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    disabled={!canManage}
+                    className="cursor-pointer"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={!canManage}
+                    onClick={() => document.getElementById('logoFile')?.click()}
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Formatos aceptados: JPG, PNG, GIF. Máximo 5MB.
+                </p>
               </div>
 
               {canManage && (

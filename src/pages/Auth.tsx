@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/Basic Branding-01.png";
+import { organizationsApi } from "@/lib/api";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -23,12 +24,41 @@ const Auth = () => {
     role: "owner" as "owner" | "cake_topper_provider" | "super_admin",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [organizationLogo, setOrganizationLogo] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
+
+  const handleEmailChange = async (email: string, isLogin: boolean) => {
+    if (isLogin) {
+      setLoginForm({ ...loginForm, email });
+    } else {
+      setSignupForm({ ...signupForm, email });
+    }
+
+    // Detectar @ y extraer dominio
+    if (email.includes('@')) {
+      const domain = email.split('@')[1];
+      if (domain) {
+        try {
+          const response = await organizationsApi.getLogoByDomain(domain);
+          if (response.data?.logoUrl) {
+            setOrganizationLogo(response.data.logoUrl);
+          } else {
+            setOrganizationLogo(null);
+          }
+        } catch (error) {
+          // Si no se encuentra logo, usar el default
+          setOrganizationLogo(null);
+        }
+      }
+    } else {
+      setOrganizationLogo(null);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +116,11 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <img src={logo} alt="Holy Moly Logo" className="h-100 w-100 object-contain" />
+            <img 
+              src={organizationLogo || logo} 
+              alt={organizationLogo ? "Organization Logo" : "Holy Moly Logo"} 
+              className="h-100 w-100 object-contain" 
+            />
           </div>
         </CardHeader>
         <CardContent>
@@ -106,7 +140,7 @@ const Auth = () => {
                     type="email"
                     placeholder="tu@ejemplo.com"
                     value={loginForm.email}
-                    onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                    onChange={(e) => handleEmailChange(e.target.value, true)}
                     required
                   />
                 </div>
@@ -148,7 +182,7 @@ const Auth = () => {
                     type="email"
                     placeholder="you@example.com"
                     value={signupForm.email}
-                    onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
+                    onChange={(e) => handleEmailChange(e.target.value, false)}
                     required
                   />
                 </div>
