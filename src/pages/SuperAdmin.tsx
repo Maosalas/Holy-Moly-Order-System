@@ -3,15 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { organizationsApi } from "@/lib/api";
 import { OrganizationWithRole } from "@/types/organization";
 import { useOrganization } from "@/contexts/OrganizationContext";
-import { Building2, Users, TrendingUp, Eye } from "lucide-react";
+import { Building2, Users, TrendingUp, Eye, Plus, Settings } from "lucide-react";
+import CreateOrganizationDialog from "@/components/CreateOrganizationDialog";
+import SubscriptionPlansManager from "@/components/SubscriptionPlansManager";
 
 const SuperAdmin = () => {
   const [allOrganizations, setAllOrganizations] = useState<OrganizationWithRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
   const { switchOrganization } = useOrganization();
 
@@ -87,9 +91,15 @@ const SuperAdmin = () => {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Super Admin Panel</h1>
-        <Button onClick={loadAllOrganizations} disabled={isLoading}>
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={loadAllOrganizations} disabled={isLoading}>
+            Actualizar
+          </Button>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Organización
+          </Button>
+        </div>
       </div>
 
       {/* Global Metrics */}
@@ -132,62 +142,87 @@ const SuperAdmin = () => {
         </Card>
       </div>
 
-      {/* Organizations List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Organizations</CardTitle>
-          <CardDescription>View and manage all organizations in the system</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Loading organizations...</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allOrganizations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No organizations found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  allOrganizations.map((org) => (
-                    <TableRow key={org.id}>
-                      <TableCell className="font-medium">{org.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{org.slug}</TableCell>
-                      <TableCell>{getPlanBadge(org.subscriptionPlan)}</TableCell>
-                      <TableCell>{getStatusBadge(org.subscriptionStatus)}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {org.createdAt.toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleImpersonate(org)}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Impersonate
-                        </Button>
-                      </TableCell>
+      {/* Tabs for Organizations and Plans */}
+      <Tabs defaultValue="organizations" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="organizations">
+            <Building2 className="h-4 w-4 mr-2" />
+            Organizaciones
+          </TabsTrigger>
+          <TabsTrigger value="plans">
+            <Settings className="h-4 w-4 mr-2" />
+            Planes de Suscripción
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="organizations" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Todas las Organizaciones</CardTitle>
+              <CardDescription>Ver y gestionar todas las organizaciones del sistema</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-center py-8">Cargando organizaciones...</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Slug</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Creado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {allOrganizations.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          No se encontraron organizaciones
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      allOrganizations.map((org) => (
+                        <TableRow key={org.id}>
+                          <TableCell className="font-medium">{org.name}</TableCell>
+                          <TableCell className="text-muted-foreground">{org.slug}</TableCell>
+                          <TableCell>{getPlanBadge(org.subscriptionPlan)}</TableCell>
+                          <TableCell>{getStatusBadge(org.subscriptionStatus)}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {org.createdAt.toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleImpersonate(org)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="plans">
+          <SubscriptionPlansManager />
+        </TabsContent>
+      </Tabs>
+
+      <CreateOrganizationDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSuccess={loadAllOrganizations}
+      />
     </div>
   );
 };
