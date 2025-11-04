@@ -1423,6 +1423,109 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+#### POST /api/organizations/:id/members/by-email
+
+Add a new member to the organization by email address. Only 'owner' and 'admin' can add members. This endpoint looks up the user by email and adds them to the organization.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "email": "newuser@example.com",
+  "role": "staff"
+}
+```
+
+**Valid Roles:** `"owner"`, `"admin"`, `"staff"`, `"viewer"`
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Member added successfully",
+  "member": {
+    "id": "660e8400-e29b-41d4-a716-446655440005",
+    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "770e8400-e29b-41d4-a716-446655440005",
+    "role": "staff",
+    "joined_at": "2025-11-04T15:30:00.000Z"
+  }
+}
+```
+
+**User Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "User not found"
+}
+```
+
+**Description:** The email address provided does not match any registered user in the system.
+
+**Member Already Exists (400):**
+```json
+{
+  "success": false,
+  "error": "BadRequestError",
+  "message": "User is already a member of this organization"
+}
+```
+
+**Forbidden - Insufficient Permissions (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Insufficient permissions"
+}
+```
+
+**Description:** Only users with 'owner' or 'admin' roles can add members.
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "email": "Valid email address is required",
+    "role": "Role must be one of: owner, admin, staff, viewer"
+  }
+}
+```
+
+**Missing Fields (400):**
+```json
+{
+  "success": false,
+  "error": "BadRequestError",
+  "message": "Missing required fields"
+}
+```
+
+**Description:** The request must include both `email` and `role` fields.
+
+**Internal Server Error (500):**
+```json
+{
+  "success": false,
+  "error": "InternalServerError",
+  "message": "Error looking up user"
+}
+```
+
+**Description:** An unexpected error occurred while processing the request.
+
+---
+
 ### User Roles API
 
 #### GET /api/users/:id/roles
