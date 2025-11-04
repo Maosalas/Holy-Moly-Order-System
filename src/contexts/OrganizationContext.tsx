@@ -33,11 +33,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Fetch organizations when authenticated
   useEffect(() => {
     const initializeOrganizations = async () => {
+      console.log("🏢 OrganizationContext: isAuthenticated =", isAuthenticated);
       if (isAuthenticated) {
+        console.log("🏢 Starting organizations initialization...");
         setIsInitializing(true);
         await fetchOrganizations();
         setIsInitializing(false);
+        console.log("🏢 Organizations initialization complete");
       } else {
+        console.log("🏢 Not authenticated, skipping initialization");
         setIsInitializing(false);
       }
     };
@@ -46,15 +50,18 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, [isAuthenticated]);
 
   const fetchOrganizations = async () => {
+    console.log("🏢 fetchOrganizations called");
     setIsLoading(true);
     try {
       const result = await organizationsApi.getAll();
+      console.log("🏢 API result:", result);
       
       if (result.error) {
         throw new Error(result.error);
       }
 
       const orgs = result.data as any[];
+      console.log("🏢 Organizations from API:", orgs);
       
       // Transform API response to match OrganizationWithRole type
       const transformedOrgs: OrganizationWithRole[] = orgs.map((org: any) => ({
@@ -73,11 +80,15 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         userRole: org.user_role,
       }));
 
+      console.log("🏢 Transformed organizations:", transformedOrgs);
       setOrganizations(transformedOrgs);
 
       // If no current organization is set and we have organizations, set the first one
       if (!currentOrganization && transformedOrgs.length > 0) {
+        console.log("🏢 Setting first organization as current:", transformedOrgs[0]);
         setCurrentOrganization(transformedOrgs[0]);
+      } else {
+        console.log("🏢 Current organization already set:", currentOrganization);
       }
     } catch (error) {
       console.error("Error fetching organizations:", error);
