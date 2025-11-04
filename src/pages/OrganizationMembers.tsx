@@ -48,6 +48,7 @@ export default function OrganizationMembers() {
     currentOrganization, 
     members, 
     isLoading,
+    isInitializing,
     fetchOrganizationMembers,
     addMember,
     updateMemberRole,
@@ -61,10 +62,11 @@ export default function OrganizationMembers() {
   const [memberToDelete, setMemberToDelete] = useState<OrganizationMember | null>(null);
 
   useEffect(() => {
-    if (currentOrganization) {
+    // Only fetch members after initialization is complete and we have an organization
+    if (!isInitializing && currentOrganization) {
       fetchOrganizationMembers(currentOrganization.id);
     }
-  }, [currentOrganization]);
+  }, [currentOrganization, isInitializing]);
 
   const handleAddMember = async () => {
     if (!currentOrganization || !newMemberEmail) return;

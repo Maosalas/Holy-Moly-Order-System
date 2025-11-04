@@ -9,6 +9,7 @@ interface OrganizationContextType {
   currentOrganization: OrganizationWithRole | null;
   members: OrganizationMember[];
   isLoading: boolean;
+  isInitializing: boolean;
   fetchOrganizations: () => Promise<void>;
   fetchOrganizationMembers: (orgId: string) => Promise<void>;
   createOrganization: (name: string, slug: string) => Promise<OrganizationWithRole | null>;
@@ -26,13 +27,22 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [organizations, setOrganizations] = useState<OrganizationWithRole[]>([]);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const { toast } = useToast();
 
   // Fetch organizations when authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchOrganizations();
-    }
+    const initializeOrganizations = async () => {
+      if (isAuthenticated) {
+        setIsInitializing(true);
+        await fetchOrganizations();
+        setIsInitializing(false);
+      } else {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeOrganizations();
   }, [isAuthenticated]);
 
   const fetchOrganizations = async () => {
@@ -342,6 +352,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         currentOrganization,
         members,
         isLoading,
+        isInitializing,
         fetchOrganizations,
         fetchOrganizationMembers,
         createOrganization,
