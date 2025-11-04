@@ -54,7 +54,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (stored) {
         const authData = JSON.parse(stored);
         console.log("🔐 Checking auth - stored data:", authData);
-        // Verify token with backend
+        
+        // Load stored user immediately (optimistic)
+        if (authData.user) {
+          setAuthState({ user: authData.user, isAuthenticated: true });
+        }
+        
+        // Then verify token with backend
         const result = await authApi.getCurrentUser();
         console.log("🔐 Current user from API:", result.data);
         if (result.data) {
