@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator } from "lucide-react";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
@@ -40,6 +40,8 @@ function AppSidebar() {
     ? menuItems.filter(item => item.url === "/orders")
     : menuItems;
 
+  const isSuperAdmin = user?.roles?.includes("super_admin");
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
@@ -61,6 +63,16 @@ function AppSidebar() {
                   
                 );
               })}
+              {isSuperAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location.pathname === "/super-admin"}>
+                    <NavLink to="/super-admin">
+                      <Shield className="h-5 w-5" />
+                      {!collapsed && <span>Super Admin</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -94,7 +106,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium truncate">{user?.name}</span>
                 <span className="text-xs text-muted-foreground capitalize">
-                  ({user?.roles?.includes("cake_topper_provider") ? "Topper" : "Owner"})
+                  ({user?.roles?.includes("super_admin") ? "Super Admin" : user?.roles?.includes("cake_topper_provider") ? "Topper" : "Owner"})
                 </span>
               </div>
               <Button variant="outline" size="sm" onClick={logout} className="gap-1 sm:gap-2">
