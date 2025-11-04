@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import type { OrganizationWithRole, OrganizationMember } from "@/types/organization";
+import type { OrganizationWithRole, OrganizationMember, Organization } from "@/types/organization";
 import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { organizationsApi } from "@/lib/api";
 
 interface OrganizationContextType {
   organizations: OrganizationWithRole[];
@@ -37,16 +38,37 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const fetchOrganizations = async () => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch('/api/organizations', {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
-      // const data = await response.json();
-      // setOrganizations(data.data);
+      const result = await organizationsApi.getAll();
       
-      // Mock data for now
-      console.log("Fetching organizations - API not implemented yet");
-      setOrganizations([]);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      const orgs = result.data as any[];
+      
+      // Transform API response to match OrganizationWithRole type
+      const transformedOrgs: OrganizationWithRole[] = orgs.map((org: any) => ({
+        id: org.organization_id,
+        name: org.organization_name,
+        slug: org.organization_slug,
+        logoUrl: org.logo_url,
+        subscriptionStatus: org.subscription_status || "trial",
+        subscriptionPlan: org.subscription_plan || "free",
+        subscriptionStripeCustomerId: org.subscription_stripe_customer_id,
+        subscriptionStripeSubscriptionId: org.subscription_stripe_subscription_id,
+        trialEndsAt: org.trial_ends_at ? new Date(org.trial_ends_at) : undefined,
+        settings: org.settings || {},
+        createdAt: new Date(org.created_at || Date.now()),
+        updatedAt: new Date(org.updated_at || Date.now()),
+        userRole: org.user_role,
+      }));
+
+      setOrganizations(transformedOrgs);
+
+      // If no current organization is set and we have organizations, set the first one
+      if (!currentOrganization && transformedOrgs.length > 0) {
+        setCurrentOrganization(transformedOrgs[0]);
+      }
     } catch (error) {
       console.error("Error fetching organizations:", error);
       toast({
@@ -62,16 +84,29 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const fetchOrganizationMembers = async (orgId: string) => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`/api/organizations/${orgId}/members`, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
-      // const data = await response.json();
-      // setMembers(data.data);
+      const result = await organizationsApi.getMembers(orgId);
       
-      // Mock data for now
-      console.log(`Fetching members for organization ${orgId} - API not implemented yet`);
-      setMembers([]);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      const membersData = result.data as any[];
+      
+      // Transform API response to match OrganizationMember type
+      const transformedMembers: OrganizationMember[] = membersData.map((member: any) => ({
+        id: member.id,
+        organizationId: member.organization_id,
+        userId: member.user_id,
+        role: member.role,
+        joinedAt: new Date(member.joined_at),
+        user: member.user ? {
+          id: member.user.id,
+          name: member.user.name,
+          email: member.user.email,
+        } : undefined,
+      }));
+
+      setMembers(transformedMembers);
     } catch (error) {
       console.error("Error fetching organization members:", error);
       toast({
@@ -87,27 +122,44 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const createOrganization = async (name: string, slug: string): Promise<OrganizationWithRole | null> => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch('/api/organizations', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     Authorization: `Bearer ${token}`
-      //   },
-      //   body: JSON.stringify({ name, slug })
-      // });
-      // const data = await response.json();
-      // if (data.success) {
-      //   await fetchOrganizations();
-      //   return data.data;
-      // }
+      const result = await organizationsApi.create({ name, slug });
       
-      console.log("Creating organization - API not implemented yet");
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      const orgData = result.data as any;
+      
+      // Transform API response to match OrganizationWithRole type
+      const newOrg: OrganizationWithRole = {
+        id: orgData.id,
+        name: orgData.name,
+        slug: orgData.slug,
+        logoUrl: orgData.logo_url,
+        subscriptionStatus: orgData.subscription_status,
+        subscriptionPlan: orgData.subscription_plan,
+        subscriptionStripeCustomerId: orgData.subscription_stripe_customer_id,
+        subscriptionStripeSubscriptionId: orgData.subscription_stripe_subscription_id,
+        trialEndsAt: orgData.trial_ends_at ? new Date(orgData.trial_ends_at) : undefined,
+        settings: orgData.settings || {},
+        createdAt: new Date(orgData.created_at),
+        updatedAt: new Date(orgData.updated_at),
+        userRole: "owner", // Creator is always owner
+      };
+
+      await fetchOrganizations();
+      
       toast({
-        title: "Info",
-        description: "Organization API not implemented yet",
+        title: "Success",
+        description: "Organization created successfully",
       });
-      return null;
+      
+      return newOrg;
     } catch (error) {
       console.error("Error creating organization:", error);
       toast({
@@ -124,27 +176,39 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const updateOrganization = async (id: string, data: Partial<OrganizationWithRole>): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`/api/organizations/${id}`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     Authorization: `Bearer ${token}`
-      //   },
-      //   body: JSON.stringify(data)
-      // });
-      // const result = await response.json();
-      // if (result.success) {
-      //   await fetchOrganizations();
-      //   return true;
-      // }
+      const updateData: any = {};
       
-      console.log("Updating organization - API not implemented yet");
+      if (data.name) updateData.name = data.name;
+      if (data.logoUrl !== undefined) updateData.logo_url = data.logoUrl;
+      if (data.settings) updateData.settings = data.settings;
+
+      const result = await organizationsApi.update(id, updateData);
+      
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      await fetchOrganizations();
+      
+      // Update current organization if it was the one updated
+      if (currentOrganization?.id === id) {
+        const updatedOrg = organizations.find(org => org.id === id);
+        if (updatedOrg) {
+          setCurrentOrganization(updatedOrg);
+        }
+      }
+      
       toast({
-        title: "Info",
-        description: "Organization API not implemented yet",
+        title: "Success",
+        description: "Organization updated successfully",
       });
-      return false;
+      
+      return true;
     } catch (error) {
       console.error("Error updating organization:", error);
       toast({
@@ -169,27 +233,25 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const addMember = async (orgId: string, userId: string, role: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`/api/organizations/${orgId}/members`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     Authorization: `Bearer ${token}`
-      //   },
-      //   body: JSON.stringify({ user_id: userId, role })
-      // });
-      // const result = await response.json();
-      // if (result.success) {
-      //   await fetchOrganizationMembers(orgId);
-      //   return true;
-      // }
+      const result = await organizationsApi.addMember(orgId, { user_id: userId, role });
       
-      console.log("Adding member - API not implemented yet");
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      await fetchOrganizationMembers(orgId);
+      
       toast({
-        title: "Info",
-        description: "Member API not implemented yet",
+        title: "Success",
+        description: "Member added successfully",
       });
-      return false;
+      
+      return true;
     } catch (error) {
       console.error("Error adding member:", error);
       toast({
@@ -206,27 +268,25 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const updateMemberRole = async (orgId: string, userId: string, role: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`/api/organizations/${orgId}/members/${userId}`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     Authorization: `Bearer ${token}`
-      //   },
-      //   body: JSON.stringify({ role })
-      // });
-      // const result = await response.json();
-      // if (result.success) {
-      //   await fetchOrganizationMembers(orgId);
-      //   return true;
-      // }
+      const result = await organizationsApi.updateMemberRole(orgId, userId, { role });
       
-      console.log("Updating member role - API not implemented yet");
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      await fetchOrganizationMembers(orgId);
+      
       toast({
-        title: "Info",
-        description: "Member API not implemented yet",
+        title: "Success",
+        description: "Member role updated successfully",
       });
-      return false;
+      
+      return true;
     } catch (error) {
       console.error("Error updating member role:", error);
       toast({
@@ -243,23 +303,25 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const removeMember = async (orgId: string, userId: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`/api/organizations/${orgId}/members/${userId}`, {
-      //   method: 'DELETE',
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
-      // const result = await response.json();
-      // if (result.success) {
-      //   await fetchOrganizationMembers(orgId);
-      //   return true;
-      // }
+      const result = await organizationsApi.removeMember(orgId, userId);
       
-      console.log("Removing member - API not implemented yet");
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      await fetchOrganizationMembers(orgId);
+      
       toast({
-        title: "Info",
-        description: "Member API not implemented yet",
+        title: "Success",
+        description: "Member removed successfully",
       });
-      return false;
+      
+      return true;
     } catch (error) {
       console.error("Error removing member:", error);
       toast({

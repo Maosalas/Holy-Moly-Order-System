@@ -14,16 +14,27 @@ const getAuthToken = (): string | null => {
   return parsed.token || null;
 };
 
+// Get current organization ID from localStorage
+const getCurrentOrgId = (): string | null => {
+  const org = localStorage.getItem("holy-moly-current-org");
+  if (!org) return null;
+  const parsed = JSON.parse(org);
+  return parsed.id || null;
+};
+
 // Generic fetch wrapper
 async function apiFetch<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  includeOrgHeader: boolean = true
 ): Promise<ApiResponse<T>> {
   const token = getAuthToken();
+  const orgId = getCurrentOrgId();
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
+    ...(includeOrgHeader && orgId && { "X-Organization-Id": orgId }),
     ...options.headers,
   };
 
@@ -32,6 +43,7 @@ async function apiFetch<T>(
       ...options,
       headers,
     });
+    
     // Handle 204 No Content (common for DELETE requests)
     if (response.status === 204) {
       return { data: {} as T };
@@ -40,7 +52,12 @@ async function apiFetch<T>(
     const data = await response.json();
 
     if (!response.ok) {
-      return { error: data.error || "An error occurred" };
+      return { error: data.message || data.error || "An error occurred" };
+    }
+
+    // Handle standard API response format {success: true, data: ...}
+    if (data.success !== undefined) {
+      return data.success ? { data: data.data } : { error: data.message || data.error };
     }
 
     return { data };
@@ -55,20 +72,20 @@ export const authApi = {
     apiFetch("/auth/signup", {
       method: "POST",
       body: JSON.stringify({ email, password, name, role }),
-    }),
+    }, false), // No org header for auth
 
   login: (email: string, password: string) =>
     apiFetch("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
-    }),
+    }, false), // No org header for auth
 
   logout: () =>
     apiFetch("/auth/logout", {
       method: "POST",
-    }),
+    }, false), // No org header for auth
 
-  getCurrentUser: () => apiFetch("/auth/me", { method: "GET" }),
+  getCurrentUser: () => apiFetch("/auth/me", { method: "GET" }, false), // No org header for auth
 };
 
 // Ingredients API
@@ -326,4 +343,55 @@ export const quotationsApi = {
       method: "POST",
       body: JSON.stringify({ recipeId, multipliers }),
     }),
+};
+
+// Organizations API
+export const organizationsApi = {
+  getAll: () => apiFetch("/organizations", { method: "GET" }, false), // No org header needed
+
+  getById: (id: string) => apiFetch(`/organizations/${id}`, { method: "GET" }, false),
+
+  create: (data: { name: string; slug: string }) =>
+    apiFetch("/organizations", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, false),
+
+  update: (id: string, data: { name?: string; logo_url?: string; settings?: Record<string, any> }) =>
+    apiFetch(`/organizations/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }, false),
+
+  delete: (id: string) =>
+    apiFetch(`/organizations/${id}`, {
+      method: "DELETE",
+    }, false),
+
+  // Members
+  getMembers: (orgId: string) =>
+    apiFetch(`/organizations/${orgId}/members`, { method: "GET" }, false),
+
+  addMember: (orgId: string, data: { user_id: string; role: string }) =>
+    apiFetch(`/organizations/${orgId}/members`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, false),
+
+  updateMemberRole: (orgId: string, userId: string, data: { role: string }) =>
+    apiFetch(`/organizations/${orgId}/members/${userId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }, false),
+
+  removeMember: (orgId: string, userId: string) =>
+    apiFetch(`/organizations/${orgId}/members/${userId}`, {
+      method: "DELETE",
+    }, false),
+};
+
+// User Roles API
+export const userRolesApi = {
+  getUserRoles: (userId: string) =>
+    apiFetch(`/users/${userId}/roles`, { method: "GET" }, false),
 };
