@@ -65,19 +65,19 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       
       // Transform API response to match OrganizationWithRole type
       const transformedOrgs: OrganizationWithRole[] = orgs.map((org: any) => ({
-        id: org.organization_id,
-        name: org.organization_name,
-        slug: org.organization_slug,
-        logoUrl: org.logo_url,
-        subscriptionStatus: org.subscription_status || "trial",
-        subscriptionPlan: org.subscription_plan || "free",
-        subscriptionStripeCustomerId: org.subscription_stripe_customer_id,
-        subscriptionStripeSubscriptionId: org.subscription_stripe_subscription_id,
-        trialEndsAt: org.trial_ends_at ? new Date(org.trial_ends_at) : undefined,
+        id: org.organizationId || org.organization_id,
+        name: org.organizationName || org.organization_name,
+        slug: org.organizationSlug || org.organization_slug,
+        logoUrl: org.logoUrl || org.logo_url,
+        subscriptionStatus: org.subscriptionStatus || org.subscription_status || "trial",
+        subscriptionPlan: org.subscriptionPlan || org.subscription_plan || "free",
+        subscriptionStripeCustomerId: org.subscriptionStripeCustomerId || org.subscription_stripe_customer_id,
+        subscriptionStripeSubscriptionId: org.subscriptionStripeSubscriptionId || org.subscription_stripe_subscription_id,
+        trialEndsAt: org.trialEndsAt || org.trial_ends_at ? new Date(org.trialEndsAt || org.trial_ends_at) : undefined,
         settings: org.settings || {},
-        createdAt: new Date(org.created_at || Date.now()),
-        updatedAt: new Date(org.updated_at || Date.now()),
-        userRole: org.user_role,
+        createdAt: new Date(org.createdAt || org.created_at || Date.now()),
+        updatedAt: new Date(org.updatedAt || org.updated_at || Date.now()),
+        userRole: org.userRole || org.user_role,
       }));
 
       console.log("🏢 Transformed organizations:", transformedOrgs);
