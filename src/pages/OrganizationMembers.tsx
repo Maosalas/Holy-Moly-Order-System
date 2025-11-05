@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { organizationsApi } from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -40,7 +42,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, UserPlus, Trash2 } from "lucide-react";
+import { ArrowLeft, UserPlus, Trash2, Mail, RefreshCw } from "lucide-react";
 import type { OrganizationMember, OrganizationRole } from "@/types/organization";
 
 export default function OrganizationMembers() {
@@ -56,11 +58,14 @@ export default function OrganizationMembers() {
   } = useOrganization();
   
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState<OrganizationRole>("viewer");
   const [memberToDelete, setMemberToDelete] = useState<OrganizationMember | null>(null);
+  const [emailStatuses, setEmailStatuses] = useState<Record<string, any>>({});
+  const [resendingEmails, setResendingEmails] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Only fetch members after initialization is complete and we have an organization
@@ -68,6 +73,21 @@ export default function OrganizationMembers() {
       fetchOrganizationMembers(currentOrganization.id);
     }
   }, [currentOrganization, isInitializing]);
+
+  useEffect(() => {
+    // Fetch email statuses for all members
+    if (members.length > 0 && currentOrganization) {
+      members.forEach(async (member) => {
+        const result = await organizationsApi.getMemberEmailStatus(currentOrganization.id, member.id);
+        if (result.data) {
+          setEmailStatuses(prev => ({
+            ...prev,
+            [member.id]: result.data
+          }));
+        }
+      });
+    }
+  }, [members, currentOrganization]);
 
   const handleAddMember = async () => {
     if (!currentOrganization || !newMemberEmail || !newMemberName) return;
@@ -97,6 +117,46 @@ export default function OrganizationMembers() {
     const success = await removeMember(currentOrganization.id, memberToDelete.userId);
     if (success) {
       setMemberToDelete(null);
+    }
+  };
+
+  const handleResendWelcome = async (memberId: string) => {
+    if (!currentOrganization) return;
+
+    setResendingEmails(prev => new Set(prev).add(memberId));
+    
+    try {
+      const result = await organizationsApi.resendWelcomeEmail(currentOrganization.id, memberId);
+      
+      if (result.data?.emailSent) {
+        toast({
+          title: "Email enviado",
+          description: "El correo de bienvenida ha sido reenviado exitosamente",
+        });
+        
+        // Refresh email status
+        const statusResult = await organizationsApi.getMemberEmailStatus(currentOrganization.id, memberId);
+        if (statusResult.data) {
+          setEmailStatuses(prev => ({
+            ...prev,
+            [memberId]: statusResult.data
+          }));
+        }
+      } else {
+        throw new Error(result.data?.emailError || "Error al enviar email");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo reenviar el correo de bienvenida",
+        variant: "destructive",
+      });
+    } finally {
+      setResendingEmails(prev => {
+        const next = new Set(prev);
+        next.delete(memberId);
+        return next;
+      });
     }
   };
 
@@ -208,6 +268,7 @@ export default function OrganizationMembers() {
                   <TableHead>Nombre</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Rol</TableHead>
+                  <TableHead>Estado Email</TableHead>
                   <TableHead>Se unió</TableHead>
                   {canManage && <TableHead className="text-right">Acciones</TableHead>}
                 </TableRow>
@@ -238,6 +299,36 @@ export default function OrganizationMembers() {
                         <Badge variant="secondary" className="capitalize">
                           {member.role}
                         </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {emailStatuses[member.id]?.hasEmailLog ? (
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={
+                              emailStatuses[member.id].emailLog?.status === 'sent' 
+                                ? 'default' 
+                                : emailStatuses[member.id].emailLog?.status === 'failed'
+                                ? 'destructive'
+                                : 'secondary'
+                            }
+                          >
+                            {emailStatuses[member.id].emailLog?.status === 'sent' && <Mail className="h-3 w-3 mr-1" />}
+                            {emailStatuses[member.id].emailLog?.status}
+                          </Badge>
+                          {canManage && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleResendWelcome(member.id)}
+                              disabled={resendingEmails.has(member.id)}
+                            >
+                              <RefreshCw className={`h-3 w-3 ${resendingEmails.has(member.id) ? 'animate-spin' : ''}`} />
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Sin registro</span>
                       )}
                     </TableCell>
                     <TableCell>

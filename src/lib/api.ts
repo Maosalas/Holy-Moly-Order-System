@@ -404,6 +404,36 @@ export const organizationsApi = {
     apiFetch<{ logoUrl: string | null }>(`/organizations/logo-by-email?email=${encodeURIComponent(email)}`, {
       method: "GET",
     }, false),
+
+  // Email audit endpoints
+  getMemberEmailStatus: async (organizationId: string, memberId: string) => {
+    return apiFetch<{
+      hasEmailLog: boolean;
+      emailLog?: {
+        id: string;
+        email: string;
+        status: 'pending' | 'sent' | 'failed' | 'bounced';
+        errorMessage?: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+      message?: string;
+    }>(`/organizations/${organizationId}/members/${memberId}/email-status`, {}, false);
+  },
+
+  resendWelcomeEmail: async (organizationId: string, memberId: string) => {
+    return apiFetch<{
+      emailSent: boolean;
+      emailError?: string;
+      member: {
+        id: string;
+        email: string;
+        name: string;
+      };
+    }>(`/organizations/${organizationId}/members/${memberId}/resend-welcome`, {
+      method: "POST",
+    }, false);
+  },
 };
 
 // User Roles API
