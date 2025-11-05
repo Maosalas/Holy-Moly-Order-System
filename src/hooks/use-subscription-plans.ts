@@ -22,21 +22,21 @@ export function useSubscriptionPlans(activeOnly: boolean = true) {
       return;
     }
 
-    // Transform snake_case to camelCase
+    // Transform snake_case to camelCase and parse numeric strings
     const transformedPlans = (result.data as any[])?.map((plan: any) => ({
       id: plan.id,
       name: plan.name,
       slug: plan.slug,
-      priceMonthly: plan.price_monthly,
-      priceYearly: plan.price_yearly,
-      maxOrdersPerMonth: plan.max_orders_per_month,
-      maxUsers: plan.max_users,
-      maxStorageGb: plan.max_storage_gb,
-      features: plan.features,
-      stripePriceId: plan.stripe_price_id,
+      priceMonthly: parseFloat(plan.priceMonthly || plan.price_monthly || "0"),
+      priceYearly: parseFloat(plan.priceYearly || plan.price_yearly || "0"),
+      maxOrdersPerMonth: plan.maxOrdersPerMonth || plan.max_orders_per_month,
+      maxUsers: plan.maxUsers || plan.max_users,
+      maxStorageGb: plan.maxStorageGb || plan.max_storage_gb,
+      features: plan.features || {},
+      stripePriceId: plan.stripePriceId || plan.stripe_price_id,
       active: plan.active,
-      createdAt: new Date(plan.created_at),
-      updatedAt: plan.updated_at ? new Date(plan.updated_at) : undefined,
+      createdAt: new Date(plan.createdAt || plan.created_at),
+      updatedAt: plan.updatedAt || plan.updated_at ? new Date(plan.updatedAt || plan.updated_at) : undefined,
     })) || [];
 
     setPlans(transformedPlans);
