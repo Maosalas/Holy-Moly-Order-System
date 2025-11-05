@@ -43,21 +43,21 @@ const SuperAdmin = () => {
       return;
     }
 
-    // Transform snake_case to camelCase
+    // Transform snake_case to camelCase (support both formats)
     const organizations = (result.data as any[])?.map((org: any) => ({
       id: org.id,
       name: org.name,
       slug: org.slug,
-      logoUrl: org.logo_url,
-      subscriptionStatus: org.subscription_status,
-      subscriptionPlan: org.subscription_plan,
-      subscriptionStripeCustomerId: org.subscription_stripe_customer_id,
-      subscriptionStripeSubscriptionId: org.subscription_stripe_subscription_id,
-      trialEndsAt: org.trial_ends_at ? new Date(org.trial_ends_at) : undefined,
+      logoUrl: org.logoUrl || org.logo_url,
+      subscriptionStatus: org.subscriptionStatus || org.subscription_status,
+      subscriptionPlan: org.subscriptionPlan || org.subscription_plan,
+      subscriptionStripeCustomerId: org.subscriptionStripeCustomerId || org.subscription_stripe_customer_id,
+      subscriptionStripeSubscriptionId: org.subscriptionStripeSubscriptionId || org.subscription_stripe_subscription_id,
+      trialEndsAt: org.trialEndsAt || org.trial_ends_at ? new Date(org.trialEndsAt || org.trial_ends_at) : undefined,
       settings: org.settings,
-      createdAt: new Date(org.created_at),
-      updatedAt: new Date(org.updated_at),
-      userRole: org.user_role || 'viewer',
+      createdAt: new Date(org.createdAt || org.created_at),
+      updatedAt: new Date(org.updatedAt || org.updated_at),
+      userRole: org.userRole || org.user_role || 'viewer',
     })) || [];
 
     setAllOrganizations(organizations);
