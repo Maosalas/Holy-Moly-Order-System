@@ -4,7 +4,7 @@ export type SubscriptionStatus = "trial" | "active" | "past_due" | "canceled" | 
 export interface SubscriptionPlanDetails {
   id: string;
   name: string;
-  slug: SubscriptionPlan;
+  slug: string; // Changed from SubscriptionPlan to allow any string
   priceMonthly: number;
   priceYearly: number;
   maxOrdersPerMonth: number;

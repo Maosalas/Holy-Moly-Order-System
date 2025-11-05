@@ -18,7 +18,7 @@ export default function SubscriptionPlansManager() {
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlanDetails | null>(null);
   const [formData, setFormData] = useState<Partial<SubscriptionPlanDetails>>({
     name: "",
-    slug: "free",
+    slug: "",
     priceMonthly: 0,
     priceYearly: 0,
     maxOrdersPerMonth: 0,
@@ -26,6 +26,16 @@ export default function SubscriptionPlansManager() {
     maxStorageGb: 0,
     active: true,
   });
+
+  // Auto-generate slug from name
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-'); // Replace multiple hyphens with single hyphen
+  };
 
   const openDialog = (plan?: SubscriptionPlanDetails) => {
     if (plan) {
@@ -35,7 +45,7 @@ export default function SubscriptionPlansManager() {
       setEditingPlan(null);
       setFormData({
         name: "",
-        slug: "free",
+        slug: "",
         priceMonthly: 0,
         priceYearly: 0,
         maxOrdersPerMonth: 0,
@@ -182,19 +192,39 @@ export default function SubscriptionPlansManager() {
                 <Label htmlFor="name">Plan Name *</Label>
                 <Input
                   id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  name="name"
+                  autoComplete="off"
+                  value={formData.name || ""}
+                  onChange={(e) => {
+                    const newName = e.target.value;
+                    setFormData({ 
+                      ...formData, 
+                      name: newName,
+                      // Auto-generate slug only when creating new plan
+                      slug: editingPlan ? formData.slug : generateSlug(newName)
+                    });
+                  }}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="slug">Slug *</Label>
+                <Label htmlFor="slug">Slug</Label>
                 <Input
                   id="slug"
-                  value={formData.slug}
+                  name="slug"
+                  autoComplete="off"
+                  value={formData.slug || ""}
+                  disabled={!!editingPlan}
+                  readOnly={!!editingPlan}
+                  className={editingPlan ? "bg-muted cursor-not-allowed" : ""}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value as any })}
                   required
                 />
+                <p className="text-xs text-muted-foreground">
+                  {editingPlan 
+                    ? "Slug cannot be changed after creation" 
+                    : "Auto-generated from plan name"}
+                </p>
               </div>
             </div>
 
@@ -203,11 +233,13 @@ export default function SubscriptionPlansManager() {
                 <Label htmlFor="priceMonthly">Monthly Price ($) *</Label>
                 <Input
                   id="priceMonthly"
+                  name="priceMonthly"
                   type="number"
                   step="0.01"
-                  value={formData.priceMonthly}
+                  autoComplete="off"
+                  value={formData.priceMonthly || 0}
                   onChange={(e) =>
-                    setFormData({ ...formData, priceMonthly: parseFloat(e.target.value) })
+                    setFormData({ ...formData, priceMonthly: parseFloat(e.target.value) || 0 })
                   }
                   required
                 />
@@ -216,11 +248,13 @@ export default function SubscriptionPlansManager() {
                 <Label htmlFor="priceYearly">Yearly Price ($) *</Label>
                 <Input
                   id="priceYearly"
+                  name="priceYearly"
                   type="number"
                   step="0.01"
-                  value={formData.priceYearly}
+                  autoComplete="off"
+                  value={formData.priceYearly || 0}
                   onChange={(e) =>
-                    setFormData({ ...formData, priceYearly: parseFloat(e.target.value) })
+                    setFormData({ ...formData, priceYearly: parseFloat(e.target.value) || 0 })
                   }
                   required
                 />
@@ -232,10 +266,12 @@ export default function SubscriptionPlansManager() {
                 <Label htmlFor="maxOrders">Max Orders/Month *</Label>
                 <Input
                   id="maxOrders"
+                  name="maxOrders"
                   type="number"
-                  value={formData.maxOrdersPerMonth}
+                  autoComplete="off"
+                  value={formData.maxOrdersPerMonth || 0}
                   onChange={(e) =>
-                    setFormData({ ...formData, maxOrdersPerMonth: parseInt(e.target.value) })
+                    setFormData({ ...formData, maxOrdersPerMonth: parseInt(e.target.value) || 0 })
                   }
                   required
                 />
@@ -245,10 +281,12 @@ export default function SubscriptionPlansManager() {
                 <Label htmlFor="maxUsers">Max Users *</Label>
                 <Input
                   id="maxUsers"
+                  name="maxUsers"
                   type="number"
-                  value={formData.maxUsers}
+                  autoComplete="off"
+                  value={formData.maxUsers || 0}
                   onChange={(e) =>
-                    setFormData({ ...formData, maxUsers: parseInt(e.target.value) })
+                    setFormData({ ...formData, maxUsers: parseInt(e.target.value) || 0 })
                   }
                   required
                 />
@@ -258,10 +296,12 @@ export default function SubscriptionPlansManager() {
                 <Label htmlFor="maxStorage">Storage (GB) *</Label>
                 <Input
                   id="maxStorage"
+                  name="maxStorage"
                   type="number"
-                  value={formData.maxStorageGb}
+                  autoComplete="off"
+                  value={formData.maxStorageGb || 0}
                   onChange={(e) =>
-                    setFormData({ ...formData, maxStorageGb: parseInt(e.target.value) })
+                    setFormData({ ...formData, maxStorageGb: parseInt(e.target.value) || 0 })
                   }
                   required
                 />
