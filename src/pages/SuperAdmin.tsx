@@ -30,9 +30,13 @@ const SuperAdmin = () => {
     console.log("Fetched organizations:", result);
 
     if (result.error) {
+      const errorMessage = typeof result.error === 'string' 
+        ? result.error 
+        : (result.error as any)?.message || 'Error al cargar organizaciones';
+      
       toast({
         title: "Error",
-        description: result.error,
+        description: errorMessage,
         variant: "destructive",
       });
       setIsLoading(false);
