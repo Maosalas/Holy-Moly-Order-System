@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { ReactNode, useEffect } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -90,6 +90,16 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { user, logout } = useAuth();
   const { currentOrganization } = useOrganization();
   const logoSrc = currentOrganization?.logoUrl || defaultLogo || "";
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Redirect super_admin users to super admin panel
+  useEffect(() => {
+    const isSuperAdmin = user?.roles?.includes("super_admin");
+    if (isSuperAdmin && location.pathname !== "/super-admin") {
+      navigate("/super-admin", { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
 
   return (
     <SidebarProvider>

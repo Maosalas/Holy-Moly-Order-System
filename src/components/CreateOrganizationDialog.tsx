@@ -38,9 +38,10 @@ export default function CreateOrganizationDialog({
 }: CreateOrganizationDialogProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [orgData, setOrgData] = useState({ name: "", slug: "" });
-  const [members, setMembers] = useState<{ email: string; role: string }[]>([]);
+  const [members, setMembers] = useState<{ email: string; name: string; role: string }[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<string>("free");
   const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("staff");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -79,6 +80,15 @@ export default function CreateOrganizationDialog({
       return;
     }
 
+    if (!newMemberName || newMemberName.trim().length === 0) {
+      toast({
+        title: "Nombre requerido",
+        description: "Por favor ingresa el nombre del miembro",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (members.some((m) => m.email === newMemberEmail)) {
       toast({
         title: "Email duplicado",
@@ -88,8 +98,9 @@ export default function CreateOrganizationDialog({
       return;
     }
 
-    setMembers([...members, { email: newMemberEmail, role: newMemberRole }]);
+    setMembers([...members, { email: newMemberEmail, name: newMemberName, role: newMemberRole }]);
     setNewMemberEmail("");
+    setNewMemberName("");
     setNewMemberRole("staff");
   };
 
@@ -122,7 +133,7 @@ export default function CreateOrganizationDialog({
 
       // 3. Add members
       for (const member of members) {
-        await organizationsApi.addMemberByEmail(orgId, member.email, member.role);
+        await organizationsApi.addMemberByEmail(orgId, member.email, member.role, member.name);
       }
 
       toast({
@@ -134,6 +145,7 @@ export default function CreateOrganizationDialog({
       setCurrentStep(1);
       setOrgData({ name: "", slug: "" });
       setMembers([]);
+      setNewMemberName("");
       setSelectedPlan("free");
       form.reset();
       onSuccess();
@@ -197,28 +209,35 @@ export default function CreateOrganizationDialog({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Agregar Miembros (Opcional)</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 <Input
-                  placeholder="email@ejemplo.com"
-                  type="email"
-                  value={newMemberEmail}
-                  onChange={(e) => setNewMemberEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addMember())}
+                  placeholder="Nombre completo"
+                  type="text"
+                  value={newMemberName}
+                  onChange={(e) => setNewMemberName(e.target.value)}
                 />
-                <Select value={newMemberRole} onValueChange={setNewMemberRole}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="owner">Owner</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="viewer">Viewer</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button type="button" onClick={addMember} size="sm">
-                  Agregar
-                </Button>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="email@ejemplo.com"
+                    type="email"
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addMember())}
+                  />
+                  <Select value={newMemberRole} onValueChange={setNewMemberRole}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="owner">Owner</SelectItem>
+                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="viewer">Viewer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" onClick={addMember} size="sm">
+                    Agregar
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -229,9 +248,12 @@ export default function CreateOrganizationDialog({
                   {members.map((member) => (
                     <Card key={member.email}>
                       <CardContent className="flex items-center justify-between p-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">{member.email}</span>
-                          <Badge variant="outline">{member.role}</Badge>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{member.name}</span>
+                            <Badge variant="outline">{member.role}</Badge>
+                          </div>
+                          <span className="text-xs text-muted-foreground">{member.email}</span>
                         </div>
                         <Button
                           type="button"

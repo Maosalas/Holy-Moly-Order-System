@@ -58,6 +58,7 @@ export default function OrganizationMembers() {
   const navigate = useNavigate();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState<OrganizationRole>("viewer");
   const [memberToDelete, setMemberToDelete] = useState<OrganizationMember | null>(null);
 
@@ -69,13 +70,14 @@ export default function OrganizationMembers() {
   }, [currentOrganization, isInitializing]);
 
   const handleAddMember = async () => {
-    if (!currentOrganization || !newMemberEmail) return;
+    if (!currentOrganization || !newMemberEmail || !newMemberName) return;
 
     try {
-      const result = await addMember(currentOrganization.id, newMemberEmail, newMemberRole);
+      const result = await addMember(currentOrganization.id, newMemberEmail, newMemberRole, newMemberName);
       if (result) {
         setIsAddDialogOpen(false);
         setNewMemberEmail("");
+        setNewMemberName("");
         setNewMemberRole("viewer");
         // Refresh the members list
         fetchOrganizationMembers(currentOrganization.id);
@@ -140,6 +142,16 @@ export default function OrganizationMembers() {
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="name">Nombre</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Juan Pérez"
+                    value={newMemberName}
+                    onChange={(e) => setNewMemberName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
@@ -159,9 +171,9 @@ export default function OrganizationMembers() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="viewer">Viewer</SelectItem>
+                      <SelectItem value="owner">Owner</SelectItem>
                       <SelectItem value="staff">Staff</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="viewer">Viewer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -170,7 +182,7 @@ export default function OrganizationMembers() {
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleAddMember} disabled={!newMemberEmail}>
+                <Button onClick={handleAddMember} disabled={!newMemberEmail || !newMemberName}>
                   Agregar
                 </Button>
               </DialogFooter>
@@ -217,9 +229,9 @@ export default function OrganizationMembers() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="viewer">Viewer</SelectItem>
+                            <SelectItem value="owner">Owner</SelectItem>
                             <SelectItem value="staff">Staff</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="viewer">Viewer</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (

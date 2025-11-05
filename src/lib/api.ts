@@ -348,10 +348,10 @@ export const quotationsApi = {
 // Organizations API
 export const organizationsApi = {
   // Add member by email
-  addMemberByEmail: async (organizationId: string, email: string, role: string) => {
+  addMemberByEmail: async (organizationId: string, email: string, role: string, name?: string) => {
     return apiFetch(`/organizations/${organizationId}/members/by-email`, {
       method: "POST",
-      body: JSON.stringify({ email, role }),
+      body: JSON.stringify({ email, role, name }),
     });
   },
   getAll: () => apiFetch("/organizations", { method: "GET" }, false), // No org header needed
