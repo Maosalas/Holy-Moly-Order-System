@@ -27,6 +27,8 @@ const SuperAdmin = () => {
     setIsLoading(true);
     const result = await organizationsApi.getAll();
     
+    console.log("Fetched organizations:", result);
+
     if (result.error) {
       toast({
         title: "Error",
