@@ -1,5 +1,7 @@
 export interface Supply {
   id: string;
+  organizationId: string;
+  userId?: string;
   name: string;
   supplierName: string;
   quantity: number;

@@ -44,6 +44,8 @@ export interface QuotationAdditionalExpense {
 
 export interface Quotation {
   id: string;
+  organizationId: string;
+  userId?: string;
   clientName: string;
   size: 'mini' | 'pequeño' | 'mediano' | 'grande';
   recipes: QuotationRecipe[];

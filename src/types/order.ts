@@ -27,6 +27,8 @@ export interface ClientPhoto {
 
 export interface Order {
   id: string;
+  organizationId: string;
+  userId?: string;
   quotationId?: string;
   quotation?: {
     id: string;

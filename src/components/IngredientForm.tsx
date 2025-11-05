@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ingredient, IngredientFormData } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface IngredientFormProps {
   ingredient?: Ingredient;
@@ -13,6 +14,7 @@ interface IngredientFormProps {
 }
 
 export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFormProps) => {
+  const { currentOrganization } = useOrganization();
   const [name, setName] = useState(ingredient?.name || "");
   const [provider, setProvider] = useState(ingredient?.provider || "");
   const [qtyProvider, setQtyProvider] = useState(ingredient?.qtyProvider?.toString() || "");
@@ -46,6 +48,7 @@ export const IngredientForm = ({ ingredient, onSubmit, onCancel }: IngredientFor
 
     try {
       await onSubmit({
+        organizationId: currentOrganization?.id || "",
         name: name.trim(),
         provider: provider.trim(),
         qtyProvider: parseFloat(qtyProvider),

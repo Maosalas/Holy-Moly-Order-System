@@ -1,5 +1,7 @@
 export interface Ingredient {
   id: string;
+  organizationId: string;
+  userId?: string;
   name: string;
   provider: string;
   qtyProvider: number;

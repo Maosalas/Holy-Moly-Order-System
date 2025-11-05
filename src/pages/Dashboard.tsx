@@ -34,7 +34,7 @@ const Dashboard = () => {
   // - Caché de datos
 
   // Filter orders by user role - cake topper providers only see orders with cake toppers
-  const roleFilteredOrders = user?.role === "cake_topper_provider"
+  const roleFilteredOrders = user?.roles?.includes("cake_topper_provider")
     ? orders.filter(order => order.needsCakeTopper)
     : orders;
   // Filter orders by date range
@@ -118,14 +118,14 @@ const Dashboard = () => {
       <div>
         <h2 className="text-3xl font-bold">Dashboard</h2>
         <p className="text-muted-foreground mt-1">
-          {user?.role === "cake_topper_provider"
+          {user?.roles?.includes("cake_topper_provider")
             ? "Sus cake topper pedidos se muestran aquí."
             : "Bienvenido al panel de control de Holy Moly! Aquí puedes ver un resumen de tus pedidos y estadísticas clave."}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        {user?.role === "owner" && (
+        {!user?.roles?.includes("cake_topper_provider") && (
           <>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -280,7 +280,7 @@ const Dashboard = () => {
           </>
         )}
 
-        {user?.role === "cake_topper_provider" && (
+        {user?.roles?.includes("cake_topper_provider") && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Topper Orders</CardTitle>
