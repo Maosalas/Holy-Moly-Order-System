@@ -1527,7 +1527,7 @@ Authorization: Bearer <jwt_token>
 
 #### POST /api/organizations/:id/members/by-email
 
-Add a new member to the organization by email address. Only 'owner' and 'admin' can add members. This endpoint looks up the user by email and adds them to the organization.
+Add a new member to the organization by email address. Only 'owner' and 'admin' can add members. This endpoint creates a new user account if the email doesn't exist, adds them to the organization, generates a temporary password, and sends a welcome email with login credentials.
 
 **Headers:**
 ```
@@ -1539,37 +1539,62 @@ Content-Type: application/json
 ```json
 {
   "email": "newuser@example.com",
+  "name": "John Doe",
   "role": "staff"
 }
 ```
 
-**Valid Roles:** `"owner"`, `"admin"`, `"staff"`, `"viewer"`
+**Valid Roles:** `"owner"`, `"staff"`, `"viewer"`
 
-**Success Response (200):**
+**Note:** The `"admin"` role is not allowed when adding members to prevent privilege escalation. Only super_admin users can have the admin role at the global level.
+
+**Success Response - New User Created (201):**
 ```json
 {
   "success": true,
-  "message": "Member added successfully",
-  "member": {
-    "id": "660e8400-e29b-41d4-a716-446655440005",
-    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
-    "user_id": "770e8400-e29b-41d4-a716-446655440005",
-    "role": "staff",
-    "joined_at": "2025-11-04T15:30:00.000Z"
+  "message": "Member added successfully and welcome email sent",
+  "data": {
+    "member": {
+      "id": "660e8400-e29b-41d4-a716-446655440005",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440005",
+      "role": "staff",
+      "joined_at": "2025-11-04T15:30:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440005",
+        "name": "John Doe",
+        "email": "newuser@example.com"
+      }
+    },
+    "emailSent": true,
+    "isNewUser": true
   }
 }
 ```
 
-**User Not Found (404):**
+**Success Response - Existing User Added (200):**
 ```json
 {
-  "success": false,
-  "error": "NotFoundError",
-  "message": "User not found"
+  "success": true,
+  "message": "Member added successfully",
+  "data": {
+    "member": {
+      "id": "660e8400-e29b-41d4-a716-446655440005",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440005",
+      "role": "staff",
+      "joined_at": "2025-11-04T15:30:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440005",
+        "name": "John Doe",
+        "email": "newuser@example.com"
+      }
+    },
+    "emailSent": false,
+    "isNewUser": false
+  }
 }
 ```
-
-**Description:** The email address provided does not match any registered user in the system.
 
 **Member Already Exists (400):**
 ```json
@@ -1585,11 +1610,49 @@ Content-Type: application/json
 {
   "success": false,
   "error": "ForbiddenError",
-  "message": "Insufficient permissions"
+  "message": "Insufficient permissions. Only owners and admins can add members."
 }
 ```
 
 **Description:** Only users with 'owner' or 'admin' roles can add members.
+
+**Forbidden - Invalid Role (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Cannot assign 'admin' role. Only 'owner', 'staff', and 'viewer' roles are allowed."
+}
+```
+
+**Description:** The 'admin' role cannot be assigned to prevent privilege escalation to super_admin.
+
+**Email Send Failed (500):**
+```json
+{
+  "success": true,
+  "message": "Member added successfully but failed to send welcome email",
+  "data": {
+    "member": {
+      "id": "660e8400-e29b-41d4-a716-446655440005",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440005",
+      "role": "staff",
+      "joined_at": "2025-11-04T15:30:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440005",
+        "name": "John Doe",
+        "email": "newuser@example.com"
+      }
+    },
+    "emailSent": false,
+    "isNewUser": true,
+    "emailError": "Failed to send email"
+  }
+}
+```
+
+**Description:** The member was successfully added, but the welcome email failed to send. The user can still log in using the password reset feature.
 
 **Validation Error (400):**
 ```json
@@ -1599,7 +1662,8 @@ Content-Type: application/json
   "message": "Invalid input data",
   "details": {
     "email": "Valid email address is required",
-    "role": "Role must be one of: owner, admin, staff, viewer"
+    "name": "Name is required and must be between 1-255 characters",
+    "role": "Role must be one of: owner, staff, viewer"
   }
 }
 ```
@@ -1609,22 +1673,57 @@ Content-Type: application/json
 {
   "success": false,
   "error": "BadRequestError",
-  "message": "Missing required fields"
+  "message": "Missing required fields: email, name, and role are required"
 }
 ```
 
-**Description:** The request must include both `email` and `role` fields.
+**Description:** The request must include `email`, `name`, and `role` fields.
 
 **Internal Server Error (500):**
 ```json
 {
   "success": false,
   "error": "InternalServerError",
-  "message": "Error looking up user"
+  "message": "Error processing member addition"
 }
 ```
 
 **Description:** An unexpected error occurred while processing the request.
+
+---
+
+### Email Notifications
+
+When a new user is added to an organization via the `/api/organizations/:id/members/by-email` endpoint:
+
+#### Welcome Email for New Users
+
+If the user doesn't exist in the system, a new account is created and a welcome email is sent with the following information:
+
+**Email Subject:** `Welcome to [Organization Name]`
+
+**Email Content:**
+- Organization name and welcome message
+- User's email address (login username)
+- Temporary password (randomly generated, secure)
+- Login URL
+- Instructions to change password on first login
+- Support contact information
+
+**Technical Details:**
+- Email service: Resend (resend.com)
+- Email template: HTML formatted with organization branding
+- Password: 12-character randomly generated string (letters, numbers, special characters)
+- Password hashing: bcrypt with salt rounds = 10
+- Email delivery: Asynchronous (doesn't block the API response)
+
+**Environment Variables Required:**
+- `RESEND_API_KEY`: API key from Resend.com for sending emails
+
+**Error Handling:**
+- If email sending fails, the user is still created and added to the organization
+- The API response includes `emailSent: false` and an `emailError` field
+- The user can use the password reset feature to gain access
 
 ---
 
