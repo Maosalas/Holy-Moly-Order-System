@@ -25,7 +25,7 @@ const SuperAdmin = () => {
 
   const loadAllOrganizations = async () => {
     setIsLoading(true);
-    const result = await organizationsApi.getAll();
+    const result = await organizationsApi.getAllForSuperAdmin();
     
     console.log("Fetched organizations:", result);
 
