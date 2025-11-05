@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { migrateRecipeToElaborations } from "@/lib/recipeUtils";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -22,6 +23,7 @@ interface RecipeFormProps {
 }
 
 export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
+  const { currentOrganization } = useOrganization();
   // Aplicar migración si la receta existe y lo necesita
   const migratedRecipe = recipe ? migrateRecipeToElaborations(recipe) : undefined;
   
@@ -358,6 +360,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
 
     try {
       await onSubmit({
+        organizationId: currentOrganization?.id || "",
         name: name.trim(),
         image: image || undefined,
         elaborations: elaborations,

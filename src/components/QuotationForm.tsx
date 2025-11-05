@@ -16,6 +16,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from "@/lib/utils";
 import { Ingredient } from "@/types/ingredient";
 import { set } from "date-fns";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface QuotationFormProps {
   quotation?: Quotation;
@@ -24,6 +25,7 @@ interface QuotationFormProps {
 }
 
 export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormProps) {
+  const { currentOrganization } = useOrganization();
   const [clientName, setClientName] = useState(quotation?.clientName || "");
   const [quotationType, setQuotationType] = useState<'queque' | 'unidad' | 'ambos'>('queque');
   const [size, setSize] = useState<'mini' | 'pequeño' | 'mediano' | 'grande'>(quotation?.size || 'pequeño');
@@ -344,6 +346,7 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
     }));
 
     const quotationData = {
+      organizationId: currentOrganization?.id || "",
       clientName,
       size,
       recipes: recipesForAPI,

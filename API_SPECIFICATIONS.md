@@ -804,231 +804,1111 @@ CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 
 ## API Endpoints
 
+### Standard API Response Structure
+
+All API endpoints follow this consistent response structure:
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "data": { ... }
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "ErrorType",
+  "message": "Human readable message",
+  "details": { ... } // Optional, for validation errors
+}
+```
+
+**HTTP Status Codes:**
+
+| Code | Description |
+|------|-------------|
+| 200 | OK - Request successful |
+| 201 | Created - Resource created successfully |
+| 400 | Bad Request - Validation error or invalid data |
+| 401 | Unauthorized - Missing or invalid authentication token |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Resource not found |
+| 409 | Conflict - Duplicate resource (e.g., slug, member) |
+| 500 | Internal Server Error - Server error |
+
+**Organization Roles:**
+- **owner**: Full control of the organization
+- **admin**: Can manage members and data
+- **staff**: Can create/edit data, cannot manage members
+- **viewer**: Read-only access
+
+**Global Roles (app_role):**
+- **super_admin**: Complete system access
+- **owner**: Business owner (can have multiple organizations)
+- **cake_topper_provider**: External topper provider
+
+---
+
 ### Organizations API
 
 #### GET /api/organizations
 
 Get all organizations for the authenticated user.
 
-**Headers:** `Authorization: Bearer {token}`
-
-**Response (200):**
-
-```json
-[
-  {
-    "id": "uuid",
-    "name": "Sweet Bakery",
-    "slug": "sweet-bakery",
-    "logo_url": "https://...",
-    "subscription_status": "active",
-    "subscription_plan": "professional",
-    "userRole": "owner",
-    "settings": {},
-    "created_at": "2024-01-01T00:00:00Z"
-  }
-]
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
 ```
 
-#### GET /api/organizations/:id
-
-Get organization details.
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Response (200):**
-
+**Success Response (200):**
 ```json
 {
-  "id": "uuid",
-  "name": "Sweet Bakery",
-  "slug": "sweet-bakery",
-  "logo_url": "https://...",
-  "subscription_status": "active",
-  "subscription_plan": "professional",
-  "trial_ends_at": "2024-12-31T00:00:00Z",
-  "settings": {
-    "timezone": "America/Costa_Rica",
-    "currency": "CRC"
-  },
-  "created_at": "2024-01-01T00:00:00Z",
-  "updated_at": "2024-01-15T00:00:00Z"
+  "success": true,
+  "data": [
+    {
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "organization_name": "Holy Moly Bakery",
+      "organization_slug": "holy-moly",
+      "user_role": "owner",
+      "joined_at": "2025-01-15T10:30:00.000Z"
+    },
+    {
+      "organization_id": "550e8400-e29b-41d4-a716-446655440002",
+      "organization_name": "Sweet Dreams Bakery",
+      "organization_slug": "sweet-dreams",
+      "user_role": "admin",
+      "joined_at": "2025-02-20T14:45:00.000Z"
+    }
+  ]
 }
 ```
+
+**Empty Response (200):**
+```json
+{
+  "success": true,
+  "data": []
+}
+```
+
+**Error Response (401):**
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+---
 
 #### POST /api/organizations
 
-Create a new organization.
+Create a new organization. The authenticated user automatically becomes the 'owner'.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
 
-**Request:**
-
+**Request Body:**
 ```json
 {
-  "name": "Sweet Bakery",
-  "slug": "sweet-bakery"
+  "name": "New Bakery Business",
+  "slug": "new-bakery"
 }
 ```
 
-**Response (201):**
-
+**Success Response (201):**
 ```json
 {
-  "id": "uuid",
-  "name": "Sweet Bakery",
-  "slug": "sweet-bakery",
-  "subscription_status": "trial",
-  "subscription_plan": "free",
-  "trial_ends_at": "2024-02-01T00:00:00Z",
-  "created_at": "2024-01-01T00:00:00Z"
-}
-```
-
-#### PUT /api/organizations/:id
-
-Update organization details (owner/admin only).
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Request:**
-
-```json
-{
-  "name": "Sweet Bakery Premium",
-  "logo_url": "https://...",
-  "settings": {
-    "timezone": "America/Costa_Rica",
-    "currency": "CRC"
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440003",
+    "name": "New Bakery Business",
+    "slug": "new-bakery",
+    "logo_url": null,
+    "subscription_status": "trial",
+    "subscription_plan": "free",
+    "subscription_stripe_customer_id": null,
+    "subscription_stripe_subscription_id": null,
+    "trial_ends_at": "2025-12-04T00:00:00.000Z",
+    "settings": {},
+    "created_at": "2025-11-04T10:30:00.000Z",
+    "updated_at": "2025-11-04T10:30:00.000Z"
   }
 }
 ```
 
-**Response (200):**
-
+**Validation Error (400):**
 ```json
 {
-  "id": "uuid",
-  "name": "Sweet Bakery Premium",
-  "slug": "sweet-bakery",
-  "logo_url": "https://...",
-  "settings": {
-    "timezone": "America/Costa_Rica",
-    "currency": "CRC"
-  },
-  "updated_at": "2024-01-15T00:00:00Z"
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "name": "Name is required and must be between 1-255 characters",
+    "slug": "Slug is required, must be lowercase, alphanumeric with hyphens, and unique"
+  }
 }
 ```
 
-#### DELETE /api/organizations/:id
+**Duplicate Slug (409):**
+```json
+{
+  "success": false,
+  "error": "ConflictError",
+  "message": "Organization slug 'new-bakery' already exists"
+}
+```
 
-Delete organization (owner only).
+**Unauthorized (401):**
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
 
-**Headers:** `Authorization: Bearer {token}`
+---
 
-**Response (204):** No content
+#### GET /api/organizations/:id
+
+Get details of a specific organization. Only members can access.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Holy Moly Bakery",
+    "slug": "holy-moly",
+    "logo_url": "https://example.com/logos/holy-moly.png",
+    "subscription_status": "active",
+    "subscription_plan": "professional",
+    "subscription_stripe_customer_id": "cus_123456789",
+    "subscription_stripe_subscription_id": "sub_987654321",
+    "trial_ends_at": null,
+    "settings": {
+      "currency": "USD",
+      "timezone": "America/Chicago",
+      "notifications_enabled": true
+    },
+    "created_at": "2025-01-15T10:30:00.000Z",
+    "updated_at": "2025-11-04T08:20:00.000Z"
+  }
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Organization not found or you don't have access"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You are not a member of this organization"
+}
+```
+
+**Unauthorized (401):**
+```json
+{
+  "success": false,
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+---
+
+#### PUT /api/organizations/:id
+
+Update organization details. Only 'owner' can update.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body (all fields optional):**
+```json
+{
+  "name": "Holy Moly Bakery & Cafe",
+  "logo_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...",
+  "settings": {
+    "currency": "USD",
+    "timezone": "America/New_York",
+    "notifications_enabled": true,
+    "auto_backup": true
+  }
+}
+```
+
+**Note:** The `logo_url` field should contain a base64 encoded image with data URI scheme (e.g., "data:image/png;base64,iVBORw0KG...").
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Holy Moly Bakery & Cafe",
+    "slug": "holy-moly",
+    "logo_url": "https://example.com/logos/new-logo.png",
+    "subscription_status": "active",
+    "subscription_plan": "professional",
+    "subscription_stripe_customer_id": "cus_123456789",
+    "subscription_stripe_subscription_id": "sub_987654321",
+    "trial_ends_at": null,
+    "settings": {
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "notifications_enabled": true,
+      "auto_backup": true
+    },
+    "created_at": "2025-01-15T10:30:00.000Z",
+    "updated_at": "2025-11-04T10:35:00.000Z"
+  }
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only organization owners can update organization details"
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Organization not found"
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "name": "Name must be between 1-255 characters"
+  }
+}
+```
+
+---
+
+#### GET /api/organizations/logo-by-email
+
+Get organization logo by user email. Public endpoint, no authentication required. Used during login to display the organization's logo when user types their email.
+
+**Query Parameters:**
+- `email` (string, required): Complete user email (e.g., "user@example.com")
+
+**Example Request:**
+```
+GET /api/organizations/logo-by-email?email=user@holymoly.com
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "logoUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg..."
+  }
+}
+```
+
+**No Logo Found (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "logoUrl": null
+  }
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Email parameter is required"
+}
+```
 
 ---
 
 ### Organization Members API
 
-#### GET /api/organizations/:orgId/members
+#### GET /api/organizations/:id/members
 
-Get all members of an organization.
+Get all members of an organization. Only members can access.
 
-**Headers:** `Authorization: Bearer {token}`
-
-**Response (200):**
-
-```json
-[
-  {
-    "id": "uuid",
-    "user_id": "uuid",
-    "organization_id": "uuid",
-    "role": "owner",
-    "user": {
-      "id": "uuid",
-      "email": "owner@example.com",
-      "name": "John Doe"
-    },
-    "joined_at": "2024-01-01T00:00:00Z"
-  },
-  {
-    "id": "uuid",
-    "user_id": "uuid",
-    "organization_id": "uuid",
-    "role": "staff",
-    "user": {
-      "id": "uuid",
-      "email": "staff@example.com",
-      "name": "Jane Smith"
-    },
-    "joined_at": "2024-01-15T00:00:00Z"
-  }
-]
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
 ```
 
-#### POST /api/organizations/:orgId/members
-
-Invite a new member to the organization (owner/admin only).
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Request:**
-
+**Success Response (200):**
 ```json
 {
-  "email": "newmember@example.com",
+  "success": true,
+  "data": [
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440001",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440001",
+      "role": "owner",
+      "joined_at": "2025-01-15T10:30:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440001",
+        "name": "John Smith",
+        "email": "john@holymoly.com"
+      }
+    },
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440002",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440002",
+      "role": "admin",
+      "joined_at": "2025-02-10T14:20:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440002",
+        "name": "Maria Garcia",
+        "email": "maria@holymoly.com"
+      }
+    },
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440003",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440003",
+      "role": "staff",
+      "joined_at": "2025-03-05T09:15:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440003",
+        "name": "Carlos Rodriguez",
+        "email": "carlos@holymoly.com"
+      }
+    }
+  ]
+}
+```
+
+**Empty Response (200):**
+```json
+{
+  "success": true,
+  "data": []
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You are not a member of this organization"
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Organization not found"
+}
+```
+
+---
+
+#### GET /api/organizations/:orgId/members/:userId
+
+Get detailed information about a specific member of an organization. Only members of the organization can access.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "660e8400-e29b-41d4-a716-446655440002",
+    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "770e8400-e29b-41d4-a716-446655440002",
+    "role": "admin",
+    "joined_at": "2025-02-10T14:20:00.000Z",
+    "user": {
+      "id": "770e8400-e29b-41d4-a716-446655440002",
+      "name": "Maria Garcia",
+      "email": "maria@holymoly.com"
+    }
+  }
+}
+```
+
+**Member Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Member not found in this organization"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You are not a member of this organization"
+}
+```
+
+**Organization Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Organization not found"
+}
+```
+
+---
+
+#### POST /api/organizations/:id/members
+
+Add a new member to the organization. Only 'owner' and 'admin' can add members.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "user_id": "770e8400-e29b-41d4-a716-446655440004",
   "role": "staff"
 }
 ```
 
-**Response (201):**
+**Valid Roles:** `"owner"`, `"admin"`, `"staff"`, `"viewer"`
 
+**Success Response (201):**
 ```json
 {
-  "id": "uuid",
-  "user_id": "uuid",
-  "organization_id": "uuid",
-  "role": "staff",
-  "joined_at": "2024-01-15T00:00:00Z"
+  "success": true,
+  "data": {
+    "id": "660e8400-e29b-41d4-a716-446655440004",
+    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "770e8400-e29b-41d4-a716-446655440004",
+    "role": "staff",
+    "joined_at": "2025-11-04T10:40:00.000Z",
+    "user": {
+      "id": "770e8400-e29b-41d4-a716-446655440004",
+      "name": "Ana Martinez",
+      "email": "ana@example.com"
+    }
+  }
 }
 ```
 
-#### PUT /api/organizations/:orgId/members/:memberId
+**Member Already Exists (409):**
+```json
+{
+  "success": false,
+  "error": "ConflictError",
+  "message": "User is already a member of this organization"
+}
+```
 
-Update member role (owner/admin only).
+**User Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "User not found"
+}
+```
 
-**Headers:** `Authorization: Bearer {token}`
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only owners and admins can add members"
+}
+```
 
-**Request:**
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "user_id": "Valid user UUID is required",
+    "role": "Role must be one of: owner, admin, staff, viewer"
+  }
+}
+```
 
+---
+
+#### PUT /api/organizations/:orgId/members/:userId
+
+Update a member's role. Only 'owner' and 'admin' can update roles.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
 ```json
 {
   "role": "admin"
 }
 ```
 
-**Response (200):**
-
+**Success Response (200):**
 ```json
 {
-  "id": "uuid",
-  "user_id": "uuid",
-  "organization_id": "uuid",
-  "role": "admin",
-  "joined_at": "2024-01-15T00:00:00Z"
+  "success": true,
+  "data": {
+    "id": "660e8400-e29b-41d4-a716-446655440002",
+    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "770e8400-e29b-41d4-a716-446655440002",
+    "role": "admin",
+    "joined_at": "2025-02-10T14:20:00.000Z",
+    "user": {
+      "id": "770e8400-e29b-41d4-a716-446655440002",
+      "name": "Maria Garcia",
+      "email": "maria@holymoly.com"
+    }
+  }
 }
 ```
 
-#### DELETE /api/organizations/:orgId/members/:memberId
+**Member Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Member not found in this organization"
+}
+```
 
-Remove a member from organization (owner/admin only).
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only owners and admins can update member roles"
+}
+```
 
-**Headers:** `Authorization: Bearer {token}`
+**Cannot Modify Last Owner (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Cannot change role of the last owner. Assign another owner first."
+}
+```
 
-**Response (204):** No content
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid role",
+  "details": {
+    "role": "Role must be one of: owner, admin, staff, viewer"
+  }
+}
+```
+
+---
+
+#### DELETE /api/organizations/:orgId/members/:userId
+
+Remove a member from the organization. Only 'owner' and 'admin' can remove members.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Member removed successfully",
+  "data": {
+    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "770e8400-e29b-41d4-a716-446655440003"
+  }
+}
+```
+
+**Member Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Member not found in this organization"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only owners and admins can remove members"
+}
+```
+
+**Cannot Remove Last Owner (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Cannot remove the last owner. Assign another owner first or delete the organization."
+}
+```
+
+**Cannot Self-Remove (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You cannot remove yourself from the organization. Ask another owner or admin to remove you."
+}
+```
+
+---
+
+#### POST /api/organizations/:id/members/by-email
+
+Add a new member to the organization by email address. Only 'owner' and 'admin' can add members. This endpoint creates a new user account if the email doesn't exist, adds them to the organization, generates a temporary password, and sends a welcome email with login credentials.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "email": "newuser@example.com",
+  "name": "John Doe",
+  "role": "staff"
+}
+```
+
+**Valid Roles:** `"owner"`, `"staff"`, `"viewer"`
+
+**Note:** The `"admin"` role is not allowed when adding members to prevent privilege escalation. Only super_admin users can have the admin role at the global level.
+
+**Success Response - New User Created (201):**
+```json
+{
+  "success": true,
+  "message": "Member added successfully and welcome email sent",
+  "data": {
+    "member": {
+      "id": "660e8400-e29b-41d4-a716-446655440005",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440005",
+      "role": "staff",
+      "joined_at": "2025-11-04T15:30:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440005",
+        "name": "John Doe",
+        "email": "newuser@example.com"
+      }
+    },
+    "emailSent": true,
+    "isNewUser": true
+  }
+}
+```
+
+**Success Response - Existing User Added (200):**
+```json
+{
+  "success": true,
+  "message": "Member added successfully",
+  "data": {
+    "member": {
+      "id": "660e8400-e29b-41d4-a716-446655440005",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440005",
+      "role": "staff",
+      "joined_at": "2025-11-04T15:30:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440005",
+        "name": "John Doe",
+        "email": "newuser@example.com"
+      }
+    },
+    "emailSent": false,
+    "isNewUser": false
+  }
+}
+```
+
+**Member Already Exists (400):**
+```json
+{
+  "success": false,
+  "error": "BadRequestError",
+  "message": "User is already a member of this organization"
+}
+```
+
+**Forbidden - Insufficient Permissions (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Insufficient permissions. Only owners and admins can add members."
+}
+```
+
+**Description:** Only users with 'owner' or 'admin' roles can add members.
+
+**Forbidden - Invalid Role (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Cannot assign 'admin' role. Only 'owner', 'staff', and 'viewer' roles are allowed."
+}
+```
+
+**Description:** The 'admin' role cannot be assigned to prevent privilege escalation to super_admin.
+
+**Email Send Failed (500):**
+```json
+{
+  "success": true,
+  "message": "Member added successfully but failed to send welcome email",
+  "data": {
+    "member": {
+      "id": "660e8400-e29b-41d4-a716-446655440005",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440005",
+      "role": "staff",
+      "joined_at": "2025-11-04T15:30:00.000Z",
+      "user": {
+        "id": "770e8400-e29b-41d4-a716-446655440005",
+        "name": "John Doe",
+        "email": "newuser@example.com"
+      }
+    },
+    "emailSent": false,
+    "isNewUser": true,
+    "emailError": "Failed to send email"
+  }
+}
+```
+
+**Description:** The member was successfully added, but the welcome email failed to send. The user can still log in using the password reset feature.
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "email": "Valid email address is required",
+    "name": "Name is required and must be between 1-255 characters",
+    "role": "Role must be one of: owner, staff, viewer"
+  }
+}
+```
+
+**Missing Fields (400):**
+```json
+{
+  "success": false,
+  "error": "BadRequestError",
+  "message": "Missing required fields: email, name, and role are required"
+}
+```
+
+**Description:** The request must include `email`, `name`, and `role` fields.
+
+**Internal Server Error (500):**
+```json
+{
+  "success": false,
+  "error": "InternalServerError",
+  "message": "Error processing member addition"
+}
+```
+
+**Description:** An unexpected error occurred while processing the request.
+
+---
+
+### Email Notifications
+
+When a new user is added to an organization via the `/api/organizations/:id/members/by-email` endpoint:
+
+#### Welcome Email for New Users
+
+If the user doesn't exist in the system, a new account is created and a welcome email is sent with the following information:
+
+**Email Subject:** `Welcome to [Organization Name]`
+
+**Email Content:**
+- Organization name and welcome message
+- User's email address (login username)
+- Temporary password (randomly generated, secure)
+- Login URL
+- Instructions to change password on first login
+- Support contact information
+
+**Technical Details:**
+- Email service: Resend (resend.com)
+- Email template: HTML formatted with organization branding
+- Password: 12-character randomly generated string (letters, numbers, special characters)
+- Password hashing: bcrypt with salt rounds = 10
+- Email delivery: Asynchronous (doesn't block the API response)
+
+**Environment Variables Required:**
+- `RESEND_API_KEY`: API key from Resend.com for sending emails
+
+**Error Handling:**
+- If email sending fails, the user is still created and added to the organization
+- The API response includes `emailSent: false` and an `emailError` field
+- The user can use the password reset feature to gain access
+
+---
+
+### User Roles API
+
+#### GET /api/users/:id/roles
+
+Get global roles for a user (super_admin, owner, cake_topper_provider). Only 'super_admin' users or the user themselves can access.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "880e8400-e29b-41d4-a716-446655440001",
+      "user_id": "770e8400-e29b-41d4-a716-446655440001",
+      "role": "super_admin",
+      "organization_id": null,
+      "created_at": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "880e8400-e29b-41d4-a716-446655440002",
+      "user_id": "770e8400-e29b-41d4-a716-446655440001",
+      "role": "owner",
+      "organization_id": null,
+      "created_at": "2025-01-15T10:30:00.000Z"
+    }
+  ]
+}
+```
+
+**No Roles (200):**
+```json
+{
+  "success": true,
+  "data": []
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You can only view your own roles unless you are a super admin"
+}
+```
+
+**User Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "User not found"
+}
+```
+
+---
+
+#### POST /api/users/:id/roles
+
+Assign a global role to a user. Only 'super_admin' can assign roles.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "role": "super_admin",
+  "organization_id": null
+}
+```
+
+**Valid Global Roles:** `"super_admin"`, `"owner"`, `"cake_topper_provider"`
+
+**Note:** The `organization_id` field is optional and should be null for global roles. It's included for future extensibility.
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "880e8400-e29b-41d4-a716-446655440003",
+    "user_id": "770e8400-e29b-41d4-a716-446655440002",
+    "role": "super_admin",
+    "organization_id": null,
+    "created_at": "2025-11-04T10:45:00.000Z"
+  }
+}
+```
+
+**Role Already Assigned (409):**
+```json
+{
+  "success": false,
+  "error": "ConflictError",
+  "message": "User already has this role"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only super admins can assign global roles"
+}
+```
+
+**User Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "User not found"
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "role": "Role must be one of: super_admin, owner, cake_topper_provider"
+  }
+}
+```
+
+---
+
+#### DELETE /api/users/:userId/roles/:roleId
+
+Remove a global role from a user. Only 'super_admin' can remove roles.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Role removed successfully"
+}
+```
+
+**Role Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Role assignment not found"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only super admins can remove global roles"
+}
+```
+
+**Cannot Remove Own Super Admin Role (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "You cannot remove your own super_admin role. Ask another super admin to do it."
+}
+```
 
 ---
 
@@ -1036,27 +1916,120 @@ Remove a member from organization (owner/admin only).
 
 #### GET /api/subscription-plans
 
-Get all available subscription plans.
+Get all subscription plans. By default returns only active plans. Super admins can see all plans including inactive ones.
 
-**Response (200):**
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
 
+**Query Parameters:**
+- `active_only` (boolean, optional): Filter to show only active plans. Default: `true`. Super admins can set to `false` to see all plans.
+
+**Success Response (200):**
 ```json
-[
-  {
-    "id": "uuid",
-    "name": "Free",
-    "slug": "free",
-    "price_monthly": 0,
-    "price_yearly": 0,
-    "max_orders_per_month": 10,
-    "max_users": 1,
-    "max_storage_gb": 1,
-    "features": {
-      "support": "community"
+{
+  "success": true,
+  "data": [
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440001",
+      "name": "Free",
+      "slug": "free",
+      "price_monthly": 0,
+      "price_yearly": 0,
+      "max_orders_per_month": 10,
+      "max_users": 1,
+      "max_storage_gb": 1,
+      "features": {
+        "support": "community"
+      },
+      "stripe_price_id": null,
+      "active": true,
+      "created_at": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440002",
+      "name": "Starter",
+      "slug": "starter",
+      "price_monthly": 29.99,
+      "price_yearly": 299.90,
+      "max_orders_per_month": 50,
+      "max_users": 3,
+      "max_storage_gb": 5,
+      "features": {
+        "support": "email",
+        "priority": false
+      },
+      "stripe_price_id": "price_1234567890",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440003",
+      "name": "Professional",
+      "slug": "professional",
+      "price_monthly": 79.99,
+      "price_yearly": 799.90,
+      "max_orders_per_month": 200,
+      "max_users": 10,
+      "max_storage_gb": 20,
+      "features": {
+        "support": "priority",
+        "custom_branding": true
+      },
+      "stripe_price_id": "price_0987654321",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440004",
+      "name": "Enterprise",
+      "slug": "enterprise",
+      "price_monthly": 199.99,
+      "price_yearly": 1999.90,
+      "max_orders_per_month": -1,
+      "max_users": -1,
+      "max_storage_gb": 100,
+      "features": {
+        "support": "dedicated",
+        "custom_branding": true,
+        "api_access": true
+      },
+      "stripe_price_id": "price_1122334455",
+      "active": true,
+      "created_at": "2025-01-01T00:00:00.000Z"
     }
-  },
-  {
-    "id": "uuid",
+  ]
+}
+```
+
+**Empty Response (200):**
+```json
+{
+  "success": true,
+  "data": []
+}
+```
+
+**Note:** A value of `-1` for `max_orders_per_month` or `max_users` indicates unlimited.
+
+---
+
+#### GET /api/subscription-plans/:id
+
+Get details of a specific subscription plan.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "990e8400-e29b-41d4-a716-446655440003",
     "name": "Professional",
     "slug": "professional",
     "price_monthly": 79.99,
@@ -1067,9 +2040,277 @@ Get all available subscription plans.
     "features": {
       "support": "priority",
       "custom_branding": true
-    }
+    },
+    "stripe_price_id": "price_0987654321",
+    "active": true,
+    "created_at": "2025-01-01T00:00:00.000Z"
   }
-]
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Subscription plan not found"
+}
+```
+
+---
+
+#### POST /api/subscription-plans
+
+Create a new subscription plan. Only 'super_admin' can create plans.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "name": "Premium",
+  "slug": "premium",
+  "price_monthly": 149.99,
+  "price_yearly": 1499.90,
+  "max_orders_per_month": 500,
+  "max_users": 25,
+  "max_storage_gb": 50,
+  "features": {
+    "support": "priority",
+    "custom_branding": true,
+    "api_access": true,
+    "advanced_analytics": true
+  },
+  "stripe_price_id": "price_premium_123",
+  "active": true
+}
+```
+
+**Field Descriptions:**
+- `name` (string, required): Display name of the plan (max 100 chars)
+- `slug` (string, required): URL-friendly identifier (lowercase, alphanumeric with hyphens, max 100 chars)
+- `price_monthly` (decimal, required): Monthly price in dollars
+- `price_yearly` (decimal, optional): Yearly price in dollars
+- `max_orders_per_month` (integer, optional): Maximum orders per month (-1 for unlimited)
+- `max_users` (integer, optional): Maximum users allowed (-1 for unlimited)
+- `max_storage_gb` (integer, optional): Maximum storage in GB
+- `features` (object, optional): JSON object with plan features
+- `stripe_price_id` (string, optional): Stripe price ID for billing integration
+- `active` (boolean, optional): Whether the plan is active. Default: `true`
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "990e8400-e29b-41d4-a716-446655440005",
+    "name": "Premium",
+    "slug": "premium",
+    "price_monthly": 149.99,
+    "price_yearly": 1499.90,
+    "max_orders_per_month": 500,
+    "max_users": 25,
+    "max_storage_gb": 50,
+    "features": {
+      "support": "priority",
+      "custom_branding": true,
+      "api_access": true,
+      "advanced_analytics": true
+    },
+    "stripe_price_id": "price_premium_123",
+    "active": true,
+    "created_at": "2025-11-04T11:00:00.000Z"
+  }
+}
+```
+
+**Duplicate Slug or Name (409):**
+```json
+{
+  "success": false,
+  "error": "ConflictError",
+  "message": "A subscription plan with this slug or name already exists"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only super admins can create subscription plans"
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "name": "Name is required and must be between 1-100 characters",
+    "slug": "Slug is required, must be lowercase, alphanumeric with hyphens, and between 1-100 characters",
+    "price_monthly": "Monthly price is required and must be a positive number"
+  }
+}
+```
+
+---
+
+#### PUT /api/subscription-plans/:id
+
+Update an existing subscription plan. Only 'super_admin' can update plans.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body (all fields optional):**
+```json
+{
+  "name": "Premium Plus",
+  "price_monthly": 159.99,
+  "price_yearly": 1599.90,
+  "max_orders_per_month": 600,
+  "max_users": 30,
+  "max_storage_gb": 75,
+  "features": {
+    "support": "dedicated",
+    "custom_branding": true,
+    "api_access": true,
+    "advanced_analytics": true,
+    "white_label": true
+  },
+  "stripe_price_id": "price_premium_456",
+  "active": true
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "990e8400-e29b-41d4-a716-446655440005",
+    "name": "Premium Plus",
+    "slug": "premium",
+    "price_monthly": 159.99,
+    "price_yearly": 1599.90,
+    "max_orders_per_month": 600,
+    "max_users": 30,
+    "max_storage_gb": 75,
+    "features": {
+      "support": "dedicated",
+      "custom_branding": true,
+      "api_access": true,
+      "advanced_analytics": true,
+      "white_label": true
+    },
+    "stripe_price_id": "price_premium_456",
+    "active": true,
+    "created_at": "2025-11-04T11:00:00.000Z"
+  }
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Subscription plan not found"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only super admins can update subscription plans"
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": {
+    "price_monthly": "Monthly price must be a positive number"
+  }
+}
+```
+
+**Cannot Modify Slug (400):**
+```json
+{
+  "success": false,
+  "error": "ValidationError",
+  "message": "Cannot modify plan slug after creation"
+}
+```
+
+---
+
+#### DELETE /api/subscription-plans/:id
+
+Delete (or deactivate) a subscription plan. Only 'super_admin' can delete plans. Plans with active subscriptions cannot be hard deleted and will be deactivated instead.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Subscription plan deleted successfully"
+}
+```
+
+**Plan Deactivated Instead (200):**
+```json
+{
+  "success": true,
+  "message": "Subscription plan has active subscriptions and has been deactivated instead of deleted"
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "NotFoundError",
+  "message": "Subscription plan not found"
+}
+```
+
+**Forbidden (403):**
+```json
+{
+  "success": false,
+  "error": "ForbiddenError",
+  "message": "Only super admins can delete subscription plans"
+}
+```
+
+**Cannot Delete (400):**
+```json
+{
+  "success": false,
+  "error": "BadRequestError",
+  "message": "Cannot delete or deactivate the free plan as it is required for new users"
+}
 ```
 
 ---
@@ -1209,9 +2450,11 @@ Refresh access token using refresh token.
 
 #### GET /api/ingredients
 
-Get all ingredients for authenticated user.
+Get all ingredients for authenticated user's current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Response (200):**
 
@@ -1219,6 +2462,8 @@ Get all ingredients for authenticated user.
 [
   {
     "id": "uuid",
+    "organizationId": "uuid",
+    "userId": "uuid",
     "name": "Flour",
     "provider": "Supplier Co",
     "qtyProvider": 5.0,
@@ -1232,9 +2477,11 @@ Get all ingredients for authenticated user.
 
 #### POST /api/ingredients
 
-Create a new ingredient.
+Create a new ingredient in the current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Request:**
 
@@ -1253,6 +2500,8 @@ Create a new ingredient.
 ```json
 {
   "id": "uuid",
+  "organizationId": "uuid",
+  "userId": "uuid",
   "name": "Flour",
   "provider": "Supplier Co",
   "qtyProvider": 5.0,
@@ -1262,6 +2511,8 @@ Create a new ingredient.
   "updatedAt": "2024-01-15T10:30:00Z"
 }
 ```
+
+**Note:** The `organizationId` is automatically set from the `X-Organization-Id` header. The `userId` is set from the authenticated user.
 
 #### PUT /api/ingredients/:id
 
@@ -1310,9 +2561,11 @@ Delete an ingredient.
 
 #### GET /api/recipes
 
-Get all recipes for authenticated user.
+Get all recipes for authenticated user's current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Response (200):**
 
@@ -1320,6 +2573,8 @@ Get all recipes for authenticated user.
 [
   {
     "id": "uuid",
+    "organizationId": "uuid",
+    "userId": "uuid",
     "name": "Chocolate Cake",
     "image": "https://storage.example.com/recipes/cake.jpg",
     "categories": ["queque", "unidad"],
@@ -1622,9 +2877,11 @@ For each recipe that needs migration:
 
 #### GET /api/supplies
 
-Get all supplies for authenticated user.
+Get all supplies for authenticated user's current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Response (200):**
 
@@ -1632,6 +2889,8 @@ Get all supplies for authenticated user.
 [
   {
     "id": "uuid",
+    "organizationId": "uuid",
+    "userId": "uuid",
     "name": "Cake Box",
     "supplierName": "Packaging Co",
     "quantity": 100,
@@ -1686,9 +2945,11 @@ Delete a supply.
 
 #### GET /api/orders
 
-Get all orders for authenticated user.
+Get all orders for authenticated user's current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Query Parameters:**
 
@@ -1702,6 +2963,8 @@ Get all orders for authenticated user.
 [
   {
     "id": "uuid",
+    "organizationId": "uuid",
+    "userId": "uuid",
     "quotationId": "uuid-quotation",
     "quotation": {
       "id": "uuid-quotation",
@@ -1769,9 +3032,11 @@ Get all orders for authenticated user.
 
 #### POST /api/orders
 
-Create a new order.
+Create a new order in the current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Request:**
 
@@ -1973,9 +3238,11 @@ Delete an expense.
 
 #### GET /api/quotations
 
-Get all quotations for authenticated user.
+Get all quotations for authenticated user's current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Response (200):**
 
@@ -1983,6 +3250,8 @@ Get all quotations for authenticated user.
 [
   {
     "id": "uuid",
+    "organizationId": "uuid",
+    "userId": "uuid",
     "clientName": "María González",
     "size": "mediano",
     "recipes": [
@@ -2071,9 +3340,11 @@ Get all quotations for authenticated user.
 
 #### POST /api/quotations
 
-Create a new quotation.
+Create a new quotation in the current organization.
 
-**Headers:** `Authorization: Bearer {token}`
+**Headers:** 
+- `Authorization: Bearer {token}`
+- `X-Organization-Id: {organizationId}` (required)
 
 **Request:**
 

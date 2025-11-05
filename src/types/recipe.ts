@@ -34,6 +34,8 @@ export type Category = "queque" | "relleno" | "cubierta" | "unidad" | "otro";
 
 export interface Recipe {
   id: string;
+  organizationId: string;
+  userId?: string;
   name: string;
   image?: string;
   elaborations: RecipeElaboration[];

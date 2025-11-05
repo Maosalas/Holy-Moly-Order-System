@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface SupplyFormProps {
   onSubmit: (supply: Supply) => void;
@@ -14,6 +15,7 @@ interface SupplyFormProps {
 
 const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
   const { toast } = useToast();
+  const { currentOrganization } = useOrganization();
   const [name, setName] = useState(initialData?.name || "");
   const [supplierName, setSupplierName] = useState(initialData?.supplierName || "");
   const [quantity, setQuantity] = useState(initialData?.quantity?.toString() || "");
@@ -59,6 +61,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
 
     const supply: Supply = {
       id: initialData?.id || crypto.randomUUID(),
+      organizationId: currentOrganization?.id || "",
       name: name.trim(),
       supplierName: supplierName.trim(),
       quantity: parsedQuantity,

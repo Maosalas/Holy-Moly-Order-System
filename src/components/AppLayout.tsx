@@ -1,9 +1,11 @@
-import { ReactNode } from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator } from "lucide-react";
+import { ReactNode, useEffect } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/Basic Branding-01.png";
+import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import defaultLogo from "@/assets/Orderly-logo.png";
 import {
   Sidebar,
   SidebarContent,
@@ -35,9 +37,11 @@ function AppSidebar() {
   const collapsed = state === "collapsed";
 
   // Filter menu items based on role
-  const visibleMenuItems = user?.role === "cake_topper_provider" 
+  const visibleMenuItems = user?.roles?.includes("cake_topper_provider")
     ? menuItems.filter(item => item.url === "/orders")
     : menuItems;
+
+  const isSuperAdmin = user?.roles?.includes("super_admin");
 
   return (
     <Sidebar collapsible="icon">
@@ -57,9 +61,19 @@ function AppSidebar() {
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  
+
                 );
               })}
+              {isSuperAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location.pathname === "/super-admin"}>
+                    <NavLink to="/super-admin">
+                      <Shield className="h-5 w-5" />
+                      {!collapsed && <span>Super Admin</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -74,6 +88,18 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { user, logout } = useAuth();
+  const { currentOrganization } = useOrganization();
+  const logoSrc = currentOrganization?.logoUrl || defaultLogo || "";
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Redirect super_admin users to super admin panel
+  useEffect(() => {
+    const isSuperAdmin = user?.roles?.includes("super_admin");
+    if (isSuperAdmin && location.pathname !== "/super-admin") {
+      navigate("/super-admin", { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
 
   return (
     <SidebarProvider>
@@ -84,15 +110,16 @@ export function AppLayout({ children }: AppLayoutProps) {
             <div className="flex items-center min-w-0">
               <SidebarTrigger />
               <div className="ml-2 sm:ml-4 flex items-center gap-2 min-w-0">
-                <img src={logo} alt="Holy Moly Logo" className="h-8 sm:h-10 w-auto object-contain" />
+                <img src={logoSrc} alt="Organization Logo" className="h-8 sm:h-10 w-auto object-contain" />
               </div>
             </div>
-            <div className="flex items-center gap-1 sm:gap-3 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <OrganizationSwitcher />
               <div className="hidden sm:flex items-center gap-2 text-sm">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium truncate">{user?.name}</span>
                 <span className="text-xs text-muted-foreground capitalize">
-                  ({user?.role === "cake_topper_provider" ? "Topper" : "Owner"})
+                  ({user?.roles?.includes("super_admin") ? "Admin" : user?.roles?.includes("cake_topper_provider") ? "Topper" : "Owner"})
                 </span>
               </div>
               <Button variant="outline" size="sm" onClick={logout} className="gap-1 sm:gap-2">
