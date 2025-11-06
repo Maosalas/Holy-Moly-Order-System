@@ -18,15 +18,21 @@ jobs:
         DEPLOY_USER:   ${{ secrets.DEPLOY_USER }}     # e.g. deploy
         DEPLOY_KEY:    ${{ secrets.DEPLOY_KEY }}      # private key content
         DEPLOY_PATH:   /var/www/holy_dashboard
+        VITE_API_URL:  ${{ secrets.VITE_API_URL }}    # e.g. https://api-holymoly.networksalas.com/api
+        VITE_APP_URL:  ${{ secrets.VITE_APP_URL }}    # e.g. https://holymoly.networksalas.com
       run: |
         echo "$DEPLOY_KEY" > deploy_key
         chmod 600 deploy_key
+
+        # Create .env file for production
+        echo "VITE_API_URL=$VITE_API_URL" > .env
+        echo "VITE_APP_URL=$VITE_APP_URL" >> .env
 
         ssh -i deploy_key -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER "
           mkdir -p $DEPLOY_PATH && chown -R $DEPLOY_USER:$DEPLOY_USER $DEPLOY_PATH
         "
 
-        # Upload only needed files
+        # Upload only needed files (now including .env)
         rsync -avz -e "ssh -i deploy_key -o StrictHostKeyChecking=no" \
           --delete \
           --exclude '.git' \

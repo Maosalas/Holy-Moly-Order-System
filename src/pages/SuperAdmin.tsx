@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { organizationsApi } from "@/lib/api";
 import { OrganizationWithRole } from "@/types/organization";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Building2, Users, TrendingUp, Eye, Plus, Settings } from "lucide-react";
 import CreateOrganizationDialog from "@/components/CreateOrganizationDialog";
 import SubscriptionPlansManager from "@/components/SubscriptionPlansManager";
@@ -18,6 +20,8 @@ const SuperAdmin = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
   const { switchOrganization } = useOrganization();
+  const { startImpersonation } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadAllOrganizations();
@@ -65,10 +69,18 @@ const SuperAdmin = () => {
   };
 
   const handleImpersonate = async (org: OrganizationWithRole) => {
+    // Start impersonation mode
+    startImpersonation(org.id);
+
+    // Switch to the organization
     await switchOrganization(org);
+
+    // Navigate to organization dashboard
+    navigate("/");
+
     toast({
       title: "Impersonating Organization",
-      description: `Switched to ${org.name}`,
+      description: `Now viewing ${org.name}`,
     });
   };
 

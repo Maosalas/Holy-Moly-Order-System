@@ -605,7 +605,6 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
                 id="downPayment"
                 type="number"
                 step="any"
-                min="0.1"
                 value={downPayment}
                 onChange={(e) => setDownPayment(e.target.value)}
                 placeholder="0.00"
@@ -736,7 +735,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
 
           <div className="flex gap-2 pt-4">
             <Button type="submit" className="flex-1" disabled={isSubmitting}>
-              {isSubmitting ? "Guardando..." : (initialData ? "Actuzaliar pedido" : "Crear Pedido")}
+              {isSubmitting ? "Guardando..." : (initialData ? "Actualizar pedido" : "Crear Pedido")}
             </Button>
             {onCancel && (
               <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>

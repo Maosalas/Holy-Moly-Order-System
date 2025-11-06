@@ -87,19 +87,19 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, isImpersonating, stopImpersonation } = useAuth();
   const { currentOrganization } = useOrganization();
   const logoSrc = currentOrganization?.logoUrl || defaultLogo || "";
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Redirect super_admin users to super admin panel
+  // Redirect super_admin users to super admin panel only if not impersonating
   useEffect(() => {
     const isSuperAdmin = user?.roles?.includes("super_admin");
-    if (isSuperAdmin && location.pathname !== "/super-admin") {
+    if (isSuperAdmin && !isImpersonating && location.pathname !== "/super-admin") {
       navigate("/super-admin", { replace: true });
     }
-  }, [user, location.pathname, navigate]);
+  }, [user, isImpersonating, location.pathname, navigate]);
 
   return (
     <SidebarProvider>
@@ -128,6 +128,27 @@ export function AppLayout({ children }: AppLayoutProps) {
               </Button>
             </div>
           </header>
+          {isImpersonating && (
+            <div className="bg-yellow-500 text-yellow-950 px-4 py-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  Impersonating: {currentOrganization?.name}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  stopImpersonation();
+                  navigate("/super-admin");
+                }}
+                className="bg-white text-yellow-950 hover:bg-yellow-50"
+              >
+                Stop Impersonation
+              </Button>
+            </div>
+          )}
           <main className="flex-1 p-3 sm:p-6 bg-background overflow-auto">
             {children}
           </main>

@@ -37,10 +37,15 @@ export function OrganizationSwitcher() {
   const [newOrgSlug, setNewOrgSlug] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const { organizations, currentOrganization, switchOrganization, createOrganization } = useOrganization();
-  const { user } = useAuth();
+  const { user, isImpersonating } = useAuth();
   const navigate = useNavigate();
-  
+
   const isSuperAdmin = user?.roles?.includes("super_admin");
+
+  // Hide OrganizationSwitcher for super_admins who are not impersonating
+  if (isSuperAdmin && !isImpersonating) {
+    return null;
+  }
 
   const handleCreateOrganization = async () => {
     if (!newOrgName.trim() || !newOrgSlug.trim()) return;
@@ -67,14 +72,18 @@ export function OrganizationSwitcher() {
     setNewOrgSlug(slug);
   };
 
+  // When impersonating, disable organization switching
+  const canSwitchOrganization = !isSuperAdmin || !isImpersonating;
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={canSwitchOrganization ? open : false} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
           className="w-[200px] justify-between bg-card"
+          disabled={!canSwitchOrganization}
         >
           <div className="flex items-center gap-2 min-w-0">
             <Building2 className="h-4 w-4 shrink-0" />
@@ -82,7 +91,7 @@ export function OrganizationSwitcher() {
               {currentOrganization?.name || "Seleccionar organización"}
             </span>
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          {canSwitchOrganization && <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0 bg-popover z-50">
