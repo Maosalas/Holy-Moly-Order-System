@@ -99,6 +99,18 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ token, newPassword }),
     }, false), // No org header for auth
+
+  updateProfile: (name: string) =>
+    apiFetch("/auth/update-profile", {
+      method: "PUT",
+      body: JSON.stringify({ name }),
+    }, false), // No org header for auth
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiFetch("/auth/change-password", {
+      method: "PUT",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }, false), // No org header for auth
 };
 
 // Ingredients API

@@ -18,6 +18,7 @@ import Quotations from "./pages/Quotations";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import UserSettings from "./pages/UserSettings";
 import NotFound from "./pages/NotFound";
 import OrganizationSettings from "./pages/OrganizationSettings";
 import OrganizationMembers from "./pages/OrganizationMembers";
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/orders" element={<ProtectedRoute><AppLayout><Orders /></AppLayout></ProtectedRoute>} />
               <Route path="/expenses" element={<ProtectedRoute><AppLayout><Expenses /></AppLayout></ProtectedRoute>} />
               <Route path="/quotations" element={<ProtectedRoute><AppLayout><Quotations /></AppLayout></ProtectedRoute>} />
+              <Route path="/user/settings" element={<ProtectedRoute><AppLayout><UserSettings /></AppLayout></ProtectedRoute>} />
               <Route path="/organization/settings" element={<ProtectedRoute><AppLayout><OrganizationSettings /></AppLayout></ProtectedRoute>} />
               <Route path="/organization/members" element={<ProtectedRoute><AppLayout><OrganizationMembers /></AppLayout></ProtectedRoute>} />
               <Route path="/super-admin" element={<SuperAdminRoute><AppLayout><SuperAdmin /></AppLayout></SuperAdminRoute>} />
