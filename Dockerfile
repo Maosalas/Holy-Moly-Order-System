@@ -1,10 +1,20 @@
 # --- build stage ---
 FROM node:20-alpine AS build
+
+# Build arguments for environment variables
+ARG VITE_API_URL
+ARG VITE_APP_URL
+
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-# Change if your build script differs
+
+# Create .env file from build args
+RUN echo "VITE_API_URL=${VITE_API_URL}" > .env && \
+    echo "VITE_APP_URL=${VITE_APP_URL}" >> .env
+
+# Build the application (Vite will read .env during build)
 RUN npm run build
 
 # --- runtime stage (serve static via Node) ---

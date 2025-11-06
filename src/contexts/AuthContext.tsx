@@ -6,6 +6,10 @@ import { authApi } from "@/lib/api";
 interface AuthContextType extends AuthState {
   currentOrganization: OrganizationWithRole | null;
   setCurrentOrganization: (org: OrganizationWithRole | null) => void;
+  isImpersonating: boolean;
+  impersonatedOrgId: string | null;
+  startImpersonation: (orgId: string) => void;
+  stopImpersonation: () => void;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin") => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
@@ -15,14 +19,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_STORAGE_KEY = "holy-moly-auth";
 const CURRENT_ORG_STORAGE_KEY = "holy-moly-current-org";
+const IMPERSONATION_STORAGE_KEY = "holy-moly-impersonation";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
   });
-  
+
   const [currentOrganization, setCurrentOrganizationState] = useState<OrganizationWithRole | null>(null);
+  const [isImpersonating, setIsImpersonating] = useState<boolean>(false);
+  const [impersonatedOrgId, setImpersonatedOrgId] = useState<string | null>(null);
 
   // Load current organization from localStorage on mount
   useEffect(() => {
@@ -34,6 +41,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error("Error parsing stored organization:", error);
         localStorage.removeItem(CURRENT_ORG_STORAGE_KEY);
+      }
+    }
+  }, []);
+
+  // Load impersonation state from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(IMPERSONATION_STORAGE_KEY);
+    if (stored) {
+      try {
+        const impersonation = JSON.parse(stored);
+        setIsImpersonating(impersonation.isImpersonating);
+        setImpersonatedOrgId(impersonation.orgId);
+      } catch (error) {
+        console.error("Error parsing stored impersonation:", error);
+        localStorage.removeItem(IMPERSONATION_STORAGE_KEY);
       }
     }
   }, []);
@@ -128,22 +150,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true };
   };
 
+  const startImpersonation = (orgId: string) => {
+    setIsImpersonating(true);
+    setImpersonatedOrgId(orgId);
+    localStorage.setItem(IMPERSONATION_STORAGE_KEY, JSON.stringify({
+      isImpersonating: true,
+      orgId
+    }));
+  };
+
+  const stopImpersonation = () => {
+    setIsImpersonating(false);
+    setImpersonatedOrgId(null);
+    setCurrentOrganizationState(null);
+    localStorage.removeItem(IMPERSONATION_STORAGE_KEY);
+    localStorage.removeItem(CURRENT_ORG_STORAGE_KEY);
+  };
+
   const logout = async () => {
     await authApi.logout();
     localStorage.removeItem(AUTH_STORAGE_KEY);
     localStorage.removeItem(CURRENT_ORG_STORAGE_KEY);
+    localStorage.removeItem(IMPERSONATION_STORAGE_KEY);
     setAuthState({ user: null, isAuthenticated: false });
     setCurrentOrganizationState(null);
+    setIsImpersonating(false);
+    setImpersonatedOrgId(null);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      ...authState, 
-      currentOrganization, 
+    <AuthContext.Provider value={{
+      ...authState,
+      currentOrganization,
       setCurrentOrganization,
-      login, 
-      signup, 
-      logout 
+      isImpersonating,
+      impersonatedOrgId,
+      startImpersonation,
+      stopImpersonation,
+      login,
+      signup,
+      logout
     }}>
       {children}
     </AuthContext.Provider>

@@ -1,5 +1,6 @@
-const API_BASE_URL = "https://api-holymoly.networksalas.com/api";
-// const API_BASE_URL = "http://localhost:3000/api"; // For local development
+// Read API URL from environment variables
+// Falls back to localhost if not defined
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 interface ApiResponse<T> {
   data?: T;
@@ -86,6 +87,18 @@ export const authApi = {
     }, false), // No org header for auth
 
   getCurrentUser: () => apiFetch("/auth/me", { method: "GET" }, false), // No org header for auth
+
+  forgotPassword: (email: string) =>
+    apiFetch("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }, false), // No org header for auth
+
+  resetPassword: (token: string, newPassword: string) =>
+    apiFetch("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
+    }, false), // No org header for auth
 };
 
 // Ingredients API
