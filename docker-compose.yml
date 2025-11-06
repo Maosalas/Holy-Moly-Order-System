@@ -5,6 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api-holymoly.networksalas.com/api}
+        VITE_APP_URL: ${VITE_APP_URL:-https://holymoly.networksalas.com}
     container_name: holymoly-frontend
     restart: unless-stopped
     labels:

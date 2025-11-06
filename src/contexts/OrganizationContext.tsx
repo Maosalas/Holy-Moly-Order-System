@@ -24,7 +24,7 @@ interface OrganizationContextType {
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentOrganization, setCurrentOrganization, isAuthenticated } = useAuth();
+  const { currentOrganization, setCurrentOrganization, isAuthenticated, user, isImpersonating } = useAuth();
   const [organizations, setOrganizations] = useState<OrganizationWithRole[]>([]);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -263,6 +263,16 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const switchOrganization = (org: OrganizationWithRole) => {
+    // Super admins can only switch organizations when impersonating
+    if (user?.roles.includes("super_admin") && !isImpersonating) {
+      toast({
+        title: "Error",
+        description: "Super admins must use impersonation to access organization views",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setCurrentOrganization(org);
     toast({
       title: "Organization switched",
