@@ -29,8 +29,15 @@ export const RecipeCard = ({ recipe, onEdit, onDelete }: RecipeCardProps) => {
       </div>
       <CardHeader>
         <CardTitle className="text-lg">{migratedRecipe.name}</CardTitle>
-        <div className="text-sm text-muted-foreground">
-          {migratedRecipe.elaborations?.length || 0} elaboración{(migratedRecipe.elaborations?.length || 0) !== 1 ? "es" : ""}
+        <div className="text-sm text-muted-foreground space-y-1">
+          <div>
+            {migratedRecipe.elaborations?.length || 0} elaboración{(migratedRecipe.elaborations?.length || 0) !== 1 ? "es" : ""} base
+          </div>
+          {migratedRecipe.variations && migratedRecipe.variations.length > 0 && (
+            <div className="font-medium text-primary">
+              {migratedRecipe.variations.length} variación{migratedRecipe.variations.length !== 1 ? "es" : ""}
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>

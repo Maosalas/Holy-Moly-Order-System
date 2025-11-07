@@ -108,7 +108,7 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Package className="h-5 w-5" />
-              <Label className="text-base font-semibold">Ingredientes</Label>
+              <Label className="text-base font-semibold">Elaboraciones Base</Label>
             </div>
             {migratedRecipe.elaborations && migratedRecipe.elaborations.length > 0 ? (
               <Accordion type="single" collapsible defaultValue={migratedRecipe.elaborations[0]?.id} className="space-y-2">
@@ -162,9 +162,104 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
                 ))}
               </Accordion>
             ) : (
-              <p className="text-sm text-muted-foreground">No hay elaboraciones definidas</p>
+              <p className="text-sm text-muted-foreground">No hay elaboraciones base definidas</p>
             )}
           </div>
+
+          {migratedRecipe.variations && migratedRecipe.variations.length > 0 && (
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <ChefHat className="h-5 w-5" />
+                <Label className="text-base font-semibold">Variaciones ({migratedRecipe.variations.length})</Label>
+              </div>
+              <Accordion type="single" collapsible className="space-y-2">
+                {migratedRecipe.variations.map((variation) => (
+                  <AccordionItem key={variation.id} value={variation.id} className="border rounded-lg px-4 bg-primary/5">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-primary">{variation.name}</span>
+                          {variation.isDefault && (
+                            <span className="text-xs px-2 py-0.5 bg-primary text-primary-foreground rounded-full">
+                              Predeterminada
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {variation.elaborations?.length || 0} elaboración{(variation.elaborations?.length || 0) !== 1 ? 'es' : ''}
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      {variation.description && (
+                        <p className="text-sm text-muted-foreground mb-3">{variation.description}</p>
+                      )}
+                      {variation.elaborations && variation.elaborations.length > 0 ? (
+                        <div className="space-y-2">
+                          {variation.elaborations.map((elaboration) => (
+                            <div key={elaboration.id} className="border rounded-lg p-3 bg-background">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-medium">{elaboration.name}</span>
+                                {elaboration.elaborationType && (
+                                  <span className="text-xs px-2 py-1 bg-muted rounded capitalize">
+                                    {elaboration.elaborationType}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="overflow-x-auto">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Ingrediente</TableHead>
+                                      <TableHead className="text-right">Cantidad</TableHead>
+                                      <TableHead className="text-right">Unidad</TableHead>
+                                      <TableHead className="text-right">Costo</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {elaboration.ingredients.map((ingredient) => (
+                                      <TableRow key={ingredient.id}>
+                                        <TableCell className="font-medium">{ingredient.ingredientName}</TableCell>
+                                        <TableCell className="text-right">
+                                          {(ingredient.quantity * selectedMultiplier).toFixed(2)}
+                                        </TableCell>
+                                        <TableCell className="text-right">{ingredient.units}</TableCell>
+                                        <TableCell className="text-right">
+                                          ₡{(ingredient.cost * selectedMultiplier).toFixed(2)}
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                    <TableRow className="bg-muted/50">
+                                      <TableCell colSpan={3} className="font-semibold text-sm">
+                                        Subtotal
+                                      </TableCell>
+                                      <TableCell className="text-right font-semibold">
+                                        ₡{(elaboration.ingredients.reduce((sum, ing) => sum + ing.cost, 0) * selectedMultiplier).toFixed(2)}
+                                      </TableCell>
+                                    </TableRow>
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </div>
+                          ))}
+                          {variation.totalCost !== undefined && (
+                            <div className="flex justify-between items-center pt-2 border-t">
+                              <Label className="font-semibold">Costo Total Variación:</Label>
+                              <span className="text-xl font-bold text-primary">
+                                ₡{(variation.totalCost * selectedMultiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No hay elaboraciones en esta variación</p>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          )}
 
           <div className="pt-4 border-t space-y-2">
             <div className="flex justify-between items-center">
