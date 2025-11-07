@@ -10,6 +10,7 @@ interface AuthContextType extends AuthState {
   impersonatedOrgId: string | null;
   startImpersonation: (orgId: string) => void;
   stopImpersonation: () => void;
+  updateUser: (user: User) => void;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin") => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
@@ -167,6 +168,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem(CURRENT_ORG_STORAGE_KEY);
   };
 
+  const updateUser = (user: User) => {
+    setAuthState({ user, isAuthenticated: true });
+    // Update localStorage with new user data
+    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (stored) {
+      const authData = JSON.parse(stored);
+      authData.user = user;
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
+    }
+  };
+
   const logout = async () => {
     await authApi.logout();
     localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -187,6 +199,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       impersonatedOrgId,
       startImpersonation,
       stopImpersonation,
+      updateUser,
       login,
       signup,
       logout

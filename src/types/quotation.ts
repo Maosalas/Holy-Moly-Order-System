@@ -12,6 +12,11 @@ export interface QuotationRecipe {
   recipeId: string;
   recipeName: string;
   recipeType: RecipeType;
+  
+  // NUEVO: Soporte para variaciones
+  variationId?: string;
+  variationName?: string;
+  
   unitCost: number;
   quantity: number;
   totalCost: number;

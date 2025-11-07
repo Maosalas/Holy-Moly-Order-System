@@ -99,6 +99,18 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ token, newPassword }),
     }, false), // No org header for auth
+
+  updateProfile: (name: string) =>
+    apiFetch("/auth/update-profile", {
+      method: "PUT",
+      body: JSON.stringify({ name }),
+    }, false), // No org header for auth
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiFetch("/auth/change-password", {
+      method: "PUT",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }, false), // No org header for auth
 };
 
 // Ingredients API
@@ -359,6 +371,30 @@ export const quotationsApi = {
 };
 
 // Organizations API
+export const recipeParametersApi = {
+  getAll: () => 
+    apiFetch<any[]>(`/organizations/${getCurrentOrgId()}/recipe-parameters`, {
+      method: "GET",
+    }),
+
+  create: (data: any) =>
+    apiFetch<any>(`/organizations/${getCurrentOrgId()}/recipe-parameters`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: any) =>
+    apiFetch<any>(`/organizations/${getCurrentOrgId()}/recipe-parameters/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    apiFetch<void>(`/organizations/${getCurrentOrgId()}/recipe-parameters/${id}`, {
+      method: "DELETE",
+    }),
+};
+
 export const organizationsApi = {
   // Add member by email
   addMemberByEmail: async (organizationId: string, email: string, role: string, name?: string) => {

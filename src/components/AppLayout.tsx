@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield } from "lucide-react";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings, Sliders } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
@@ -25,6 +25,7 @@ const menuItems = [
   { title: "Pedidos", url: "/orders", icon: ShoppingBag },
   { title: "Cotizador", url: "/quotations", icon: Calculator },
   { title: "Recetas", url: "/recipes", icon: ChefHat },
+  { title: "Parámetros", url: "/recipe-parameters", icon: Sliders },
   { title: "Ingredientes", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
   { title: "Gastos", url: "/expenses", icon: Receipt },
@@ -122,6 +123,15 @@ export function AppLayout({ children }: AppLayoutProps) {
                   ({user?.roles?.includes("super_admin") ? "Admin" : user?.roles?.includes("cake_topper_provider") ? "Topper" : "Owner"})
                 </span>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/user/settings")}
+                className="gap-1 sm:gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Settings</span>
+              </Button>
               <Button variant="outline" size="sm" onClick={logout} className="gap-1 sm:gap-2">
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Logout</span>
