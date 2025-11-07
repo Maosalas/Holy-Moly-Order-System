@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import OrganizationSettings from "./pages/OrganizationSettings";
 import OrganizationMembers from "./pages/OrganizationMembers";
 import SuperAdmin from "./pages/SuperAdmin";
+import RecipeParameters from "./pages/RecipeParameters";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/user/settings" element={<ProtectedRoute><AppLayout><UserSettings /></AppLayout></ProtectedRoute>} />
               <Route path="/organization/settings" element={<ProtectedRoute><AppLayout><OrganizationSettings /></AppLayout></ProtectedRoute>} />
               <Route path="/organization/members" element={<ProtectedRoute><AppLayout><OrganizationMembers /></AppLayout></ProtectedRoute>} />
+              <Route path="/recipe-parameters" element={<ProtectedRoute><AppLayout><RecipeParameters /></AppLayout></ProtectedRoute>} />
               <Route path="/super-admin" element={<SuperAdminRoute><AppLayout><SuperAdmin /></AppLayout></SuperAdminRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

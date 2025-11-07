@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings } from "lucide-react";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings, Sliders } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
@@ -25,6 +25,7 @@ const menuItems = [
   { title: "Pedidos", url: "/orders", icon: ShoppingBag },
   { title: "Cotizador", url: "/quotations", icon: Calculator },
   { title: "Recetas", url: "/recipes", icon: ChefHat },
+  { title: "Parámetros", url: "/recipe-parameters", icon: Sliders },
   { title: "Ingredientes", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
   { title: "Gastos", url: "/expenses", icon: Receipt },
