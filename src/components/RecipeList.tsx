@@ -114,9 +114,15 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Elaboraciones:</span>
-                      <span className="font-medium">{recipe.elaborations?.length || 0} elaboración{(recipe.elaborations?.length || 0) !== 1 ? 'es' : ''}</span>
+                      <span className="text-muted-foreground">Elaboraciones base:</span>
+                      <span className="font-medium">{recipe.elaborations?.length || 0}</span>
                     </div>
+                    {recipe.variations && recipe.variations.length > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Variaciones:</span>
+                        <span className="font-medium text-primary">{recipe.variations.length}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Categorías:</span>
                       <span className="font-medium">{(recipe.categories || [(recipe as any).category]).join(', ')}</span>
@@ -173,7 +179,8 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
               <TableHeader>
                 <TableRow>
                   <TableHead className="font-semibold">Receta</TableHead>
-                  <TableHead className="font-semibold">Elaboraciones</TableHead>
+                  <TableHead className="font-semibold">Elaboraciones Base</TableHead>
+                  <TableHead className="font-semibold">Variaciones</TableHead>
                   <TableHead className="font-semibold">Costo Total</TableHead>
                   <TableHead className="font-semibold">Categorías</TableHead>
                   <TableHead className="text-right font-semibold">Acciones</TableHead>
@@ -201,9 +208,15 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                     <TableCell>
                       <div className="text-sm">
                         <span className="font-medium">{recipe.elaborations?.length || 0}</span>
-                        <span className="text-muted-foreground ml-1">
-                          elaboración{(recipe.elaborations?.length || 0) !== 1 ? 'es' : ''}
-                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {recipe.variations && recipe.variations.length > 0 ? (
+                          <span className="font-medium text-primary">{recipe.variations.length}</span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
