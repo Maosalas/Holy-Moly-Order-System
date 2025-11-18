@@ -56,11 +56,11 @@ export function RecipeParameterForm({
               id="parameterKey"
               value={parameterKey}
               onChange={(e) => setParameterKey(e.target.value)}
-              placeholder="Ej: Relleno_Cupcake, Cubierta_Pastel"
+              placeholder="Ej: Relleno Cupcake, Crema de Mantequilla, Fondant"
               required
             />
             <p className="text-sm text-muted-foreground">
-              Use guiones bajos (_) en lugar de espacios
+              Use un nombre descriptivo y único para identificar este parámetro
             </p>
           </div>
 

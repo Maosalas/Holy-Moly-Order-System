@@ -3,22 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, X } from "lucide-react";
-import { RecipeElaboration, RecipeIngredient, ElaborationType } from "@/types/recipe";
+import { RecipeElaboration, RecipeIngredient } from "@/types/recipe";
 import { Ingredient } from "@/types/ingredient";
-import { RecipeParameter } from "@/types/recipe-parameter";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -32,34 +24,28 @@ interface ElaborationEditorProps {
   elaborations: RecipeElaboration[];
   onElaborationsChange: (elaborations: RecipeElaboration[]) => void;
   availableIngredients: Ingredient[];
-  availableParameters: RecipeParameter[];
-  variationId?: string;
-  showElaborationType?: boolean;
 }
 
 export function ElaborationEditor({
   elaborations,
   onElaborationsChange,
   availableIngredients,
-  availableParameters,
-  variationId,
-  showElaborationType = true,
 }: ElaborationEditorProps) {
   const addElaboration = () => {
     const newElaboration: RecipeElaboration = {
       id: getUUID(),
       name: `Elaboración ${elaborations.length + 1}`,
       order: elaborations.length + 1,
+      cost: 0,              // Inicializar costo en 0
+      variationId: null,    // null = elaboración común a todas las variaciones
       ingredients: [],
-      variationId: variationId,
-      elaborationType: showElaborationType ? "base" : undefined,
     };
     onElaborationsChange([...elaborations, newElaboration]);
   };
 
   const removeElaboration = (id: string) => {
-    if (elaborations.length === 1 && !variationId) {
-      return; // Must have at least one base elaboration
+    if (elaborations.length === 1) {
+      return; // Must have at least one elaboration
     }
     onElaborationsChange(elaborations.filter((e) => e.id !== id));
   };
@@ -172,81 +158,18 @@ export function ElaborationEditor({
               <AccordionTrigger className="hover:no-underline">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{elaboration.name}</span>
-                  {elaboration.elaborationType && (
-                    <span className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded capitalize">
-                      {elaboration.elaborationType}
-                    </span>
-                  )}
-                  {elaboration.parameterKey && (
-                    <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded font-mono">
-                      {elaboration.parameterKey}
-                    </span>
-                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-3 pt-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Nombre</Label>
-                    <Input
-                      value={elaboration.name}
-                      onChange={(e) =>
-                        updateElaboration(elaboration.id, { name: e.target.value })
-                      }
-                    />
-                  </div>
-                  {showElaborationType && (
-                    <div className="space-y-2">
-                      <Label>Tipo</Label>
-                      <Select
-                        value={elaboration.elaborationType || "base"}
-                        onValueChange={(value) =>
-                          updateElaboration(elaboration.id, {
-                            elaborationType: value as ElaborationType,
-                          })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="base">Base</SelectItem>
-                          <SelectItem value="relleno">Relleno</SelectItem>
-                          <SelectItem value="cubierta">Cubierta</SelectItem>
-                          <SelectItem value="decoracion">Decoración</SelectItem>
-                          <SelectItem value="otro">Otro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                <div className="space-y-2">
+                  <Label>Nombre</Label>
+                  <Input
+                    value={elaboration.name}
+                    onChange={(e) =>
+                      updateElaboration(elaboration.id, { name: e.target.value })
+                    }
+                  />
                 </div>
-
-                {availableParameters.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>Parámetro Global (Opcional)</Label>
-                    <Select
-                      value={elaboration.parameterKey || "none"}
-                      onValueChange={(value) =>
-                        updateElaboration(elaboration.id, {
-                          parameterKey: value === "none" ? undefined : value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sin parámetro" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sin parámetro</SelectItem>
-                        {availableParameters.map((param) => (
-                          <SelectItem key={param.id} value={param.parameterKey}>
-                            {param.parameterKey} ({param.value}
-                            {param.unit})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -364,7 +287,7 @@ export function ElaborationEditor({
       )}
       <Button type="button" onClick={addElaboration} variant="outline" className="w-full">
         <Plus className="h-4 w-4 mr-2" />
-        Agregar {variationId ? "Elaboración a esta Variación" : "Elaboración Base"}
+        Agregar Elaboración
       </Button>
     </div>
   );

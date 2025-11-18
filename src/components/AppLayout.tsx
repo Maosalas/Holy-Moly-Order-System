@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings, Sliders } from "lucide-react";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings, Sliders, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
@@ -15,17 +15,31 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Pedidos", url: "/orders", icon: ShoppingBag },
   { title: "Cotizador", url: "/quotations", icon: Calculator },
-  { title: "Recetas", url: "/recipes", icon: ChefHat },
-  { title: "Parámetros", url: "/recipe-parameters", icon: Sliders },
+  {
+    title: "Recetas",
+    url: "/recipes",
+    icon: ChefHat,
+    submenu: [
+      { title: "Parámetros", url: "/recipe-parameters", icon: Sliders }
+    ]
+  },
   { title: "Ingredientes", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
   { title: "Gastos", url: "/expenses", icon: Receipt },
@@ -53,6 +67,44 @@ function AppSidebar() {
             <SidebarMenu>
               {visibleMenuItems.map((item) => {
                 const isActive = location.pathname === item.url;
+                const hasSubmenu = 'submenu' in item && item.submenu;
+
+                if (hasSubmenu) {
+                  return (
+                    <Collapsible key={item.title} asChild defaultOpen={false} className="group/collapsible">
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton tooltip={item.title}>
+                            <item.icon className="h-5 w-5" />
+                            {!collapsed && <span>{item.title}</span>}
+                            {!collapsed && <ChevronDown className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />}
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenuSub>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild isActive={location.pathname === item.url}>
+                                <NavLink to={item.url}>
+                                  <span>Ver todas</span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            {item.submenu.map((subItem: any) => (
+                              <SidebarMenuSubItem key={subItem.title}>
+                                <SidebarMenuSubButton asChild isActive={location.pathname === subItem.url}>
+                                  <NavLink to={subItem.url}>
+                                    <span>{subItem.title}</span>
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            ))}
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  );
+                }
+
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>
@@ -62,7 +114,6 @@ function AppSidebar() {
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-
                 );
               })}
               {isSuperAdmin && (

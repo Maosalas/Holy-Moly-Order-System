@@ -200,11 +200,6 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
                             <div key={elaboration.id} className="border rounded-lg p-3 bg-background">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="font-medium">{elaboration.name}</span>
-                                {elaboration.elaborationType && (
-                                  <span className="text-xs px-2 py-1 bg-muted rounded capitalize">
-                                    {elaboration.elaborationType}
-                                  </span>
-                                )}
                               </div>
                               <div className="overflow-x-auto">
                                 <Table>
