@@ -326,7 +326,13 @@ export function VariationEditor({
                             >
                               <Checkbox
                                 checked={isSelected}
-                                onCheckedChange={() => {}}
+                                onCheckedChange={(checked) => {
+                                  const currentIds = variation.baseElaborationIds || [];
+                                  const newIds = checked
+                                    ? [...currentIds, elab.id]
+                                    : currentIds.filter(id => id !== elab.id);
+                                  updateVariation(variation.id, { baseElaborationIds: newIds });
+                                }}
                               />
                               <div className="flex-1">
                                 <div className="font-medium">{elab.name || 'Sin nombre'}</div>
