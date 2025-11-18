@@ -52,6 +52,19 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     migratedRecipe?.variations || []
   );
 
+  // Declare elaborations early since it's used in useEffect below
+  const [elaborations, setElaborations] = useState<RecipeElaboration[]>(
+    migratedRecipe?.elaborations && migratedRecipe.elaborations.length > 0
+      ? migratedRecipe.elaborations
+      : [{
+          id: crypto.randomUUID(),
+          name: "",
+          order: 1,
+          cost: 0,
+          ingredients: []
+        }]
+  );
+
   // Recalcular costos de variaciones al cargar si no están presentes
   useEffect(() => {
     if (migratedRecipe?.variations && migratedRecipe.variations.length > 0) {
@@ -106,27 +119,6 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [newParameterUnit, setNewParameterUnit] = useState("gr");
   const [newParameterDescription, setNewParameterDescription] = useState("");
 
-  // Set default images for relleno and cubierta when categories change
-  useEffect(() => {
-    if (!migratedRecipe && !image) {
-      if (categories.includes('relleno')) {
-        setImage('/src/assets/temp_relleno.png');
-      } else if (categories.includes('cubierta')) {
-        setImage('/src/assets/temp_cubierta.png');
-      }
-    }
-  }, [categories, migratedRecipe, image]);
-  const [elaborations, setElaborations] = useState<RecipeElaboration[]>(
-    migratedRecipe?.elaborations && migratedRecipe.elaborations.length > 0
-      ? migratedRecipe.elaborations
-      : [{
-          id: crypto.randomUUID(),
-          name: "",
-          order: 1,
-          cost: 0,
-          ingredients: []
-        }]
-  );
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
   const [availableSupplies, setAvailableSupplies] = useState<any[]>([]);
   const [selectedSupplies, setSelectedSupplies] = useState<any[]>(

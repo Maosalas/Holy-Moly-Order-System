@@ -52,7 +52,7 @@ export function CardTypesList() {
     try {
       const { data, error } = await cardTypesApi.getAll();
       if (error) throw new Error(error);
-      setCardTypes(data || []);
+      setCardTypes((data as CardType[]) || []);
     } catch (error) {
       console.error("Error fetching card types:", error);
       toast({

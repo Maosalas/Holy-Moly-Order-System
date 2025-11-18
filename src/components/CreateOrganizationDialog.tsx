@@ -112,7 +112,7 @@ export default function CreateOrganizationDialog({
     setIsSubmitting(true);
 
     try {
-      // 1. Create organization
+      // 1. Create organization with super admin API
       const orgResult = await organizationsApi.create({
         name: orgData.name,
         slug: orgData.slug,
@@ -124,11 +124,31 @@ export default function CreateOrganizationDialog({
 
       const orgId = (orgResult.data as any).id;
 
-      // 2. Update subscription plan if not free (store in settings for now)
-      if (selectedPlan !== "free") {
-        await organizationsApi.update(orgId, {
-          settings: { subscription_plan: selectedPlan },
+      // 2. Update subscription plan using super admin endpoint
+      const selectedPlanObj = plans.find(p => p.slug === selectedPlan);
+      if (selectedPlanObj) {
+        const subscriptionData: any = {
+          subscriptionPlan: selectedPlan,
+          subscriptionStatus: "trial",
+        };
+        
+        // Set trial end date (14 days from now)
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 14);
+        subscriptionData.trialEndsAt = trialEndDate.toISOString();
+
+        const subResult = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/super-admin/organizations/${orgId}/subscription`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${JSON.parse(localStorage.getItem("holy-moly-auth") || "{}").token}`,
+          },
+          body: JSON.stringify(subscriptionData),
         });
+
+        if (!subResult.ok) {
+          console.error("Error updating subscription:", await subResult.text());
+        }
       }
 
       // 3. Add members
