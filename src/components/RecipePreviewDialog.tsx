@@ -13,16 +13,12 @@ import { useState } from "react";
 import { Label } from "./ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { cn } from "@/lib/utils";
-import { migrateRecipeToElaborations } from "@/lib/recipeUtils";
 
 interface RecipePreviewDialogProps {
   recipe: Recipe;
 }
 
 export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
-  // Aplicar migración si es necesario
-  const migratedRecipe = migrateRecipeToElaborations(recipe);
-
   const multiplierOptions = [0.5, 1, 1.5, 2, 4];
   const [selectedMultiplier, setSelectedMultiplier] = useState<number>(1);
 
@@ -35,15 +31,15 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">{migratedRecipe.name}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">{recipe.name}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {migratedRecipe.image && (
+          {recipe.image && (
             <div className="w-full h-64 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
               <img
-                src={migratedRecipe.image}
-                alt={migratedRecipe.name}
+                src={recipe.image}
+                alt={recipe.name}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -52,12 +48,12 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <Label className="text-muted-foreground text-sm">Nombre</Label>
-              <p className="font-bold text-xl mt-1">{migratedRecipe.name}</p>
+              <p className="font-bold text-xl mt-1">{recipe.name}</p>
             </div>
             <div>
               <Label className="text-muted-foreground text-sm">Categorías</Label>
               <div className="flex flex-wrap gap-1 mt-1">
-                {(migratedRecipe.categories || [(migratedRecipe as any).category]).map((cat, idx) => (
+                {(recipe.categories || [(recipe as any).category]).map((cat, idx) => (
                   <span key={idx} className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-sm font-medium capitalize">
                     {cat}
                   </span>
@@ -69,18 +65,18 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <Label className="text-muted-foreground text-sm">Notas</Label>
-              <p className="text-sm mt-1">{migratedRecipe.notes || "No hay notas"}</p>
+              <p className="text-sm mt-1">{recipe.notes || "No hay notas"}</p>
             </div>
             <div>
               <Label className="text-muted-foreground text-sm">Link/recurso</Label>
-              {migratedRecipe.url ? (
+              {recipe.url ? (
                 <a
-                  href={migratedRecipe.url}
+                  href={recipe.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary hover:underline block mt-1"
                 >
-                  {migratedRecipe.url}
+                  {recipe.url}
                 </a>
               ) : (
                 <p className="text-sm mt-1">No hay link/recurso</p>
@@ -110,9 +106,9 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
               <Package className="h-5 w-5" />
               <Label className="text-base font-semibold">Elaboraciones Base</Label>
             </div>
-            {migratedRecipe.elaborations && migratedRecipe.elaborations.length > 0 ? (
-              <Accordion type="single" collapsible defaultValue={migratedRecipe.elaborations[0]?.id} className="space-y-2">
-                {migratedRecipe.elaborations.map((elaboration) => (
+            {recipe.elaborations && recipe.elaborations.length > 0 ? (
+              <Accordion type="single" collapsible defaultValue={recipe.elaborations[0]?.id} className="space-y-2">
+                {recipe.elaborations.map((elaboration) => (
                   <AccordionItem key={elaboration.id} value={elaboration.id} className="border rounded-lg px-4">
                     <AccordionTrigger className="hover:no-underline">
                       <div className="flex items-center justify-between w-full pr-4">
@@ -166,14 +162,14 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
             )}
           </div>
 
-          {migratedRecipe.variations && migratedRecipe.variations.length > 0 && (
+          {recipe.variations && recipe.variations.length > 0 && (
             <div className="space-y-3 pt-4 border-t">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <ChefHat className="h-5 w-5" />
-                <Label className="text-base font-semibold">Variaciones ({migratedRecipe.variations.length})</Label>
+                <Label className="text-base font-semibold">Variaciones ({recipe.variations.length})</Label>
               </div>
               <Accordion type="single" collapsible className="space-y-2">
-                {migratedRecipe.variations.map((variation) => (
+                {recipe.variations.map((variation) => (
                   <AccordionItem key={variation.id} value={variation.id} className="border rounded-lg px-4 bg-primary/5">
                     <AccordionTrigger className="hover:no-underline">
                       <div className="flex items-center justify-between w-full pr-4">
@@ -260,14 +256,14 @@ export const RecipePreviewDialog = ({ recipe }: RecipePreviewDialogProps) => {
             <div className="flex justify-between items-center">
               <Label className="text-lg font-semibold">Costo Total:</Label>
               <span className="text-2xl font-bold text-primary">
-                ₡{(migratedRecipe.totalCost * selectedMultiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ₡{(recipe.totalCost * selectedMultiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
-            {(migratedRecipe.categories || [(migratedRecipe as any).category]).includes("unidad") && migratedRecipe.unitCost && (
+            {(recipe.categories || [(recipe as any).category]).includes("unidad") && recipe.unitCost && (
               <div className="flex justify-between items-center">
                 <Label className="text-lg font-semibold">Costo por Unidad:</Label>
                 <span className="text-2xl font-bold text-primary">
-                  ₡{(migratedRecipe.unitCost * selectedMultiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ₡{(recipe.unitCost * selectedMultiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             )}
