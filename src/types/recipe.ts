@@ -31,7 +31,6 @@ export interface RecipeVariation {
   isDefault: boolean;
   orderNumber: number;
   units: number;                   // Cantidad de unidades que produce (Ej: 6, 12, 24)
-  ingredientMultiplier: number;    // Multiplicador de ingredientes (Ej: 0.5, 1, 2)
 
   // Parámetros globales a nivel de variación
   usedParameters?: string[];       // Parámetros específicos para esta variación (Ej: ["Relleno Pavlova"])

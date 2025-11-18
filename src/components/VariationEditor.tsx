@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, GripVertical, Check, ChevronsUpDown, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RecipeVariation, RecipeElaboration } from "@/types/recipe";
+import { Ingredient } from "@/types/ingredient";
 import {
   Accordion,
   AccordionContent,
@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { useRecipeParameters } from "@/hooks/use-recipe-parameters";
+import { ElaborationEditor } from "./ElaborationEditor";
 
 function getUUID() {
   return crypto.randomUUID();
@@ -26,6 +27,7 @@ interface VariationEditorProps {
   onVariationsChange: (variations: RecipeVariation[]) => void;
   baseTotalCost: number; // Costo base de la receta para calcular costos de variaciones
   baseElaborations: RecipeElaboration[]; // Elaboraciones base (variationId = null) disponibles para seleccionar
+  availableIngredients: Ingredient[]; // Ingredientes disponibles para las elaboraciones propias
 }
 
 export function VariationEditor({
@@ -33,8 +35,10 @@ export function VariationEditor({
   onVariationsChange,
   baseTotalCost,
   baseElaborations,
+  availableIngredients,
 }: VariationEditorProps) {
   const { data: recipeParameters = [] } = useRecipeParameters();
+
   const addVariation = () => {
     const newVariation: RecipeVariation = {
       id: getUUID(),
@@ -44,7 +48,6 @@ export function VariationEditor({
       isDefault: variations.length === 0,
       orderNumber: variations.length + 1,
       units: 1,
-      ingredientMultiplier: 1,
       usedParameters: [],           // Parámetros globales de esta variación
       baseElaborationIds: [],       // IDs de elaboraciones base a incluir
       elaborations: [],             // Elaboraciones propias de la variación
@@ -65,9 +68,27 @@ export function VariationEditor({
       variations.map((v) => {
         if (v.id === id) {
           const updated = { ...v, ...updates };
-          // Recalcular costos automáticamente
-          updated.totalCost = baseTotalCost * updated.ingredientMultiplier;
+
+          // Calcular costo de elaboraciones base seleccionadas
+          const baseElabIds = updated.baseElaborationIds || [];
+          const baseCost = baseElaborations
+            .filter(elab => baseElabIds.includes(elab.id))
+            .reduce((sum, elab) => {
+              const elabCost = elab.ingredients.reduce((ingSum, ing) => ingSum + (ing.cost || 0), 0);
+              return sum + elabCost;
+            }, 0);
+
+          // Calcular costo de elaboraciones propias de esta variación
+          const ownElaborations = updated.elaborations || [];
+          const ownCost = ownElaborations.reduce((sum, elab) => {
+            const elabCost = elab.ingredients.reduce((ingSum, ing) => ingSum + (ing.cost || 0), 0);
+            return sum + elabCost;
+          }, 0);
+
+          // Sumar ambos costos
+          updated.totalCost = baseCost + ownCost;
           updated.unitCost = updated.units > 0 ? updated.totalCost / updated.units : 0;
+
           return updated;
         }
         return v;
@@ -108,7 +129,7 @@ export function VariationEditor({
           </div>
         ) : (
           <Accordion type="single" collapsible className="w-full">
-            {variations.map((variation, index) => (
+            {variations.map((variation) => (
               <AccordionItem key={variation.id} value={variation.id}>
                 <AccordionTrigger className="hover:no-underline">
                   <div className="flex items-center gap-3 flex-1">
@@ -150,43 +171,23 @@ export function VariationEditor({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Unidades que Produce</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={variation.units}
-                        onChange={(e) =>
-                          updateVariation(variation.id, {
-                            units: parseInt(e.target.value) || 1,
-                          })
-                        }
-                        placeholder="Ej: 6, 12, 24"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Cantidad de piezas/porciones que produce esta variación
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Multiplicador de Ingredientes</Label>
-                      <Input
-                        type="number"
-                        min="0.1"
-                        step="0.1"
-                        value={variation.ingredientMultiplier}
-                        onChange={(e) =>
-                          updateVariation(variation.id, {
-                            ingredientMultiplier: parseFloat(e.target.value) || 1,
-                          })
-                        }
-                        placeholder="Ej: 0.5, 1, 2"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Factor para calcular cantidades de ingredientes
-                      </p>
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Unidades que Produce</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={variation.units}
+                      onChange={(e) =>
+                        updateVariation(variation.id, {
+                          units: parseInt(e.target.value) || 1,
+                        })
+                      }
+                      placeholder="Ej: 6, 12, 24"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Cantidad de piezas/porciones que produce esta variación
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -351,6 +352,29 @@ export function VariationEditor({
                     </div>
                   )}
 
+                  {/* Elaboraciones PROPIAS de esta variación */}
+                  <div className="space-y-2 pt-4 border-t">
+                    <div className="mb-3">
+                      <Label>Elaboraciones Propias de esta Variación <small>(Opcional)</small></Label>
+                      <p className="text-sm text-muted-foreground">
+                        Agrega elaboraciones específicas que solo aplican a esta variación
+                      </p>
+                    </div>
+
+                    <ElaborationEditor
+                      elaborations={variation.elaborations || []}
+                      onElaborationsChange={(newElaborations) => {
+                        // Ensure all elaborations have the correct variationId
+                        const elaborationsWithVariationId = newElaborations.map(elab => ({
+                          ...elab,
+                          variationId: variation.id
+                        }));
+                        updateVariation(variation.id, { elaborations: elaborationsWithVariationId });
+                      }}
+                      availableIngredients={availableIngredients}
+                    />
+                  </div>
+
                   {/* Cálculo automático de costos */}
                   <div className="p-4 bg-muted rounded-lg space-y-2">
                     <div className="flex justify-between items-center">
@@ -366,8 +390,7 @@ export function VariationEditor({
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground pt-2 border-t">
-                      Cálculo: Costo base (₡{baseTotalCost.toFixed(2)}) × Multiplicador (
-                      {variation.ingredientMultiplier}) ÷ Unidades ({variation.units})
+                      Cálculo: Basado en elaboraciones seleccionadas ÷ Unidades ({variation.units})
                     </p>
                   </div>
 

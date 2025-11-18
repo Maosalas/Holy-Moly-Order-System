@@ -1049,6 +1049,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
             onVariationsChange={setVariations}
             baseTotalCost={totalCost}
             baseElaborations={elaborations.filter(e => !e.variationId)}
+            availableIngredients={availableIngredients}
           />
 
           {/* Supplies Section */}

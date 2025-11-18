@@ -1531,7 +1531,6 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                             )}
                             <div className="space-y-1 text-xs text-muted-foreground">
                               <div>{variation.units} unidades</div>
-                              <div>Multiplicador: {variation.ingredientMultiplier}x</div>
                               <div>₡{variation.unitCost?.toFixed(2)}/unidad</div>
                             </div>
                             {recipe.usedParameters && recipe.usedParameters.length > 0 && (
