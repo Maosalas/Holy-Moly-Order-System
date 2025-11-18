@@ -61,6 +61,7 @@ export interface Quotation {
   organizationId: string;
   userId?: string;
   clientName: string;
+  size?: string; // Tamaño de la cotización (pequeño, mediano, grande, etc.)
   recipes: QuotationRecipe[];
   selectedSupplies: QuotationSupply[];
   additionalExpenses?: QuotationAdditionalExpense[];
