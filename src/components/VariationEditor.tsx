@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,8 +16,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { useRecipeParameters } from "@/hooks/use-recipe-parameters";
+import { useRecipeParameters, useCreateRecipeParameter } from "@/hooks/use-recipe-parameters";
 import { ElaborationEditor } from "./ElaborationEditor";
+import { RecipeParameterFormData } from "@/types/recipe-parameter";
 
 function getUUID() {
   return crypto.randomUUID();
@@ -28,6 +30,7 @@ interface VariationEditorProps {
   baseTotalCost: number; // Costo base de la receta para calcular costos de variaciones
   baseElaborations: RecipeElaboration[]; // Elaboraciones base (variationId = null) disponibles para seleccionar
   availableIngredients: Ingredient[]; // Ingredientes disponibles para las elaboraciones propias
+  recipeName: string; // Nombre de la receta para agregar a los parámetros
 }
 
 export function VariationEditor({
@@ -36,8 +39,17 @@ export function VariationEditor({
   baseTotalCost,
   baseElaborations,
   availableIngredients,
+  recipeName,
 }: VariationEditorProps) {
   const { data: recipeParameters = [] } = useRecipeParameters();
+  const createParameter = useCreateRecipeParameter();
+  const [showNewParameterForm, setShowNewParameterForm] = useState<string | null>(null);
+  const [newParameterName, setNewParameterName] = useState("");
+  const [newParameter, setNewParameter] = useState({
+    value: 0,
+    unit: "",
+    description: "",
+  });
 
   const addVariation = () => {
     const newVariation: RecipeVariation = {
@@ -103,6 +115,43 @@ export function VariationEditor({
         isDefault: v.id === id,
       }))
     );
+  };
+
+  const handleCreateParameter = async (variationId: string) => {
+    if (!newParameterName || !newParameter.unit || newParameter.value <= 0) {
+      return;
+    }
+
+    // Construir el parameterKey con el nombre de la receta automáticamente
+    const fullParameterKey = `${newParameterName} ${recipeName}`.trim();
+
+    try {
+      const parameterData: RecipeParameterFormData = {
+        parameterKey: fullParameterKey,
+        value: newParameter.value,
+        unit: newParameter.unit,
+        description: newParameter.description,
+      };
+
+      await createParameter.mutateAsync(parameterData);
+
+      // Agregar el parámetro recién creado a la variación
+      const currentParams = variations.find(v => v.id === variationId)?.usedParameters || [];
+      updateVariation(variationId, {
+        usedParameters: [...currentParams, fullParameterKey]
+      });
+
+      // Resetear formulario
+      setNewParameterName("");
+      setNewParameter({
+        value: 0,
+        unit: "",
+        description: "",
+      });
+      setShowNewParameterForm(null);
+    } catch (error) {
+      console.error("Error creating parameter:", error);
+    }
   };
 
   return (
@@ -205,88 +254,201 @@ export function VariationEditor({
                   </div>
 
                   {/* Parámetros Globales */}
-                  {recipeParameters.length > 0 && (
-                    <div className="space-y-2 pt-4 border-t">
-                      <Label>Parámetros Globales para esta Variación <small>(Opcional)</small></Label>
-                      <p className="text-sm text-muted-foreground">
-                        Selecciona los parámetros que esta variación utiliza (ej: Relleno Mini, Crema Pequeña)
-                      </p>
+                  <div className="space-y-2 pt-4 border-t">
+                    <Label>Parámetros Globales para esta Variación <small>(Opcional)</small></Label>
+                    <p className="text-sm text-muted-foreground">
+                      Selecciona los parámetros que esta variación utiliza (ej: Relleno Mini, Crema Pequeña)
+                    </p>
 
-                      <Popover>
-                        <PopoverTrigger asChild>
+                    <div className="flex gap-2">
+                      {recipeParameters.length > 0 && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="flex-1 justify-between"
+                            >
+                              {(variation.usedParameters?.length || 0) > 0
+                                ? `${variation.usedParameters?.length} parámetro${(variation.usedParameters?.length || 0) > 1 ? 's' : ''} seleccionado${(variation.usedParameters?.length || 0) > 1 ? 's' : ''}`
+                                : "Seleccionar parámetros..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Buscar parámetros..." />
+                              <CommandList>
+                                <CommandEmpty>No se encontraron parámetros.</CommandEmpty>
+                                <CommandGroup>
+                                  {recipeParameters.map((param) => (
+                                    <CommandItem
+                                      key={param.id}
+                                      value={param.parameterKey}
+                                      onSelect={() => {
+                                        const currentParams = variation.usedParameters || [];
+                                        const newParams = currentParams.includes(param.parameterKey)
+                                          ? currentParams.filter(p => p !== param.parameterKey)
+                                          : [...currentParams, param.parameterKey];
+                                        updateVariation(variation.id, { usedParameters: newParams });
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          variation.usedParameters?.includes(param.parameterKey) ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {param.parameterKey} ({param.value}{param.unit})
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="default"
+                        onClick={() => {
+                          if (showNewParameterForm === variation.id) {
+                            setShowNewParameterForm(null);
+                            setNewParameterName("");
+                            setNewParameter({
+                              value: 0,
+                              unit: "",
+                              description: "",
+                            });
+                          } else {
+                            setShowNewParameterForm(variation.id);
+                          }
+                        }}
+                        className="gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Nuevo
+                      </Button>
+                    </div>
+
+                    {/* Formulario para crear nuevo parámetro */}
+                    {showNewParameterForm === variation.id && (
+                      <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
+                        <div className="font-medium text-sm">Crear Nuevo Parámetro Global</div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Nombre del Parámetro *</Label>
+                            <div className="flex gap-2 items-center">
+                              <Input
+                                placeholder="Ej: Relleno Mini"
+                                value={newParameterName}
+                                onChange={(e) => setNewParameterName(e.target.value)}
+                                className="flex-1"
+                              />
+                              <span className="text-sm text-muted-foreground whitespace-nowrap font-medium">
+                                {recipeName}
+                              </span>
+                            </div>
+                            {newParameterName && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Nombre completo: <span className="font-medium">{newParameterName} {recipeName}</span>
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-xs">Descripción (Opcional)</Label>
+                            <Input
+                              placeholder="Breve descripción"
+                              value={newParameter.description}
+                              onChange={(e) => setNewParameter({ ...newParameter, description: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Valor *</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="Ej: 50"
+                              value={newParameter.value || ""}
+                              onChange={(e) => setNewParameter({ ...newParameter, value: parseFloat(e.target.value) || 0 })}
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-xs">Unidad *</Label>
+                            <Input
+                              placeholder="Ej: gr, ml, kg"
+                              value={newParameter.unit}
+                              onChange={(e) => setNewParameter({ ...newParameter, unit: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 justify-end">
                           <Button
                             type="button"
-                            variant="outline"
-                            className="w-full justify-between"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setShowNewParameterForm(null);
+                              setNewParameterName("");
+                              setNewParameter({
+                                value: 0,
+                                unit: "",
+                                description: "",
+                              });
+                            }}
                           >
-                            {(variation.usedParameters?.length || 0) > 0
-                              ? `${variation.usedParameters?.length} parámetro${(variation.usedParameters?.length || 0) > 1 ? 's' : ''} seleccionado${(variation.usedParameters?.length || 0) > 1 ? 's' : ''}`
-                              : "Seleccionar parámetros..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            Cancelar
                           </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0" align="start">
-                          <Command>
-                            <CommandInput placeholder="Buscar parámetros..." />
-                            <CommandList>
-                              <CommandEmpty>No se encontraron parámetros.</CommandEmpty>
-                              <CommandGroup>
-                                {recipeParameters.map((param) => (
-                                  <CommandItem
-                                    key={param.id}
-                                    value={param.parameterKey}
-                                    onSelect={() => {
-                                      const currentParams = variation.usedParameters || [];
-                                      const newParams = currentParams.includes(param.parameterKey)
-                                        ? currentParams.filter(p => p !== param.parameterKey)
-                                        : [...currentParams, param.parameterKey];
-                                      updateVariation(variation.id, { usedParameters: newParams });
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        variation.usedParameters?.includes(param.parameterKey) ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {param.parameterKey} ({param.value}{param.unit})
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-
-                      {variation.usedParameters && variation.usedParameters.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {variation.usedParameters.map((paramKey) => {
-                            const param = recipeParameters.find(p => p.parameterKey === paramKey);
-                            return (
-                              <div
-                                key={paramKey}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-sm"
-                              >
-                                <span>{param?.parameterKey}</span>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-4 w-4 p-0 hover:bg-transparent"
-                                  onClick={() => {
-                                    const newParams = variation.usedParameters?.filter(p => p !== paramKey) || [];
-                                    updateVariation(variation.id, { usedParameters: newParams });
-                                  }}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            );
-                          })}
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => handleCreateParameter(variation.id)}
+                            disabled={!newParameterName || !newParameter.unit || newParameter.value <= 0 || createParameter.isPending}
+                          >
+                            {createParameter.isPending ? "Creando..." : "Crear y Agregar"}
+                          </Button>
                         </div>
-                      )}
-                    </div>
-                  )}
+                      </div>
+                    )}
+
+                    {variation.usedParameters && variation.usedParameters.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {variation.usedParameters.map((paramKey) => {
+                          const param = recipeParameters.find(p => p.parameterKey === paramKey);
+                          return (
+                            <div
+                              key={paramKey}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-sm"
+                            >
+                              <span>{param?.parameterKey}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 p-0 hover:bg-transparent"
+                                onClick={() => {
+                                  const newParams = variation.usedParameters?.filter(p => p !== paramKey) || [];
+                                  updateVariation(variation.id, { usedParameters: newParams });
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Elaboraciones BASE para incluir en esta variación */}
                   {baseElaborations.length > 0 && (

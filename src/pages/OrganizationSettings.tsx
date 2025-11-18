@@ -7,9 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Users, Upload } from "lucide-react";
+import { ArrowLeft, Building2, Users, Upload, Wallet, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import defaultLogo from "@/assets/Orderly-logo.png";
+import { PaymentMethodsList } from "@/components/PaymentMethodsList";
+import { CardTypesList } from "@/components/CardTypesList";
 
 export default function OrganizationSettings() {
   const { currentOrganization, updateOrganization, isLoading, fetchOrganizations } = useOrganization();
@@ -105,7 +107,7 @@ export default function OrganizationSettings() {
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general">
             <Building2 className="h-4 w-4 mr-2" />
             General
@@ -113,6 +115,14 @@ export default function OrganizationSettings() {
           <TabsTrigger value="members">
             <Users className="h-4 w-4 mr-2" />
             Miembros
+          </TabsTrigger>
+          <TabsTrigger value="payment-methods">
+            <Wallet className="h-4 w-4 mr-2" />
+            Métodos de Pago
+          </TabsTrigger>
+          <TabsTrigger value="card-types">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Tipos de Tarjetas
           </TabsTrigger>
         </TabsList>
 
@@ -242,12 +252,40 @@ export default function OrganizationSettings() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
+              <Button
                 onClick={() => navigate("/organization/members")}
                 variant="default"
               >
                 Gestionar Miembros
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payment-methods">
+          <Card>
+            <CardHeader>
+              <CardTitle>Métodos de Pago</CardTitle>
+              <CardDescription>
+                Configura los métodos de pago disponibles para los pedidos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PaymentMethodsList />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="card-types">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tipos de Tarjetas</CardTitle>
+              <CardDescription>
+                Configura los tipos de tarjetas aceptadas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CardTypesList />
             </CardContent>
           </Card>
         </TabsContent>

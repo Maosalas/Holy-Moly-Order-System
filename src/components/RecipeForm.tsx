@@ -51,6 +51,47 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [variations, setVariations] = useState<RecipeVariation[]>(
     migratedRecipe?.variations || []
   );
+
+  // Recalcular costos de variaciones al cargar si no están presentes
+  useEffect(() => {
+    if (migratedRecipe?.variations && migratedRecipe.variations.length > 0) {
+      const needsRecalculation = migratedRecipe.variations.some(
+        v => v.totalCost === undefined || v.totalCost === 0 || v.unitCost === undefined || v.unitCost === 0
+      );
+
+      if (needsRecalculation) {
+        const recalculatedVariations = migratedRecipe.variations.map(v => {
+          // Calcular costo de elaboraciones propias
+          const ownElaborationsCost = (v.elaborations || []).reduce((sum, elab) => {
+            const elabCost = (elab.ingredients || []).reduce((ingSum, ing) => ingSum + (ing.cost || 0), 0);
+            return sum + elabCost;
+          }, 0);
+
+          // Calcular costo de elaboraciones base
+          const baseElaborationsCost = (v.baseElaborationIds || []).reduce((sum, baseElabId) => {
+            const baseElab = elaborations.find(e => e.id === baseElabId);
+            if (baseElab) {
+              const baseElabCost = baseElab.ingredients.reduce((ingSum, ing) => ingSum + (ing.cost || 0), 0);
+              return sum + baseElabCost;
+            }
+            return sum;
+          }, 0);
+
+          const totalCost = ownElaborationsCost + baseElaborationsCost;
+          const unitCost = v.units > 0 ? totalCost / v.units : 0;
+
+          return {
+            ...v,
+            totalCost,
+            unitCost,
+          };
+        });
+
+        setVariations(recalculatedVariations);
+      }
+    }
+  }, [migratedRecipe, elaborations]);
+
   const [totalWeight, setTotalWeight] = useState(migratedRecipe?.totalWeight || 0);
   const [totalWeightUnit, setTotalWeightUnit] = useState(migratedRecipe?.totalWeightUnit || "gr");
   const [useManualWeight, setUseManualWeight] = useState(!!migratedRecipe?.totalWeight);
@@ -420,6 +461,28 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
 
     // Preparar variations con sus elaborations (mantener las elaboraciones específicas)
     const preparedVariations = variations.map(v => {
+      // Calcular el costo total de las elaboraciones propias
+      const ownElaborationsCost = v.elaborations.reduce((sum, elab) => {
+        const elabCost = elab.ingredients.reduce((ingSum, ing) => ingSum + ing.cost, 0);
+        return sum + elabCost;
+      }, 0);
+
+      // Calcular el costo de las elaboraciones base seleccionadas
+      const baseElaborationsCost = (v.baseElaborationIds || []).reduce((sum, baseElabId) => {
+        const baseElab = elaborations.find(e => e.id === baseElabId);
+        if (baseElab) {
+          const baseElabCost = baseElab.ingredients.reduce((ingSum, ing) => ingSum + ing.cost, 0);
+          return sum + baseElabCost;
+        }
+        return sum;
+      }, 0);
+
+      // Costo total de la variación
+      const variationTotalCost = ownElaborationsCost + baseElaborationsCost;
+
+      // Costo por unidad
+      const variationUnitCost = v.units > 0 ? variationTotalCost / v.units : 0;
+
       const prepared = {
         ...v,
         baseElaborationIds: v.baseElaborationIds || [],  // Ensure baseElaborationIds is included
@@ -427,9 +490,11 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         elaborations: v.elaborations.map(elab => ({
           ...elab,
           cost: elab.ingredients.reduce((sum, ing) => sum + ing.cost, 0)
-        }))
+        })),
+        totalCost: variationTotalCost,
+        unitCost: variationUnitCost,
       };
-      console.log('Prepared variation:', v.name, 'baseElaborationIds:', v.baseElaborationIds);
+      console.log('Prepared variation:', v.name, 'baseElaborationIds:', v.baseElaborationIds, 'totalCost:', variationTotalCost, 'unitCost:', variationUnitCost);
       return prepared;
     });
 
@@ -1047,6 +1112,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
             baseTotalCost={totalCost}
             baseElaborations={elaborations.filter(e => !e.variationId)}
             availableIngredients={availableIngredients}
+            recipeName={name}
           />
 
           {/* Supplies Section */}

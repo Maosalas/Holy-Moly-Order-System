@@ -22,9 +22,10 @@ interface OrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "createdAt">) => void;
   initialData?: Order;
   onCancel?: () => void;
+  quotation?: Quotation;
 }
 
-export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) => {
+export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderFormProps) => {
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
@@ -87,6 +88,16 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     fetchQuotations();
     fetchPaymentMethods();
   }, [initialData]);
+
+  // Pre-poblar datos cuando se pasa una cotización
+  useEffect(() => {
+    if (quotation && !initialData) {
+      setSelectedQuotationId(quotation.id);
+      setClientName(quotation.clientName || "");
+      setChargeAmount(quotation.totalCost.toString());
+      // Puedes pre-poblar otros campos si es necesario
+    }
+  }, [quotation, initialData]);
 
   // Calculate cost from selected quotation
   const selectedQuotation = quotations.find(q => q.id === selectedQuotationId);

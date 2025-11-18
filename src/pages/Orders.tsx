@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { OrderForm } from "@/components/OrderForm";
 import { OrderList } from "@/components/OrderList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
@@ -9,11 +10,13 @@ import { Plus, ShoppingCart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Order } from "@/types/order";
-import { ordersApi } from "@/lib/api";
+import { ordersApi, quotationsApi } from "@/lib/api";
 import { useOrders, useCreateOrder, useUpdateOrder, useDeleteOrder, useOrder } from "@/hooks/use-orders";
+import type { Quotation } from "@/types/quotation";
 
 const Orders = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Usar React Query hooks
   const { data: orders = [], isLoading } = useOrders();
@@ -28,6 +31,36 @@ const Orders = () => {
   const [isFetchingOrder, setIsFetchingOrder] = useState(false);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [shoppingListOpen, setShoppingListOpen] = useState(false);
+  const [quotationForOrder, setQuotationForOrder] = useState<Quotation | null>(null);
+
+  // Detectar quotationId en la URL y cargar la cotización
+  useEffect(() => {
+    const quotationId = searchParams.get('quotationId');
+    if (quotationId) {
+      // Cargar la cotización y abrir el formulario
+      const loadQuotation = async () => {
+        try {
+          const { data, error } = await quotationsApi.getById(quotationId);
+          if (error) throw new Error(error);
+          if (data) {
+            setQuotationForOrder(data as Quotation);
+            setIsFormOpen(true);
+            // Limpiar el parámetro de la URL
+            searchParams.delete('quotationId');
+            setSearchParams(searchParams);
+          }
+        } catch (error) {
+          console.error("Error loading quotation:", error);
+          toast({
+            title: "Error",
+            description: "No se pudo cargar la cotización",
+            variant: "destructive",
+          });
+        }
+      };
+      loadQuotation();
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleSubmit = async (orderData: Omit<Order, "id" | "createdAt">) => {
     // Transform orderData for API - replace paymentMethod object with paymentMethodId
@@ -47,6 +80,7 @@ const Orders = () => {
       }
       setIsFormOpen(false);
       setEditingOrder(undefined);
+      setQuotationForOrder(null);
     } catch (error) {
       // Los errores ya son manejados por los hooks
       console.error("Error submitting order:", error);
@@ -109,6 +143,7 @@ const Orders = () => {
   const handleCancel = () => {
     setIsFormOpen(false);
     setEditingOrder(undefined);
+    setQuotationForOrder(null);
   };
 
   // Filter orders based on user role
@@ -166,6 +201,7 @@ const Orders = () => {
           initialData={editingOrder}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
+          quotation={quotationForOrder || undefined}
         />
       ) : (
         <OrderList

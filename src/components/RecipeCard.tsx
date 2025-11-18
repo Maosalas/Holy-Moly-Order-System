@@ -10,17 +10,37 @@ interface RecipeCardProps {
 }
 
 export const RecipeCard = ({ recipe, onEdit, onDelete }: RecipeCardProps) => {
+  // Obtener la categoría principal para mostrar en el icono
+  const primaryCategory = recipe.categories?.[0] || "otro";
+
+  // Formatear el nombre de la categoría
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
+      queque: "Queque",
+      relleno: "Relleno",
+      cubierta: "Cubierta",
+      unidad: "Unidad",
+      otro: "Otro",
+    };
+    return labels[category] || category;
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-video w-full bg-muted flex items-center justify-center overflow-hidden">
         {recipe.image ? (
-          <img 
-            src={recipe.image} 
+          <img
+            src={recipe.image}
             alt={recipe.name}
             className="w-full h-full object-cover"
           />
         ) : (
-          <ChefHat className="h-16 w-16 text-muted-foreground" />
+          <div className="flex flex-col items-center gap-2">
+            <ChefHat className="h-16 w-16 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {getCategoryLabel(primaryCategory)}
+            </span>
+          </div>
         )}
       </div>
       <CardHeader>
