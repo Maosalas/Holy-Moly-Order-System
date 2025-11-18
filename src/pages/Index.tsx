@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Recipe, RecipeFormData } from "@/types/recipe";
 import { RecipeForm } from "@/components/RecipeForm";
 import { RecipeList } from "@/components/RecipeList";
@@ -14,14 +14,16 @@ const Index = () => {
   const updateRecipe = useUpdateRecipe();
   const deleteRecipe = useDeleteRecipe();
 
-  // Transformar datos del API
-  const recipes: Recipe[] = recipesData.map((r: any) => ({
-    ...r,
-    categories: r.categories || (r.category ? [r.category] : ["unidad"]),
-    usedParameters: r.used_parameters || r.usedParameters || [],
-    createdAt: new Date(r.created_at || r.createdAt),
-    updatedAt: new Date(r.updated_at || r.updatedAt)
-  }));
+  // Transformar datos del API con useMemo para estabilizar referencias
+  const recipes: Recipe[] = useMemo(() => {
+    return recipesData.map((r: any) => ({
+      ...r,
+      categories: r.categories || (r.category ? [r.category] : ["unidad"]),
+      usedParameters: r.used_parameters || r.usedParameters || [],
+      createdAt: new Date(r.created_at || r.createdAt),
+      updatedAt: new Date(r.updated_at || r.updatedAt)
+    }));
+  }, [recipesData]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

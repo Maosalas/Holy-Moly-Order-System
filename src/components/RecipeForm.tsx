@@ -79,10 +79,11 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     migratedRecipe?.elaborations && migratedRecipe.elaborations.length > 0
       ? migratedRecipe.elaborations
       : [{
-          id: getUUID(),
-          name: "Elaboración principal",
+          id: crypto.randomUUID(),
+          name: "",
           order: 1,
-          ingredients: [],
+          cost: 0,
+          ingredients: []
         }]
   );
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
@@ -183,6 +184,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
       id: getUUID(),
       name: `Elaboración ${elaborations.length + 1}`,
       order: elaborations.length + 1,
+      cost: 0,
       ingredients: [],
     };
     setElaborations([...elaborations, newElaboration]);
@@ -445,21 +447,16 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         image: image || undefined,
         elaborations: elaborationsWithCost,
         usedParameters: finalUsedParameters,
-        used_parameters: finalUsedParameters, // Backend expects snake_case
         totalWeight: (categories.includes("relleno") || categories.includes("cubierta")) ? finalTotalWeight : undefined,
         totalWeightUnit: (categories.includes("relleno") || categories.includes("cubierta")) ? totalWeightUnit : undefined,
-        total_weight: (categories.includes("relleno") || categories.includes("cubierta")) ? finalTotalWeight : undefined,
-        total_weight_unit: (categories.includes("relleno") || categories.includes("cubierta")) ? totalWeightUnit : undefined,
         variations: preparedVariations.length > 0 ? preparedVariations : undefined,
         supplies: selectedSupplies.length > 0 ? selectedSupplies : undefined,
         totalCost,
-        total_cost: totalCost,
         categories: categories,
         notes: notes,
         url: url,
         units: unidades,
         unitCost: totalUnitCost || undefined,
-        unit_cost: totalUnitCost || undefined,
       });
     } finally {
       setIsSubmitting(false);

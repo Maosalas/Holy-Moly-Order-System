@@ -317,19 +317,27 @@ export function VariationEditor({
                                   ? "bg-primary/10 border-primary"
                                   : "hover:bg-muted"
                               )}
-                              onClick={() => {
-                                const currentIds = variation.baseElaborationIds || [];
-                                const newIds = isSelected
-                                  ? currentIds.filter(id => id !== elab.id)
-                                  : [...currentIds, elab.id];
-                                updateVariation(variation.id, { baseElaborationIds: newIds });
-                              }}
                             >
                               <Checkbox
                                 checked={isSelected}
-                                onCheckedChange={() => {}}
+                                onCheckedChange={(checked) => {
+                                  const currentIds = variation.baseElaborationIds || [];
+                                  const newIds = checked
+                                    ? [...currentIds, elab.id]
+                                    : currentIds.filter(id => id !== elab.id);
+                                  updateVariation(variation.id, { baseElaborationIds: newIds });
+                                }}
                               />
-                              <div className="flex-1">
+                              <div 
+                                className="flex-1 cursor-pointer"
+                                onClick={() => {
+                                  const currentIds = variation.baseElaborationIds || [];
+                                  const newIds = isSelected
+                                    ? currentIds.filter(id => id !== elab.id)
+                                    : [...currentIds, elab.id];
+                                  updateVariation(variation.id, { baseElaborationIds: newIds });
+                                }}
+                              >
                                 <div className="font-medium">{elab.name || 'Sin nombre'}</div>
                                 <div className="text-xs text-muted-foreground">
                                   {ingredients.length} ingrediente{ingredients.length !== 1 ? 's' : ''} • ₡{elaborationCost.toFixed(2)}
