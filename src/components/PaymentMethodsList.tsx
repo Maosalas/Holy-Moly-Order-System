@@ -52,7 +52,7 @@ export function PaymentMethodsList() {
     try {
       const { data, error } = await paymentMethodsApi.getAll();
       if (error) throw new Error(error);
-      setPaymentMethods(data || []);
+      setPaymentMethods((data as PaymentMethod[]) || []);
     } catch (error) {
       console.error("Error fetching payment methods:", error);
       toast({
