@@ -80,7 +80,7 @@ const OrganizationSettingsDialog = ({
     }
 
     console.log("Subscription plans loaded:", result.data);
-    setSubscriptionPlans(result.data || []);
+    setSubscriptionPlans((result.data as SubscriptionPlanOption[]) || []);
     setIsLoadingPlans(false);
   };
 
@@ -100,7 +100,7 @@ const OrganizationSettingsDialog = ({
       return;
     }
 
-    setMembers(result.data || []);
+    setMembers((result.data as OrganizationMember[]) || []);
     setIsLoadingMembers(false);
   };
 
