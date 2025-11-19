@@ -113,9 +113,10 @@ const OrganizationSettingsDialog = ({
     });
 
     if (result.error) {
+      const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error actualizando plan";
       toast({
         title: "Error",
-        description: result.error,
+        description: errorMsg,
         variant: "destructive",
       });
       setIsUpdatingPlan(false);
@@ -146,9 +147,10 @@ const OrganizationSettingsDialog = ({
     const result = await superAdminApi.resendConfirmationEmail(organization.id, selectedMemberForEmail);
 
     if (result.error) {
+      const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error enviando email";
       toast({
         title: "Error",
-        description: result.error,
+        description: errorMsg,
         variant: "destructive",
       });
       setIsSendingEmail(false);
@@ -181,9 +183,10 @@ const OrganizationSettingsDialog = ({
     const result = await superAdminApi.sendPasswordResetEmail(organization.id, selectedMemberForPassword);
 
     if (result.error) {
+      const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error enviando reset de contraseña";
       toast({
         title: "Error",
-        description: result.error,
+        description: errorMsg,
         variant: "destructive",
       });
       setIsSendingPasswordReset(false);

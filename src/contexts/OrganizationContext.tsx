@@ -165,9 +165,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.create({ name, slug });
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error creando organización";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return null;
@@ -225,9 +226,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.update(id, updateData);
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error actualizando organización";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return false;
@@ -286,9 +288,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.getMember(orgId, userId);
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error obteniendo miembro";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return null;
@@ -314,9 +317,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.addMemberByEmail(orgId, email, role, name);
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error agregando miembro";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return false;
@@ -349,9 +353,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.updateMemberRole(orgId, userId, { role });
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error actualizando rol";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return false;
@@ -384,9 +389,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.removeMember(orgId, userId);
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error eliminando miembro";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return false;

@@ -60,10 +60,11 @@ const UserSettings = () => {
       const result = await authApi.updateProfile(name);
 
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error actualizando perfil";
         toast({
           variant: "destructive",
           title: "Error",
-          description: result.error,
+          description: errorMsg,
         });
       } else {
         // Update user in context
@@ -120,11 +121,12 @@ const UserSettings = () => {
       const result = await authApi.changePassword(currentPassword, newPassword);
 
       if (result.error) {
-        setPasswordError(result.error);
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error cambiando contraseña";
+        setPasswordError(errorMsg);
         toast({
           variant: "destructive",
           title: "Error",
-          description: result.error,
+          description: errorMsg,
         });
       } else {
         toast({

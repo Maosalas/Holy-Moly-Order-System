@@ -108,9 +108,10 @@ const SuperAdmin = () => {
     const result = await organizationsApi.delete(organizationToDelete.id);
 
     if (result.error) {
+      const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error eliminando organización";
       toast({
         title: "Error",
-        description: result.error,
+        description: errorMsg,
         variant: "destructive",
       });
       setIsDeleting(false);
