@@ -547,4 +547,18 @@ export const superAdminApi = {
     apiFetch(`/super-admin/organizations/${orgId}/impersonate`, {
       method: "POST",
     }, false),
+
+  // Send confirmation email to specific user in organization
+  resendConfirmationEmail: (orgId: string, userId: string) =>
+    apiFetch(`/super-admin/organizations/${orgId}/resend-confirmation`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }, false),
+
+  // Send password reset email to specific user in organization
+  sendPasswordResetEmail: (orgId: string, userId: string) =>
+    apiFetch(`/super-admin/organizations/${orgId}/send-password-reset`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }, false),
 };
