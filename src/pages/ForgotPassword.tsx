@@ -23,10 +23,11 @@ const ForgotPassword = () => {
       const result = await authApi.forgotPassword(email);
 
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error enviando email";
         toast({
           variant: "destructive",
           title: "Error",
-          description: result.error,
+          description: errorMsg,
         });
       } else {
         setIsSubmitted(true);
