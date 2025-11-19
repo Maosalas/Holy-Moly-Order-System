@@ -23,6 +23,22 @@ const getCurrentOrgId = (): string | null => {
   return parsed.id || null;
 };
 
+// Get auth user roles from localStorage
+const getUserRoles = (): string[] => {
+  const auth = localStorage.getItem("holy-moly-auth");
+  if (!auth) return [];
+  const parsed = JSON.parse(auth);
+  return parsed.user?.roles || [];
+};
+
+// Get impersonation state
+const isImpersonating = (): boolean => {
+  const impersonation = localStorage.getItem("holy-moly-impersonation");
+  if (!impersonation) return false;
+  const parsed = JSON.parse(impersonation);
+  return parsed.isImpersonating || false;
+};
+
 // Generic fetch wrapper
 async function apiFetch<T>(
   endpoint: string,
@@ -31,11 +47,20 @@ async function apiFetch<T>(
 ): Promise<ApiResponse<T>> {
   const token = getAuthToken();
   const orgId = getCurrentOrgId();
+  const roles = getUserRoles();
+  const impersonating = isImpersonating();
+
+  // Solo enviar X-Organization-Id si:
+  // 1. includeOrgHeader es true
+  // 2. Hay un orgId
+  // 3. NO es superadmin O está impersonando
+  const shouldIncludeOrgHeader = includeOrgHeader && orgId &&
+    (!roles.includes("super_admin") || impersonating);
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
-    ...(includeOrgHeader && orgId && { "X-Organization-Id": orgId }),
+    ...(shouldIncludeOrgHeader && { "X-Organization-Id": orgId }),
     ...options.headers,
   };
 
