@@ -16,11 +16,16 @@ export function useQuotations() {
   return useQuery({
     queryKey: quotationKeys.all,
     queryFn: async () => {
-      const { data, error } = await quotationsApi.getAll();
-      if (error) throw new Error(error);
-      return (data as any[]) || [];
+      const result = await quotationsApi.getAll();
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al obtener cotizaciones";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data || [];
     },
-    staleTime: 30000, // 30 segundos
+    staleTime: 30000,
     refetchOnWindowFocus: true,
   });
 }
@@ -30,12 +35,17 @@ export function useFillingMultipliers(recipeId: string) {
   return useQuery({
     queryKey: quotationKeys.fillingMultipliers(recipeId),
     queryFn: async () => {
-      const { data, error } = await quotationsApi.getFillingMultipliers(recipeId);
-      if (error) throw new Error(error);
-      return data || [];
+      const result = await quotationsApi.getFillingMultipliers(recipeId);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al obtener multiplicadores de rellenos";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data || [];
     },
     enabled: !!recipeId,
-    staleTime: 60000, // 1 minuto
+    staleTime: 60000,
   });
 }
 
@@ -44,12 +54,17 @@ export function useCoveringMultipliers(recipeId: string) {
   return useQuery({
     queryKey: quotationKeys.coveringMultipliers(recipeId),
     queryFn: async () => {
-      const { data, error } = await quotationsApi.getCoveringMultipliers(recipeId);
-      if (error) throw new Error(error);
-      return data || [];
+      const result = await quotationsApi.getCoveringMultipliers(recipeId);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al obtener multiplicadores de coberturas";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data || [];
     },
     enabled: !!recipeId,
-    staleTime: 60000, // 1 minuto
+    staleTime: 60000,
   });
 }
 
@@ -58,12 +73,17 @@ export function useCakeMultipliers(recipeId: string) {
   return useQuery({
     queryKey: quotationKeys.cakeMultipliers(recipeId),
     queryFn: async () => {
-      const { data, error } = await quotationsApi.getCakeMultipliers(recipeId);
-      if (error) throw new Error(error);
-      return data || [];
+      const result = await quotationsApi.getCakeMultipliers(recipeId);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al obtener multiplicadores de pasteles";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data || [];
     },
     enabled: !!recipeId,
-    staleTime: 60000, // 1 minuto
+    staleTime: 60000,
   });
 }
 
@@ -74,9 +94,14 @@ export function useCreateQuotation() {
 
   return useMutation({
     mutationFn: async (quotation: any) => {
-      const { data, error } = await quotationsApi.create(quotation);
-      if (error) throw new Error(error);
-      return data;
+      const result = await quotationsApi.create(quotation);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al crear cotización";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: quotationKeys.all });
@@ -102,9 +127,14 @@ export function useUpdateQuotation() {
 
   return useMutation({
     mutationFn: async ({ id, quotation }: { id: string; quotation: any }) => {
-      const { data, error } = await quotationsApi.update(id, quotation);
-      if (error) throw new Error(error);
-      return data;
+      const result = await quotationsApi.update(id, quotation);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al actualizar cotización";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: quotationKeys.all });
@@ -130,8 +160,13 @@ export function useDeleteQuotation() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await quotationsApi.delete(id);
-      if (error) throw new Error(error);
+      const result = await quotationsApi.delete(id);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al eliminar cotización";
+        throw new Error(errorMsg);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: quotationKeys.all });
@@ -157,9 +192,14 @@ export function useSaveFillingMultipliers() {
 
   return useMutation({
     mutationFn: async ({ recipeId, multipliers }: { recipeId: string; multipliers: Array<{ size: string; multiplier: number }> }) => {
-      const { data, error } = await quotationsApi.saveFillingMultipliers(recipeId, multipliers);
-      if (error) throw new Error(error);
-      return data;
+      const result = await quotationsApi.saveFillingMultipliers(recipeId, multipliers);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al guardar multiplicadores de rellenos";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: quotationKeys.fillingMultipliers(variables.recipeId) });
@@ -185,9 +225,14 @@ export function useSaveCoveringMultipliers() {
 
   return useMutation({
     mutationFn: async ({ recipeId, multipliers }: { recipeId: string; multipliers: Array<{ size: string; multiplier: number }> }) => {
-      const { data, error } = await quotationsApi.saveCoveringMultipliers(recipeId, multipliers);
-      if (error) throw new Error(error);
-      return data;
+      const result = await quotationsApi.saveCoveringMultipliers(recipeId, multipliers);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al guardar multiplicadores de coberturas";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: quotationKeys.coveringMultipliers(variables.recipeId) });
@@ -213,9 +258,14 @@ export function useSaveCakeMultipliers() {
 
   return useMutation({
     mutationFn: async ({ recipeId, multipliers }: { recipeId: string; multipliers: Array<{ size: string; multiplier: number }> }) => {
-      const { data, error } = await quotationsApi.saveCakeMultipliers(recipeId, multipliers);
-      if (error) throw new Error(error);
-      return data;
+      const result = await quotationsApi.saveCakeMultipliers(recipeId, multipliers);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al guardar multiplicadores de pasteles";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: quotationKeys.cakeMultipliers(variables.recipeId) });
