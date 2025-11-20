@@ -93,9 +93,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: apiUser.id,
             email: apiUser.email,
             name: apiUser.name,
-            roles: apiUser.roles || (apiUser.role ? [apiUser.role] : [])
+            roles: apiUser.roles || (apiUser.role ? [apiUser.role] : []),
+            currentOrganizationId: apiUser.organizationId || apiUser.currentOrganizationId
           };
-          console.log("✅ User authenticated - roles:", user.roles);
+          console.log("✅ User authenticated - roles:", user.roles, "organizationId:", user.currentOrganizationId);
           setAuthState({ user, isAuthenticated: true });
         } else {
           console.log("❌ Auth verification failed");
@@ -111,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const result = await authApi.login(email, password);
-    
+
     if (result.error) {
       return { success: false, error: result.error };
     }
@@ -122,17 +123,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: apiResponse.user.id,
       email: apiResponse.user.email,
       name: apiResponse.user.name,
-      roles: apiResponse.user.roles || (apiResponse.user.role ? [apiResponse.user.role] : [])
+      roles: apiResponse.user.roles || (apiResponse.user.role ? [apiResponse.user.role] : []),
+      currentOrganizationId: apiResponse.user.organizationId || apiResponse.user.currentOrganizationId
     };
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, token: apiResponse.token }));
     setAuthState({ user, isAuthenticated: true });
-    
+
     return { success: true };
   };
 
   const signup = async (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin"): Promise<{ success: boolean; error?: string }> => {
     const result = await authApi.signup(email, password, name, role);
-    
+
     if (result.error) {
       return { success: false, error: result.error };
     }
@@ -143,7 +145,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: apiResponse.user.id,
       email: apiResponse.user.email,
       name: apiResponse.user.name,
-      roles: apiResponse.user.roles || (apiResponse.user.role ? [apiResponse.user.role] : [])
+      roles: apiResponse.user.roles || (apiResponse.user.role ? [apiResponse.user.role] : []),
+      currentOrganizationId: apiResponse.user.organizationId || apiResponse.user.currentOrganizationId
     };
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, token: apiResponse.token }));
     setAuthState({ user, isAuthenticated: true });
