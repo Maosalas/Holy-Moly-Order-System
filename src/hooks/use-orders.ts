@@ -14,11 +14,16 @@ export function useOrders() {
   return useQuery({
     queryKey: orderKeys.all,
     queryFn: async () => {
-      const { data, error } = await ordersApi.getAll();
-      if (error) throw new Error(error);
-      return (data as Order[]) || [];
+      const result = await ordersApi.getAll();
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al obtener pedidos";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data || [];
     },
-    staleTime: 30000, // 30 segundos
+    staleTime: 30000,
     refetchOnWindowFocus: true,
   });
 }
@@ -28,11 +33,16 @@ export function useOrder(id: string) {
   return useQuery({
     queryKey: orderKeys.detail(id),
     queryFn: async () => {
-      const { data, error } = await ordersApi.getById(id);
-      if (error) throw new Error(error);
-      return data as Order;
+      const result = await ordersApi.getById(id);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al obtener pedido";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data as Order;
     },
-    enabled: !!id, // Solo ejecuta si hay un ID válido
+    enabled: !!id,
   });
 }
 
@@ -43,9 +53,14 @@ export function useCreateOrder() {
 
   return useMutation({
     mutationFn: async (order: any) => {
-      const { data, error } = await ordersApi.create(order);
-      if (error) throw new Error(error);
-      return data;
+      const result = await ordersApi.create(order);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al crear pedido";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       // Invalida y refresca la lista de pedidos
@@ -72,9 +87,14 @@ export function useUpdateOrder() {
 
   return useMutation({
     mutationFn: async ({ id, order }: { id: string; order: any }) => {
-      const { data, error } = await ordersApi.update(id, order);
-      if (error) throw new Error(error);
-      return data;
+      const result = await ordersApi.update(id, order);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al actualizar pedido";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: (_, variables) => {
       // Invalida la lista completa y el detalle específico
@@ -102,8 +122,13 @@ export function useDeleteOrder() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await ordersApi.delete(id);
-      if (error) throw new Error(error);
+      const result = await ordersApi.delete(id);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al eliminar pedido";
+        throw new Error(errorMsg);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: orderKeys.all });

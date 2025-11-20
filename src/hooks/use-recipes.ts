@@ -13,11 +13,16 @@ export function useRecipes() {
   return useQuery({
     queryKey: recipeKeys.all,
     queryFn: async () => {
-      const { data, error } = await recipesApi.getAll();
-      if (error) throw new Error(error);
-      return (data as any[]) || [];
+      const result = await recipesApi.getAll();
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al obtener recetas";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data || [];
     },
-    staleTime: 60000, // 1 minuto - recetas no cambian tan seguido
+    staleTime: 60000,
     refetchOnWindowFocus: true,
   });
 }
@@ -29,9 +34,14 @@ export function useCreateRecipe() {
 
   return useMutation({
     mutationFn: async (recipe: any) => {
-      const { data, error } = await recipesApi.create(recipe);
-      if (error) throw new Error(error);
-      return data;
+      const result = await recipesApi.create(recipe);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al crear receta";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: recipeKeys.all });
@@ -57,9 +67,14 @@ export function useUpdateRecipe() {
 
   return useMutation({
     mutationFn: async ({ id, recipe }: { id: string; recipe: any }) => {
-      const { data, error } = await recipesApi.update(id, recipe);
-      if (error) throw new Error(error);
-      return data;
+      const result = await recipesApi.update(id, recipe);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al actualizar receta";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: recipeKeys.all });
@@ -85,8 +100,13 @@ export function useDeleteRecipe() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await recipesApi.delete(id);
-      if (error) throw new Error(error);
+      const result = await recipesApi.delete(id);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al eliminar receta";
+        throw new Error(errorMsg);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: recipeKeys.all });
@@ -112,9 +132,14 @@ export function useMigrateRecipes() {
 
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await recipesApi.migrateToElaborations();
-      if (error) throw new Error(error);
-      return data;
+      const result = await recipesApi.migrateToElaborations();
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al migrar recetas";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: recipeKeys.all });

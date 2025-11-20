@@ -386,97 +386,9 @@ DROP FUNCTION IF EXISTS public.has_org_role(uuid, uuid, text);
 
 ---
 
-## FASE 4: Actualizar Frontend (Hooks)
+## FASE 4: Testing y Validación
 
-### 4.1 Patrón Consistente en Hooks
-
-Los hooks del frontend **NO NECESITAN CAMBIOS MAYORES** porque el filtrado ahora se hace en el backend.
-
-Sin embargo, asegúrate de que todos los hooks manejen errores correctamente:
-
-**Ejemplo**: `src/hooks/use-recipes.ts`
-
-```typescript
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { recipesApi } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
-
-export const recipeKeys = {
-  all: ['recipes'] as const,
-  detail: (id: string) => ['recipes', id] as const,
-};
-
-export function useRecipes() {
-  return useQuery({
-    queryKey: recipeKeys.all,
-    queryFn: async () => {
-      const result = await recipesApi.getAll();
-      if (result.error) {
-        const errorMsg = typeof result.error === 'string' 
-          ? result.error 
-          : (result.error as any)?.message || "Error al obtener recetas";
-        throw new Error(errorMsg);
-      }
-      return (result as any).data || [];
-    },
-    staleTime: 60000,
-    refetchOnWindowFocus: true,
-  });
-}
-
-export function useCreateRecipe() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (recipe: any) => {
-      const result = await recipesApi.create(recipe);
-      if (result.error) {
-        const errorMsg = typeof result.error === 'string' 
-          ? result.error 
-          : (result.error as any)?.message || "Error al crear receta";
-        throw new Error(errorMsg);
-      }
-      return (result as any).data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: recipeKeys.all });
-      toast({
-        title: "Receta creada",
-        description: "La receta se ha creado exitosamente",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-}
-
-// UPDATE y DELETE siguen el mismo patrón
-```
-
-### 4.2 Actualizar Hooks Existentes
-
-**Archivos a verificar/actualizar**:
-- ✅ `src/hooks/use-recipes.ts` (ya actualizado)
-- ✅ `src/hooks/use-orders.ts` (ya actualizado)
-- ✅ `src/hooks/use-ingredients.ts` (ya tiene el patrón correcto)
-- ✅ `src/hooks/use-supplies.ts` (ya tiene el patrón correcto)
-- ✅ `src/hooks/use-expenses.ts` (ya actualizado)
-- ✅ `src/hooks/use-quotations.ts` (ya actualizado)
-- ✅ `src/hooks/use-recipe-parameters.ts` (ya actualizado en el último cambio)
-
-**Acción**: Verificar que todos usen el mismo patrón de manejo de errores mostrado arriba.
-
----
-
-## FASE 5: Testing y Validación
-
-### 5.1 Tests de Backend
+### 4.1 Tests de Backend
 
 **Archivo**: `tests/repositories/recipes.test.ts`
 
@@ -535,7 +447,7 @@ describe('Recipes Repository with Explicit Filtering', () => {
 });
 ```
 
-### 5.2 Tests de RLS (Safety Net)
+### 4.2 Tests de RLS (Safety Net)
 
 **SQL para validar**:
 
@@ -556,7 +468,7 @@ INSERT INTO recipes (name, organization_id) VALUES ('Test', 'org-B');
 -- Debería fallar (bloqueado por RLS)
 ```
 
-### 5.3 Checklist de Validación Manual
+### 4.3 Checklist de Validación Manual
 
 - [ ] Usuario normal ve solo sus datos de su org
 - [ ] Super admin ve datos de todas las orgs
@@ -568,9 +480,9 @@ INSERT INTO recipes (name, organization_id) VALUES ('Test', 'org-B');
 
 ---
 
-## FASE 6: Migración y Rollout
+## FASE 5: Migración y Rollout
 
-### 6.1 Plan de Migración
+### 5.1 Plan de Migración
 
 **Opción A - Migración Gradual (Recomendada)**:
 
@@ -589,7 +501,7 @@ Testing completo
 Deploy a producción en una ventana de mantenimiento
 ```
 
-### 6.2 Rollback Plan
+### 5.2 Rollback Plan
 
 Si algo falla después de la migración:
 
@@ -601,7 +513,7 @@ Si algo falla después de la migración:
 git revert <commit-hash>
 ```
 
-### 6.3 Monitoreo Post-Migración
+### 5.3 Monitoreo Post-Migración
 
 **Métricas a monitorear**:
 - Errores 500 (deben disminuir)
@@ -611,15 +523,15 @@ git revert <commit-hash>
 
 ---
 
-## FASE 7: Limpieza Post-Migración
+## FASE 6: Limpieza Post-Migración
 
-### 7.1 Código Obsoleto a Eliminar
+### 6.1 Código Obsoleto a Eliminar
 
 - `withTransaction` ya no necesita establecer `app.current_user_id` (opcional)
 - Helper functions de RLS complejas (`is_org_member`, `has_org_role`)
 - Código de manejo de contexto de usuario en RLS
 
-### 7.2 Documentación
+### 6.2 Documentación
 
 Actualizar documentación interna:
 - Cómo funcionan los filtros por org ahora

@@ -13,11 +13,16 @@ export function useIngredients() {
   return useQuery({
     queryKey: ingredientKeys.all,
     queryFn: async () => {
-      const { data, error } = await ingredientsApi.getAll();
-      if (error) throw new Error(error);
-      return (data as any[]) || [];
+      const result = await ingredientsApi.getAll();
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al obtener ingredientes";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data || [];
     },
-    staleTime: 60000, // 1 minuto - ingredientes no cambian tan seguido
+    staleTime: 60000,
     refetchOnWindowFocus: true,
   });
 }
@@ -29,9 +34,14 @@ export function useCreateIngredient() {
 
   return useMutation({
     mutationFn: async (ingredient: any) => {
-      const { data, error } = await ingredientsApi.create(ingredient);
-      if (error) throw new Error(error);
-      return data;
+      const result = await ingredientsApi.create(ingredient);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al crear ingrediente";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ingredientKeys.all });
@@ -57,9 +67,14 @@ export function useUpdateIngredient() {
 
   return useMutation({
     mutationFn: async ({ id, ingredient }: { id: string; ingredient: any }) => {
-      const { data, error } = await ingredientsApi.update(id, ingredient);
-      if (error) throw new Error(error);
-      return data;
+      const result = await ingredientsApi.update(id, ingredient);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al actualizar ingrediente";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ingredientKeys.all });
@@ -85,8 +100,13 @@ export function useDeleteIngredient() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await ingredientsApi.delete(id);
-      if (error) throw new Error(error);
+      const result = await ingredientsApi.delete(id);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al eliminar ingrediente";
+        throw new Error(errorMsg);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ingredientKeys.all });
