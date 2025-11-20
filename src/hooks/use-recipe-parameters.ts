@@ -7,9 +7,13 @@ export function useRecipeParameters() {
   return useQuery({
     queryKey: ["recipe-parameters"],
     queryFn: async () => {
-      const { data, error } = await recipeParametersApi.getAll();
-      if (error) throw error;
-      return (data || []).map((p: any) => ({
+      const result = await recipeParametersApi.getAll();
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error al obtener parámetros";
+        throw new Error(errorMsg);
+      }
+      const data = (result as any).data || [];
+      return (data as any[]).map((p: any) => ({
         ...p,
         createdAt: new Date(p.created_at || p.createdAt),
         updatedAt: new Date(p.updated_at || p.updatedAt),
@@ -24,9 +28,12 @@ export function useCreateRecipeParameter() {
 
   return useMutation({
     mutationFn: async (data: RecipeParameterFormData) => {
-      const { data: result, error } = await recipeParametersApi.create(data);
-      if (error) throw error;
-      return result;
+      const result = await recipeParametersApi.create(data);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error al crear parámetro";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipe-parameters"] });
@@ -51,9 +58,12 @@ export function useUpdateRecipeParameter() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<RecipeParameterFormData> }) => {
-      const { data: result, error } = await recipeParametersApi.update(id, data);
-      if (error) throw error;
-      return result;
+      const result = await recipeParametersApi.update(id, data);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error al actualizar parámetro";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipe-parameters"] });
@@ -78,8 +88,11 @@ export function useDeleteRecipeParameter() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await recipeParametersApi.delete(id);
-      if (error) throw error;
+      const result = await recipeParametersApi.delete(id);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error al eliminar parámetro";
+        throw new Error(errorMsg);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipe-parameters"] });

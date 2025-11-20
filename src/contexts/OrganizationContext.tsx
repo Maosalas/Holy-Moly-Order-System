@@ -62,7 +62,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       console.log("🏢 API result (isSuperAdmin:", isSuperAdmin, "):", result);
       
       if (result.error) {
-        throw new Error(result.error);
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error al obtener organizaciones";
+        throw new Error(errorMsg);
       }
 
       const orgs = result.data as any[];
@@ -129,7 +130,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.getMembers(orgId);
       
       if (result.error) {
-        throw new Error(result.error);
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error al obtener miembros";
+        throw new Error(errorMsg);
       }
 
       const membersData = result.data as any[];
