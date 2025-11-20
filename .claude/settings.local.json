@@ -6,7 +6,8 @@
       "Bash(npm install:*)",
       "Bash(git checkout src/components/QuotationForm.tsx)",
       "Bash(npm run build:dev:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(psql:*)"
     ],
     "deny": [],
     "ask": []

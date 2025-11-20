@@ -21,7 +21,53 @@ const Index = () => {
       categories: r.categories || (r.category ? [r.category] : ["unidad"]),
       usedParameters: r.used_parameters || r.usedParameters || [],
       createdAt: new Date(r.created_at || r.createdAt),
-      updatedAt: new Date(r.updated_at || r.updatedAt)
+      updatedAt: new Date(r.updated_at || r.updatedAt),
+      // Mapear elaboraciones y sus ingredientes
+      elaborations: (r.elaborations || []).map((elab: any) => ({
+        id: elab.id,
+        name: elab.name,
+        order: elab.order,
+        cost: elab.cost || 0,
+        variationId: elab.variation_id || elab.variationId || null,
+        // Mapear ingredientes dentro de la elaboración
+        ingredients: (elab.ingredients || []).map((ing: any) => ({
+          id: ing.id,
+          ingredientId: ing.ingredient_id || ing.ingredientId,
+          ingredientName: ing.ingredient_name || ing.ingredientName || ing.name,
+          quantity: ing.quantity || 0,
+          units: ing.units || ing.unit || '',
+          cost: ing.cost || 0
+        }))
+      })),
+      // Mapear variaciones si existen
+      variations: (r.variations || []).map((v: any) => ({
+        ...v,
+        createdAt: v.created_at ? new Date(v.created_at) : new Date(),
+        updatedAt: v.updated_at ? new Date(v.updated_at) : new Date(),
+        variationId: v.variation_id || v.variationId,
+        baseElaborationIds: v.base_elaboration_ids || v.baseElaborationIds || [],
+        usedParameters: v.used_parameters || v.usedParameters || [],
+        totalCost: v.total_cost || v.totalCost,
+        unitCost: v.unit_cost || v.unitCost,
+        orderNumber: v.order_number || v.orderNumber || 0,
+        isDefault: v.is_default !== undefined ? v.is_default : v.isDefault,
+        // Mapear elaboraciones de la variación
+        elaborations: (v.elaborations || []).map((elab: any) => ({
+          id: elab.id,
+          name: elab.name,
+          order: elab.order,
+          cost: elab.cost || 0,
+          variationId: elab.variation_id || elab.variationId || null,
+          ingredients: (elab.ingredients || []).map((ing: any) => ({
+            id: ing.id,
+            ingredientId: ing.ingredient_id || ing.ingredientId,
+            ingredientName: ing.ingredient_name || ing.ingredientName || ing.name,
+            quantity: ing.quantity || 0,
+            units: ing.units || ing.unit || '',
+            cost: ing.cost || 0
+          }))
+        }))
+      }))
     }));
   }, [recipesData]);
   const [isFormOpen, setIsFormOpen] = useState(false);
