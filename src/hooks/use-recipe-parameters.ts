@@ -42,10 +42,10 @@ export function useCreateRecipeParameter() {
         description: "El parámetro global ha sido creado exitosamente",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "No se pudo crear el parámetro",
+        description: error.message || "No se pudo crear el parámetro",
         variant: "destructive",
       });
     },
@@ -72,10 +72,10 @@ export function useUpdateRecipeParameter() {
         description: "El parámetro global ha sido actualizado exitosamente",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "No se pudo actualizar el parámetro",
+        description: error.message || "No se pudo actualizar el parámetro",
         variant: "destructive",
       });
     },
@@ -101,10 +101,10 @@ export function useDeleteRecipeParameter() {
         description: "El parámetro global ha sido eliminado",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "No se pudo eliminar el parámetro",
+        description: error.message || "No se pudo eliminar el parámetro",
         variant: "destructive",
       });
     },
