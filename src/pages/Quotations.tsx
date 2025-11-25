@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus, Calculator, ShoppingCart } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Calculator, ShoppingCart, Clock, History } from "lucide-react";
 import { QuotationForm } from "@/components/QuotationForm";
 import { QuotationList } from "@/components/QuotationList";
 import { useQuotations, useCreateQuotation, useUpdateQuotation, useDeleteQuotation } from "@/hooks/use-quotations";
@@ -93,6 +94,27 @@ const Quotations = () => {
     setCreatedQuotation(null);
   };
 
+  // Filter quotations by date (last month vs older)
+  const oneMonthAgo = useMemo(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return date;
+  }, []);
+
+  const recentQuotations = useMemo(() => {
+    return quotations.filter(quotation => {
+      const quotationDate = new Date(quotation.createdAt);
+      return quotationDate >= oneMonthAgo;
+    });
+  }, [quotations, oneMonthAgo]);
+
+  const oldQuotations = useMemo(() => {
+    return quotations.filter(quotation => {
+      const quotationDate = new Date(quotation.createdAt);
+      return quotationDate < oneMonthAgo;
+    });
+  }, [quotations, oneMonthAgo]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -116,19 +138,43 @@ const Quotations = () => {
       {isFormOpen ? (
         <QuotationForm
           quotation={editingQuotation}
-          onSubmit={editingQuotation 
+          onSubmit={editingQuotation
             ? (data) => handleUpdate(editingQuotation.id, data)
             : handleCreate
           }
           onCancel={handleCloseForm}
         />
       ) : (
-        <QuotationList
-          quotations={quotations}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onGenerateOrder={handleGenerateOrder}
-        />
+        <Tabs defaultValue="recent" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="recent" className="gap-2">
+              <Clock className="h-4 w-4" />
+              Recientes ({recentQuotations.length})
+            </TabsTrigger>
+            <TabsTrigger value="old" className="gap-2">
+              <History className="h-4 w-4" />
+              Antiguas ({oldQuotations.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="recent" className="mt-6">
+            <QuotationList
+              quotations={recentQuotations}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onGenerateOrder={handleGenerateOrder}
+            />
+          </TabsContent>
+
+          <TabsContent value="old" className="mt-6">
+            <QuotationList
+              quotations={oldQuotations}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onGenerateOrder={handleGenerateOrder}
+            />
+          </TabsContent>
+        </Tabs>
       )}
 
       {/* Diálogo para confirmar generación de pedido */}

@@ -15,7 +15,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import type { Order, OrderStatus, PaymentMethod } from "@/types/order";
 import type { Quotation } from "@/types/quotation";
 import { quotationsApi, paymentMethodsApi } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, dateToLocalInput, localInputToDate } from "@/lib/utils";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface OrderFormProps {
@@ -36,7 +36,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
   const [orderDetails, setOrderDetails] = useState(initialData?.orderDetails || "");
   const [deliveryDate, setDeliveryDate] = useState<string>(
     initialData?.deliveryDate
-      ? new Date(initialData.deliveryDate).toISOString().slice(0, 16)
+      ? dateToLocalInput(initialData.deliveryDate)
       : ""
   );
   const [paymentMethodId, setPaymentMethodId] = useState<string>(
@@ -112,7 +112,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
       setPhoneNumber(initialData.phoneNumber || "");
       setOrderDetails(initialData.orderDetails || "");
       const formattedDate = initialData.deliveryDate
-        ? new Date(initialData.deliveryDate).toISOString().slice(0, 16)
+        ? dateToLocalInput(initialData.deliveryDate)
         : "";
       setDeliveryDate(formattedDate);
       setPaymentMethodId(
@@ -308,7 +308,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
       clientName: clientName.trim(),
       phoneNumber: phoneNumber.trim(),
       orderDetails: orderDetails.trim(),
-      deliveryDate: new Date(deliveryDate),
+      deliveryDate: localInputToDate(deliveryDate),
       paymentMethod: selectedPaymentMethod, // Include the full object for type compatibility
       clientPhotos,
       costAmount,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,11 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
-import { User, Lock, Eye, EyeOff, Check, AlertCircle } from "lucide-react";
+import { User, Lock, Eye, EyeOff, Check, AlertCircle, Building2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const UserSettings = () => {
   const { user, updateUser, logout } = useAuth();
+  const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -190,6 +192,27 @@ const UserSettings = () => {
               />
               <p className="text-xs text-muted-foreground">
                 El correo electrónico no se puede cambiar
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="organization">Organización</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="organization"
+                  type="text"
+                  value={currentOrganization?.name || "Sin organización"}
+                  disabled
+                  className="bg-muted"
+                />
+                {currentOrganization && (
+                  <span className="text-xs text-muted-foreground capitalize px-3 py-2 bg-muted rounded-md">
+                    {currentOrganization.userRole}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Tu rol y organización actual
               </p>
             </div>
 

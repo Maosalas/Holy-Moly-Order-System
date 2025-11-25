@@ -506,7 +506,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
         usedParameters: finalUsedParameters,
         totalWeight: (categories.includes("relleno") || categories.includes("cubierta")) ? finalTotalWeight : undefined,
         totalWeightUnit: (categories.includes("relleno") || categories.includes("cubierta")) ? totalWeightUnit : undefined,
-        variations: preparedVariations.length > 0 ? preparedVariations : undefined,
+        variations: preparedVariations,
         supplies: selectedSupplies.length > 0 ? selectedSupplies : undefined,
         totalCost,
         categories: categories,

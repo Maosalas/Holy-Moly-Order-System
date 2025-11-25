@@ -10,6 +10,7 @@ import { ShoppingBag, Phone, Calendar, ArrowRight, Package, Filter } from "lucid
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrders } from "@/hooks/use-orders";
 import { useExpenses } from "@/hooks/use-expenses";
+import { formatDateForDisplay, parseDateFromDB } from "@/lib/utils";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -73,23 +74,34 @@ const Dashboard = () => {
       if (order.statuses.includes("finished")) return false;
 
       // Filter out orders with past delivery dates
-      const delivery = new Date(order.deliveryDate);
-      delivery.setHours(0, 0, 0, 0);
+      const delivery = parseDateFromDB(order.deliveryDate);
       const diffTime = delivery.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
       return diffDays >= 0; // Only include today and future dates
     })
-    .sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
+    .sort((a, b) => parseDateFromDB(a.deliveryDate).getTime() - parseDateFromDB(b.deliveryDate).getTime())
 
 
   const getTimeUntilDelivery = (deliveryDate: Date | string) => {
-    const delivery = typeof deliveryDate === 'string' ? new Date(deliveryDate) : new Date(deliveryDate);
-    // Normalize delivery date to midnight for accurate day comparison
-    delivery.setHours(0, 0, 0, 0);
+    const delivery = parseDateFromDB(deliveryDate);
+
+    console.log("🔍 Debug getTimeUntilDelivery:", {
+      originalDate: deliveryDate,
+      parsedDelivery: delivery,
+      today: today,
+      deliveryTime: delivery.getTime(),
+      todayTime: today.getTime()
+    });
 
     const diffTime = delivery.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    console.log("🔍 Diff calculation:", {
+      diffTime,
+      diffDays,
+      result: diffDays === 0 ? "Hoy" : diffDays === 1 ? "Mañana" : `En ${diffDays} días`
+    });
 
     if (diffDays === 0) return "Hoy";
     if (diffDays === 1) return "Mañana";
@@ -423,7 +435,7 @@ const Dashboard = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{new Date(order.deliveryDate).toLocaleDateString('en-US', {
+                            <span className="text-sm">{formatDateForDisplay(order.deliveryDate, 'en-US', {
                               month: 'short',
                               day: 'numeric'
                             })}</span>
