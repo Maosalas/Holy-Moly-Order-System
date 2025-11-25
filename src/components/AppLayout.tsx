@@ -48,15 +48,22 @@ const menuItems = [
 function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isImpersonating } = useAuth();
   const collapsed = state === "collapsed";
 
-  // Filter menu items based on role
-  const visibleMenuItems = user?.roles?.includes("cake_topper_provider")
-    ? menuItems.filter(item => item.url === "/orders")
-    : menuItems;
-
   const isSuperAdmin = user?.roles?.includes("super_admin");
+  
+  // Filter menu items based on role and impersonation status
+  let visibleMenuItems = menuItems;
+  
+  // If super admin is NOT impersonating, don't show organization menus
+  if (isSuperAdmin && !isImpersonating) {
+    visibleMenuItems = [];
+  } 
+  // If cake topper provider, only show orders
+  else if (user?.roles?.includes("cake_topper_provider")) {
+    visibleMenuItems = menuItems.filter(item => item.url === "/orders");
+  }
 
   return (
     <Sidebar collapsible="icon">
