@@ -4,27 +4,28 @@
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
+Shopify-inspired professional design system
 */
 
 @layer base {
   :root {
-    --background: 30 40% 98%;
-    --foreground: 25 20% 15%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 25 20% 15%;
+    --card-foreground: 0 0% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 25 20% 15%;
+    --popover-foreground: 0 0% 20%;
 
     --primary: 28 85% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 35 50% 92%;
-    --secondary-foreground: 25 20% 15%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 20%;
 
-    --muted: 35 30% 95%;
-    --muted-foreground: 25 10% 50%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
     --accent: 28 80% 60%;
     --accent-foreground: 0 0% 100%;
@@ -32,11 +33,11 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 35 25% 88%;
-    --input: 35 25% 88%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
     --ring: 28 85% 55%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -104,6 +105,25 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  h3 {
+    @apply text-xl;
   }
 }
