@@ -302,6 +302,11 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
       return;
     }
 
+    // Para actualizaciones, solo enviar el último status; para creación, enviar el array inicial
+    const statusesToSend = isUpdate 
+      ? [statuses[statuses.length - 1] || "waiting_for_payment"]
+      : (statuses.length > 0 ? statuses : ["waiting_for_payment"]);
+
     const orderData: Omit<Order, "id" | "createdAt"> = {
       organizationId: currentOrganization?.id || "",
       quotationId: selectedQuotationId,
@@ -318,7 +323,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
       needsCakeTopper,
       topperDetails: needsCakeTopper ? topperDetails.trim() : undefined,
       topperPhotos: needsCakeTopper ? topperPhotos : undefined,
-      statuses: (statuses.length > 0 ? statuses : ["waiting-for-payment"]) as OrderStatus[],
+      statuses: statusesToSend as OrderStatus[],
     };
 
     try {
