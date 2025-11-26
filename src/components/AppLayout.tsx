@@ -1,9 +1,11 @@
 import { ReactNode, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings, Sliders, ChevronDown } from "lucide-react";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings, Sliders, ChevronDown, Bell, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import defaultLogo from "@/assets/Orderly-logo.png";
 import {
@@ -66,10 +68,10 @@ function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r border-border/60">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleMenuItems.map((item) => {
@@ -81,7 +83,7 @@ function AppSidebar() {
                     <Collapsible key={item.title} asChild defaultOpen={false} className="group/collapsible">
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title}>
+                          <SidebarMenuButton tooltip={item.title} className="hover:bg-muted/50">
                             <item.icon className="h-5 w-5" />
                             {!collapsed && <span>{item.title}</span>}
                             {!collapsed && <ChevronDown className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />}
@@ -114,7 +116,7 @@ function AppSidebar() {
 
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive}>
+                    <SidebarMenuButton asChild isActive={isActive} className="hover:bg-muted/50">
                       <NavLink to={item.url}>
                         <item.icon className="h-5 w-5" />
                         {!collapsed && <span>{item.title}</span>}
@@ -125,7 +127,7 @@ function AppSidebar() {
               })}
               {isSuperAdmin && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location.pathname === "/super-admin"}>
+                  <SidebarMenuButton asChild isActive={location.pathname === "/super-admin"} className="hover:bg-muted/50">
                     <NavLink to="/super-admin">
                       <Shield className="h-5 w-5" />
                       {!collapsed && <span>Super Admin</span>}
@@ -160,42 +162,61 @@ export function AppLayout({ children }: AppLayoutProps) {
     }
   }, [user, isImpersonating, location.pathname, navigate]);
 
+  const userInitials = user?.email?.substring(0, 2).toUpperCase() || "U";
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full max-w-full overflow-x-hidden">
+      <div className="min-h-screen flex w-full max-w-full overflow-x-hidden bg-background">
         <AppSidebar />
+        
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 border-b bg-card flex items-center px-2 sm:px-4 sticky top-0 z-10 justify-between gap-2">
-            <div className="flex items-center min-w-0">
-              <SidebarTrigger />
-              <div className="ml-2 sm:ml-4 flex items-center gap-2 min-w-0">
-                <img src={logoSrc} alt="Organization Logo" className="h-8 sm:h-10 w-auto object-contain" />
+          {/* Shopify-style Topbar */}
+          <header className="h-14 border-b border-border/60 bg-card sticky top-0 z-10 flex items-center px-4 gap-3">
+            <SidebarTrigger className="-ml-2" />
+            
+            <div className="flex items-center gap-2 min-w-0">
+              <img src={logoSrc} alt="Organization Logo" className="h-8 w-auto object-contain" />
+            </div>
+
+            <div className="flex-1 flex items-center gap-3 max-w-md ml-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar..."
+                  className="pl-9 h-9 bg-muted/50 border-border/60 focus-visible:ring-1"
+                />
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+
+            <div className="flex items-center gap-2 ml-auto">
               <OrganizationSwitcher />
-              <div className="hidden sm:flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium truncate">{user?.name}</span>
-                <span className="text-xs text-muted-foreground capitalize">
-                  ({user?.roles?.includes("super_admin") ? "Admin" : user?.roles?.includes("cake_topper_provider") ? "Topper" : "Owner"})
-                </span>
-              </div>
+              
+              <Button variant="ghost" size="icon" className="h-9 w-9 hidden sm:flex">
+                <Bell className="h-4 w-4" />
+              </Button>
+              
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => navigate("/user/settings")}
-                className="gap-1 sm:gap-2"
+                className="h-9 w-9 hidden sm:flex"
               >
                 <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Settings</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={logout} className="gap-1 sm:gap-2">
+
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+
+              <Button variant="ghost" size="sm" onClick={logout} className="gap-2 hidden md:flex">
                 <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <span>Logout</span>
               </Button>
             </div>
           </header>
+
           {isImpersonating && (
             <div className="bg-yellow-500 text-yellow-950 px-4 py-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -217,8 +238,12 @@ export function AppLayout({ children }: AppLayoutProps) {
               </Button>
             </div>
           )}
-          <main className="flex-1 p-3 sm:p-6 bg-background overflow-auto">
-            {children}
+
+          {/* Main content with Shopify-style background */}
+          <main className="flex-1 p-6 bg-muted/30 overflow-auto">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
           </main>
         </div>
       </div>
