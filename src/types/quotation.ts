@@ -12,14 +12,23 @@ export interface QuotationRecipe {
   recipeId: string;
   recipeName: string;
   recipeType: RecipeType;
-  
+
   // NUEVO: Soporte para variaciones
   variationId?: string;
   variationName?: string;
-  
+
+  // NUEVO: Tamaño específico de esta receta (si aplica)
+  size?: string;
+
   unitCost: number;
   quantity: number;
   totalCost: number;
+
+  // NUEVO: Para rellenos/cubiertas - relación con receta principal
+  linkedToRecipeId?: string;        // ID de la receta principal
+  linkedToVariationId?: string;     // ID de la variación de la receta principal
+  parameterKey?: string;            // Parámetro usado para calcular (ej: "Relleno Pavlova")
+  baseRecipeId?: string;            // ID de la receta base de relleno/cubierta
 }
 
 export interface QuotationSupply {
@@ -52,12 +61,15 @@ export interface Quotation {
   organizationId: string;
   userId?: string;
   clientName: string;
-  size: 'mini' | 'pequeño' | 'mediano' | 'grande';
+  size?: string; // Tamaño de la cotización (pequeño, mediano, grande, etc.)
   recipes: QuotationRecipe[];
   selectedSupplies: QuotationSupply[];
   additionalExpenses?: QuotationAdditionalExpense[];
   additionalIngredients?: QuotationIngredient[];
   totalCost: number;
+  sellingPrice?: number; // Precio que se cobra al cliente
+  profit?: number; // Ganancia (sellingPrice - totalCost)
+  profitMargin?: number; // % de ganancia ((profit / totalCost) * 100)
   notes?: string;
   createdAt: Date;
   updatedAt: Date;

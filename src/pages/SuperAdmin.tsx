@@ -10,14 +10,21 @@ import { organizationsApi } from "@/lib/api";
 import { OrganizationWithRole } from "@/types/organization";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Building2, Users, TrendingUp, Eye, Plus, Settings } from "lucide-react";
+import { Building2, Users, TrendingUp, Eye, Plus, Settings, Trash2 } from "lucide-react";
 import CreateOrganizationDialog from "@/components/CreateOrganizationDialog";
-import SubscriptionPlansManager from "@/components/SubscriptionPlansManager";
+import CompleteSubscriptionManager from "@/components/CompleteSubscriptionManager";
+import DeleteOrganizationDialog from "@/components/DeleteOrganizationDialog";
+import OrganizationSettingsDialog from "@/components/OrganizationSettingsDialog";
 
 const SuperAdmin = () => {
   const [allOrganizations, setAllOrganizations] = useState<OrganizationWithRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [organizationToDelete, setOrganizationToDelete] = useState<OrganizationWithRole | null>(null);
+  const [organizationToEdit, setOrganizationToEdit] = useState<OrganizationWithRole | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const { switchOrganization } = useOrganization();
   const { startImpersonation } = useAuth();
@@ -82,6 +89,46 @@ const SuperAdmin = () => {
       title: "Impersonating Organization",
       description: `Now viewing ${org.name}`,
     });
+  };
+
+  const handleDeleteClick = (org: OrganizationWithRole) => {
+    setOrganizationToDelete(org);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleSettingsClick = (org: OrganizationWithRole) => {
+    setOrganizationToEdit(org);
+    setIsSettingsDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!organizationToDelete) return;
+
+    setIsDeleting(true);
+    const result = await organizationsApi.delete(organizationToDelete.id);
+
+    if (result.error) {
+      const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error eliminando organización";
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
+      setIsDeleting(false);
+      return;
+    }
+
+    toast({
+      title: "Organización Eliminada",
+      description: `${organizationToDelete.name} ha sido eliminada exitosamente`,
+    });
+
+    setIsDeleting(false);
+    setIsDeleteDialogOpen(false);
+    setOrganizationToDelete(null);
+
+    // Reload organizations
+    loadAllOrganizations();
   };
 
   const getStatusBadge = (status: string) => {
@@ -169,7 +216,7 @@ const SuperAdmin = () => {
           </TabsTrigger>
           <TabsTrigger value="plans">
             <Settings className="h-4 w-4 mr-2" />
-            Planes de Suscripción
+            Planes y Features
           </TabsTrigger>
         </TabsList>
 
@@ -212,14 +259,33 @@ const SuperAdmin = () => {
                             {org.createdAt.toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleImpersonate(org)}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver
-                            </Button>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleImpersonate(org)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSettingsClick(org)}
+                              >
+                                <Settings className="h-4 w-4 mr-2" />
+                                Ajustes
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteClick(org)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Eliminar
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -232,13 +298,28 @@ const SuperAdmin = () => {
         </TabsContent>
 
         <TabsContent value="plans">
-          <SubscriptionPlansManager />
+          <CompleteSubscriptionManager />
         </TabsContent>
       </Tabs>
 
       <CreateOrganizationDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
+        onSuccess={loadAllOrganizations}
+      />
+
+      <DeleteOrganizationDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        organizationName={organizationToDelete?.name || ""}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+      />
+
+      <OrganizationSettingsDialog
+        open={isSettingsDialogOpen}
+        onOpenChange={setIsSettingsDialogOpen}
+        organization={organizationToEdit}
         onSuccess={loadAllOrganizations}
       />
     </div>

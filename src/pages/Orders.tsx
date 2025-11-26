@@ -1,19 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { OrderForm } from "@/components/OrderForm";
 import { OrderList } from "@/components/OrderList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { ShoppingListDialog } from "@/components/ShoppingListDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ShoppingCart } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, ShoppingCart, Clock, History } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Order } from "@/types/order";
-import { ordersApi } from "@/lib/api";
+import { ordersApi, quotationsApi } from "@/lib/api";
 import { useOrders, useCreateOrder, useUpdateOrder, useDeleteOrder, useOrder } from "@/hooks/use-orders";
+import type { Quotation } from "@/types/quotation";
 
 const Orders = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Usar React Query hooks
   const { data: orders = [], isLoading } = useOrders();
@@ -28,6 +32,36 @@ const Orders = () => {
   const [isFetchingOrder, setIsFetchingOrder] = useState(false);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [shoppingListOpen, setShoppingListOpen] = useState(false);
+  const [quotationForOrder, setQuotationForOrder] = useState<Quotation | null>(null);
+
+  // Detectar quotationId en la URL y cargar la cotización
+  useEffect(() => {
+    const quotationId = searchParams.get('quotationId');
+    if (quotationId) {
+      // Cargar la cotización y abrir el formulario
+      const loadQuotation = async () => {
+        try {
+          const { data, error } = await quotationsApi.getById(quotationId);
+          if (error) throw new Error(error);
+          if (data) {
+            setQuotationForOrder(data as Quotation);
+            setIsFormOpen(true);
+            // Limpiar el parámetro de la URL
+            searchParams.delete('quotationId');
+            setSearchParams(searchParams);
+          }
+        } catch (error) {
+          console.error("Error loading quotation:", error);
+          toast({
+            title: "Error",
+            description: "No se pudo cargar la cotización",
+            variant: "destructive",
+          });
+        }
+      };
+      loadQuotation();
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleSubmit = async (orderData: Omit<Order, "id" | "createdAt">) => {
     // Transform orderData for API - replace paymentMethod object with paymentMethodId
@@ -47,6 +81,7 @@ const Orders = () => {
       }
       setIsFormOpen(false);
       setEditingOrder(undefined);
+      setQuotationForOrder(null);
     } catch (error) {
       // Los errores ya son manejados por los hooks
       console.error("Error submitting order:", error);
@@ -109,12 +144,34 @@ const Orders = () => {
   const handleCancel = () => {
     setIsFormOpen(false);
     setEditingOrder(undefined);
+    setQuotationForOrder(null);
   };
 
   // Filter orders based on user role
   const visibleOrders = user?.roles?.includes("cake_topper_provider")
     ? orders.filter(order => order.needsCakeTopper)
     : orders;
+
+  // Filter orders by date (last month vs older)
+  const oneMonthAgo = useMemo(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return date;
+  }, []);
+
+  const recentOrders = useMemo(() => {
+    return visibleOrders.filter(order => {
+      const orderDate = new Date(order.createdAt);
+      return orderDate >= oneMonthAgo;
+    });
+  }, [visibleOrders, oneMonthAgo]);
+
+  const oldOrders = useMemo(() => {
+    return visibleOrders.filter(order => {
+      const orderDate = new Date(order.createdAt);
+      return orderDate < oneMonthAgo;
+    });
+  }, [visibleOrders, oneMonthAgo]);
 
   const selectedOrders = orders.filter(order => selectedOrderIds.includes(order.id));
 
@@ -166,16 +223,43 @@ const Orders = () => {
           initialData={editingOrder}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
+          quotation={quotationForOrder || undefined}
         />
       ) : (
-        <OrderList
-          orders={visibleOrders}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
-          isDeleting={deleteOrder.isPending || isFetchingOrder}
-          selectedOrderIds={selectedOrderIds}
-          onSelectionChange={setSelectedOrderIds}
-        />
+        <Tabs defaultValue="recent" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="recent" className="gap-2">
+              <Clock className="h-4 w-4" />
+              Recientes ({recentOrders.length})
+            </TabsTrigger>
+            <TabsTrigger value="old" className="gap-2">
+              <History className="h-4 w-4" />
+              Antiguos ({oldOrders.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="recent" className="mt-6">
+            <OrderList
+              orders={recentOrders}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+              isDeleting={deleteOrder.isPending || isFetchingOrder}
+              selectedOrderIds={selectedOrderIds}
+              onSelectionChange={setSelectedOrderIds}
+            />
+          </TabsContent>
+
+          <TabsContent value="old" className="mt-6">
+            <OrderList
+              orders={oldOrders}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+              isDeleting={deleteOrder.isPending || isFetchingOrder}
+              selectedOrderIds={selectedOrderIds}
+              onSelectionChange={setSelectedOrderIds}
+            />
+          </TabsContent>
+        </Tabs>
       )}
 
       <ShoppingListDialog

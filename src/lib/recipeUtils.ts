@@ -5,12 +5,12 @@ import { Recipe, RecipeElaboration } from "@/types/recipe";
  */
 export function migrateRecipeToElaborations(recipe: any): Recipe {
   let migratedRecipe = { ...recipe };
-  
+
   // Migrar category a categories si es necesario
   if (!migratedRecipe.categories && migratedRecipe.category) {
     migratedRecipe.categories = [migratedRecipe.category];
   }
-  
+
   // Si ya tiene elaborations y no está vacío, retornar tal cual
   if (migratedRecipe.elaborations && migratedRecipe.elaborations.length > 0) {
     return migratedRecipe as Recipe;
@@ -22,16 +22,18 @@ export function migrateRecipeToElaborations(recipe: any): Recipe {
       id: `temp-${crypto.randomUUID()}`, // ID temporal para frontend
       name: "Elaboración principal",
       order: 1,
+      cost: 0,              // Costo inicial en 0, se calculará
+      variationId: null,    // null = elaboración común
       ingredients: migratedRecipe.ingredients
     };
-    
+
     return {
       ...migratedRecipe,
       elaborations: [mainElaboration],
       ingredients: undefined // Remover propiedad antigua
     };
   }
-  
+
   // Si no tiene ni elaborations ni ingredients, crear elaboration vacía
   return {
     ...migratedRecipe,
@@ -39,6 +41,8 @@ export function migrateRecipeToElaborations(recipe: any): Recipe {
       id: `temp-${crypto.randomUUID()}`,
       name: "Elaboración principal",
       order: 1,
+      cost: 0,
+      variationId: null,
       ingredients: []
     }]
   };

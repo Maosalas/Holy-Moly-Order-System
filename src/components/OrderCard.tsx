@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Edit, Trash2, MessageCircle, Calendar, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TopperUploadDialog } from "./TopperUploadDialog";
+import { formatDateForDisplay, parseDateFromDB } from "@/lib/utils";
 
 interface OrderCardProps {
   order: Order;
@@ -18,8 +19,10 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
     window.open(url, "_blank");
   };
 
-  const deliveryDate = new Date(order.deliveryDate);
-  const isUpcoming = deliveryDate >= new Date();
+  const deliveryDate = parseDateFromDB(order.deliveryDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isUpcoming = deliveryDate >= today;
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -84,7 +87,7 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />
-          {deliveryDate.toLocaleDateString()}
+          {formatDateForDisplay(order.deliveryDate)}
           {isUpcoming && (
             <Badge variant="outline" className="text-xs">Upcoming</Badge>
           )}

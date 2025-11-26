@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, X, Upload, ImageIcon, Check, ChevronsUpDown, Tag, Divide, GripVertical, Trash2, Package } from "lucide-react";
-import { Recipe, RecipeIngredient, RecipeFormData, Category, RecipeMultiplier, RecipeElaboration } from "@/types/recipe";
+import { Recipe, RecipeIngredient, RecipeFormData, Category, RecipeElaboration, RecipeVariation } from "@/types/recipe";
 import { Ingredient } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
 import { ingredientsApi, suppliesApi } from "@/lib/api";
@@ -15,6 +15,10 @@ import { Textarea } from "./ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { migrateRecipeToElaborations } from "@/lib/recipeUtils";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { VariationEditor } from "./VariationEditor";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useRecipeParameters, useCreateRecipeParameter } from "@/hooks/use-recipe-parameters";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -24,9 +28,12 @@ interface RecipeFormProps {
 
 export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const { currentOrganization } = useOrganization();
+  const { data: recipeParameters = [] } = useRecipeParameters();
+  const createParameter = useCreateRecipeParameter();
+
   // Aplicar migración si la receta existe y lo necesita
   const migratedRecipe = recipe ? migrateRecipeToElaborations(recipe) : undefined;
-  
+
   const [name, setName] = useState(migratedRecipe?.name || "");
   const [categories, setCategories] = useState<Category[]>(() => {
     if (migratedRecipe?.categories && Array.isArray(migratedRecipe.categories) && migratedRecipe.categories.length > 0) {
@@ -41,57 +48,83 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
   const [url, setUrl] = useState(migratedRecipe?.url || "");
   const [unidades, setUnidades] = useState(migratedRecipe?.units || 0);
   const [image, setImage] = useState(migratedRecipe?.image || "");
+  const [variations, setVariations] = useState<RecipeVariation[]>(
+    migratedRecipe?.variations || []
+  );
 
-  // Set default images for relleno and cubierta when categories change
-  useEffect(() => {
-    if (!migratedRecipe && !image) {
-      if (categories.includes('relleno')) {
-        setImage('/src/assets/temp_relleno.png');
-      } else if (categories.includes('cubierta')) {
-        setImage('/src/assets/temp_cubierta.png');
-      }
-    }
-  }, [categories, migratedRecipe, image]);
+  // Declare elaborations early since it's used in useEffect below
   const [elaborations, setElaborations] = useState<RecipeElaboration[]>(
     migratedRecipe?.elaborations && migratedRecipe.elaborations.length > 0
       ? migratedRecipe.elaborations
       : [{
-          id: getUUID(),
-          name: "Elaboración principal",
+          id: crypto.randomUUID(),
+          name: "",
           order: 1,
+          cost: 0,
           ingredients: []
         }]
   );
-  const [multipliers, setMultipliers] = useState<RecipeMultiplier[]>(
-    migratedRecipe?.multipliers || []
+
+  // Recalcular costos de variaciones al cargar si no están presentes
+  useEffect(() => {
+    if (migratedRecipe?.variations && migratedRecipe.variations.length > 0) {
+      const needsRecalculation = migratedRecipe.variations.some(
+        v => v.totalCost === undefined || v.totalCost === 0 || v.unitCost === undefined || v.unitCost === 0
+      );
+
+      if (needsRecalculation) {
+        const recalculatedVariations = migratedRecipe.variations.map(v => {
+          // Calcular costo de elaboraciones propias
+          const ownElaborationsCost = (v.elaborations || []).reduce((sum, elab) => {
+            const elabCost = (elab.ingredients || []).reduce((ingSum, ing) => ingSum + (ing.cost || 0), 0);
+            return sum + elabCost;
+          }, 0);
+
+          // Calcular costo de elaboraciones base
+          const baseElaborationsCost = (v.baseElaborationIds || []).reduce((sum, baseElabId) => {
+            const baseElab = elaborations.find(e => e.id === baseElabId);
+            if (baseElab) {
+              const baseElabCost = baseElab.ingredients.reduce((ingSum, ing) => ingSum + (ing.cost || 0), 0);
+              return sum + baseElabCost;
+            }
+            return sum;
+          }, 0);
+
+          const totalCost = ownElaborationsCost + baseElaborationsCost;
+          const unitCost = v.units > 0 ? totalCost / v.units : 0;
+
+          return {
+            ...v,
+            totalCost,
+            unitCost,
+          };
+        });
+
+        setVariations(recalculatedVariations);
+      }
+    }
+  }, [migratedRecipe, elaborations]);
+
+  const [totalWeight, setTotalWeight] = useState(migratedRecipe?.totalWeight || 0);
+  const [totalWeightUnit, setTotalWeightUnit] = useState(migratedRecipe?.totalWeightUnit || "gr");
+  const [useManualWeight, setUseManualWeight] = useState(!!migratedRecipe?.totalWeight);
+  const [usedParameters, setUsedParameters] = useState<string[]>(
+    migratedRecipe?.usedParameters || []
   );
+
+  // States for new parameter dialog
+  const [showNewParameterDialog, setShowNewParameterDialog] = useState(false);
+  const [newParameterKey, setNewParameterKey] = useState("");
+  const [newParameterValue, setNewParameterValue] = useState("");
+  const [newParameterUnit, setNewParameterUnit] = useState("gr");
+  const [newParameterDescription, setNewParameterDescription] = useState("");
+
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
   const [availableSupplies, setAvailableSupplies] = useState<any[]>([]);
   const [selectedSupplies, setSelectedSupplies] = useState<any[]>(
     migratedRecipe?.supplies || []
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Default sizes for multipliers
-  const defaultSizes = ["mini", "pequeño", "mediano", "grande"];
-
-  // Initialize multipliers when categories include queque, relleno, or cubierta
-  useEffect(() => {
-    const hasMultiplierCategory = categories.some(cat => ["queque", "relleno", "cubierta"].includes(cat));
-    if (hasMultiplierCategory) {
-      if (multipliers.length === 0) {
-        setMultipliers(
-          defaultSizes.map((size) => ({
-            id: getUUID(),
-            size,
-            multiplier: 1.0,
-          }))
-        );
-      }
-    } else {
-      setMultipliers([]);
-    }
-  }, [categories]);
 
   useEffect(() => {
     const fetchIngredients = async () => {
@@ -128,13 +161,64 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
     return ingredientsCost + suppliesCost;
   };
 
+  const calculateTotalWeight = () => {
+    // Sum all ingredient quantities across all elaborations
+    return elaborations.reduce((total, elab) => {
+      return total + elab.ingredients.reduce((sum, ing) => {
+        // Only sum if the ingredient unit is weight-based (gr, kg)
+        if (ing.units === 'gr' || ing.units === 'g') {
+          return sum + ing.quantity;
+        } else if (ing.units === 'kg') {
+          return sum + (ing.quantity * 1000); // Convert to grams
+        }
+        // For other units (ml, L, units, etc.), don't include in weight
+        return sum;
+      }, 0);
+    }, 0);
+  };
+
+  // Parameter management
+  const handleCreateParameter = async () => {
+    if (!newParameterKey.trim() || !newParameterValue) {
+      toast({
+        title: "Error",
+        description: "Por favor complete todos los campos requeridos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await createParameter.mutateAsync({
+        parameterKey: newParameterKey.trim(),
+        value: parseFloat(newParameterValue),
+        unit: newParameterUnit,
+        description: newParameterDescription.trim() || undefined,
+      });
+
+      // Add the new parameter to the selected parameters
+      setUsedParameters(prev => [...prev, newParameterKey.trim()]);
+
+      // Reset form and close dialog
+      setNewParameterKey("");
+      setNewParameterValue("");
+      setNewParameterUnit("gr");
+      setNewParameterDescription("");
+      setShowNewParameterDialog(false);
+    } catch (error) {
+      // Error is already handled by the mutation
+      console.error("Error creating parameter:", error);
+    }
+  };
+
   // Elaboration management
   const addElaboration = () => {
     const newElaboration: RecipeElaboration = {
       id: getUUID(),
       name: `Elaboración ${elaborations.length + 1}`,
       order: elaborations.length + 1,
-      ingredients: []
+      cost: 0,
+      ingredients: [],
     };
     setElaborations([...elaborations, newElaboration]);
   };
@@ -358,14 +442,72 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
 
     const totalCost = calculateTotalCost();
 
+    // Determine totalWeight based on manual or auto
+    const finalTotalWeight = useManualWeight ? totalWeight : calculateTotalWeight();
+
+    // Calcular cost de cada elaboración
+    const elaborationsWithCost = elaborations.map(elab => ({
+      ...elab,
+      cost: elab.ingredients.reduce((sum, ing) => sum + ing.cost, 0)
+    }));
+
+    // Preparar variations con sus elaborations (mantener las elaboraciones específicas)
+    const preparedVariations = variations.map(v => {
+      // Calcular el costo total de las elaboraciones propias
+      const ownElaborationsCost = v.elaborations.reduce((sum, elab) => {
+        const elabCost = elab.ingredients.reduce((ingSum, ing) => ingSum + ing.cost, 0);
+        return sum + elabCost;
+      }, 0);
+
+      // Calcular el costo de las elaboraciones base seleccionadas
+      const baseElaborationsCost = (v.baseElaborationIds || []).reduce((sum, baseElabId) => {
+        const baseElab = elaborations.find(e => e.id === baseElabId);
+        if (baseElab) {
+          const baseElabCost = baseElab.ingredients.reduce((ingSum, ing) => ingSum + ing.cost, 0);
+          return sum + baseElabCost;
+        }
+        return sum;
+      }, 0);
+
+      // Costo total de la variación
+      const variationTotalCost = ownElaborationsCost + baseElaborationsCost;
+
+      // Costo por unidad
+      const variationUnitCost = v.units > 0 ? variationTotalCost / v.units : 0;
+
+      const prepared = {
+        ...v,
+        baseElaborationIds: v.baseElaborationIds || [],  // Ensure baseElaborationIds is included
+        base_elaboration_ids: v.baseElaborationIds || [], // Backend expects snake_case
+        elaborations: v.elaborations.map(elab => ({
+          ...elab,
+          cost: elab.ingredients.reduce((sum, ing) => sum + ing.cost, 0)
+        })),
+        totalCost: variationTotalCost,
+        unitCost: variationUnitCost,
+      };
+      console.log('Prepared variation:', v.name, 'baseElaborationIds:', v.baseElaborationIds, 'totalCost:', variationTotalCost, 'unitCost:', variationUnitCost);
+      return prepared;
+    });
+
+    // Preparar usedParameters:
+    // - Si NO tiene variaciones: a nivel de receta
+    // - Si SÍ tiene variaciones: null a nivel de receta (se envían en cada variación)
+    const finalUsedParameters = variations.length === 0 && usedParameters.length > 0
+      ? usedParameters
+      : undefined;
+
     try {
       await onSubmit({
         organizationId: currentOrganization?.id || "",
         name: name.trim(),
         image: image || undefined,
-        elaborations: elaborations,
+        elaborations: elaborationsWithCost,
+        usedParameters: finalUsedParameters,
+        totalWeight: (categories.includes("relleno") || categories.includes("cubierta")) ? finalTotalWeight : undefined,
+        totalWeightUnit: (categories.includes("relleno") || categories.includes("cubierta")) ? totalWeightUnit : undefined,
+        variations: preparedVariations,
         supplies: selectedSupplies.length > 0 ? selectedSupplies : undefined,
-        multipliers: multipliers.length > 0 ? multipliers : undefined,
         totalCost,
         categories: categories,
         notes: notes,
@@ -444,6 +586,201 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
             </div>
           </div>
 
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between space-y-0">
+              <div>
+                <CardTitle>Parámetros Globales</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {variations.length > 0
+                    ? "Los parámetros se configuran individualmente en cada variación"
+                    : "Seleccione los parámetros que esta receta utiliza (opcional)"}
+                </p>
+              </div>
+              {variations.length === 0 && (
+                <Dialog open={showNewParameterDialog} onOpenChange={setShowNewParameterDialog}>
+                  <DialogTrigger asChild>
+                    <Button type="button" size="sm" variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nuevo Parámetro
+                    </Button>
+                  </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Crear Nuevo Parámetro Global</DialogTitle>
+                    <DialogDescription>
+                      Agregue un nuevo parámetro para usar en sus recetas
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="paramKey">Nombre del Parámetro *</Label>
+                      <Input
+                        id="paramKey"
+                        placeholder="Ej: Relleno Cupcake, Crema de Mantequilla, Fondant"
+                        value={newParameterKey}
+                        onChange={(e) => setNewParameterKey(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Use un nombre descriptivo y único para identificar este parámetro
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="paramValue">Valor *</Label>
+                        <Input
+                          id="paramValue"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Ej: 50"
+                          value={newParameterValue}
+                          onChange={(e) => setNewParameterValue(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="paramUnit">Unidad *</Label>
+                        <Input
+                          id="paramUnit"
+                          placeholder="Ej: gr, ml"
+                          value={newParameterUnit}
+                          onChange={(e) => setNewParameterUnit(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="paramDescription">Descripción (Opcional)</Label>
+                      <Textarea
+                        id="paramDescription"
+                        placeholder="Breve descripción del parámetro"
+                        value={newParameterDescription}
+                        onChange={(e) => setNewParameterDescription(e.target.value)}
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowNewParameterDialog(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleCreateParameter}
+                      disabled={!newParameterKey.trim() || !newParameterValue || createParameter.isPending}
+                    >
+                      {createParameter.isPending ? "Creando..." : "Crear Parámetro"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              )}
+            </CardHeader>
+              <CardContent className="space-y-4">
+                {variations.length > 0 ? (
+                  <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <p>⚠️ Esta receta tiene variaciones</p>
+                    <p className="text-sm mt-2">
+                      Los parámetros globales deben configurarse en cada variación individual
+                    </p>
+                  </div>
+                ) : recipeParameters.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <p>No hay parámetros globales definidos.</p>
+                    <p className="text-sm mt-2">
+                      Cree un nuevo parámetro usando el botón "Nuevo Parámetro" arriba
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Seleccionar Parámetros</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full justify-between"
+                          >
+                            {usedParameters.length > 0
+                              ? `${usedParameters.length} parámetro${usedParameters.length > 1 ? 's' : ''} seleccionado${usedParameters.length > 1 ? 's' : ''}`
+                              : "Seleccionar parámetros..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Buscar parámetros..." />
+                            <CommandList>
+                              <CommandEmpty>No se encontraron parámetros.</CommandEmpty>
+                              <CommandGroup>
+                                {recipeParameters.map((param) => (
+                                  <CommandItem
+                                    key={param.id}
+                                    value={param.parameterKey}
+                                    onSelect={() => {
+                                      setUsedParameters(prev =>
+                                        prev.includes(param.parameterKey)
+                                          ? prev.filter(p => p !== param.parameterKey)
+                                          : [...prev, param.parameterKey]
+                                      );
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        usedParameters.includes(param.parameterKey) ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {param.parameterKey} ({param.value}{param.unit})
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+
+                      <p className="text-xs text-muted-foreground">
+                        Los parámetros seleccionados aquí estarán disponibles para usar en las elaboraciones de esta receta
+                      </p>
+                    </div>
+
+                    {usedParameters.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Parámetros Seleccionados</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {usedParameters.map((paramKey) => {
+                            const param = recipeParameters.find(p => p.parameterKey === paramKey);
+                            return (
+                              <div
+                                key={paramKey}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-sm"
+                              >
+                                <span>{param?.parameterKey}</span>
+                                <span className="text-xs opacity-70">({param?.value}{param?.unit})</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 p-0 hover:bg-transparent"
+                                  onClick={() => setUsedParameters(prev => prev.filter(p => p !== paramKey))}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
           <div className="grid grid-cols-2 gap-4">
             {categories.includes("unidad") && (
               <div className="space-y-2">
@@ -471,46 +808,6 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
               />
             </div>
           </div>
-
-          {categories.some(cat => ["queque", "relleno", "cubierta"].includes(cat)) && (
-            <div className="space-y-3">
-              <Label className="text-lg font-semibold">
-                Multiplicadores por tamaño
-              </Label>
-              <div className="grid grid-cols-2 gap-4">
-                {multipliers.map((multiplier, index) => (
-                  <div key={multiplier.id || index} className="space-y-2">
-                    <Label htmlFor={`multiplier-${index}`} className="capitalize">
-                      {multiplier.size}
-                    </Label>
-                    <Input
-                      id={`multiplier-${index}`}
-                      type="number"
-                      min="0.1"
-                      step="any"
-                      value={multiplier.multiplier}
-                      onChange={(e) => {
-                        const newMultipliers = [...multipliers];
-                        newMultipliers[index] = {
-                          ...newMultipliers[index],
-                          multiplier: parseFloat(e.target.value) || 0,
-                        };
-                        setMultipliers(newMultipliers);
-                      }}
-                      placeholder="Multiplicador"
-                      required
-                    />
-                    <div className="flex justify-between items-center">
-                      <Label className="text-lg font-semibold">Costo total:</Label>
-                      <span className="text-2xl font-bold text-primary">
-                        ₡{Math.round(totalCost * multiplier.multiplier).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notas adicionales</Label>
@@ -588,8 +885,13 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <AccordionTrigger className="flex-1 hover:no-underline">
                       <div className="flex items-center justify-between w-full pr-4">
-                        <span className="font-semibold">
-                          {elaboration.name} ({elaboration.ingredients.length} ingredientes)
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">
+                            {elaboration.name}
+                          </span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {elaboration.ingredients.length} ingredientes
                         </span>
                       </div>
                     </AccordionTrigger>
@@ -735,6 +1037,75 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
               ))}
             </Accordion>
           </div>
+
+          {/* Weight Section for relleno/cubierta */}
+          {(categories.includes("relleno") || categories.includes("cubierta")) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Peso Total Generado</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Define cuánto peso total produce esta receta
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Peso Calculado Automáticamente</Label>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <span className="text-lg font-bold">{calculateTotalWeight().toFixed(2)} gr</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Suma de ingredientes en gramos
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Checkbox
+                        id="useManualWeight"
+                        checked={useManualWeight}
+                        onCheckedChange={(checked) => setUseManualWeight(!!checked)}
+                      />
+                      <Label htmlFor="useManualWeight" className="cursor-pointer">
+                        Ingresar peso manualmente
+                      </Label>
+                    </div>
+                    {useManualWeight && (
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={totalWeight}
+                          onChange={(e) => setTotalWeight(parseFloat(e.target.value) || 0)}
+                          placeholder="Ej: 500"
+                        />
+                        <select
+                          value={totalWeightUnit}
+                          onChange={(e) => setTotalWeightUnit(e.target.value)}
+                          className="border rounded-md px-3 py-2 bg-background"
+                        >
+                          <option value="gr">gr</option>
+                          <option value="kg">kg</option>
+                          <option value="ml">ml</option>
+                          <option value="L">L</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Variations Section */}
+          <VariationEditor
+            variations={variations}
+            onVariationsChange={setVariations}
+            baseTotalCost={totalCost}
+            baseElaborations={elaborations.filter(e => !e.variationId)}
+            availableIngredients={availableIngredients}
+            recipeName={name}
+          />
 
           {/* Supplies Section */}
           <div className="space-y-4">

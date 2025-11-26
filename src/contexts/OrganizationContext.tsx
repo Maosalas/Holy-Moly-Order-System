@@ -54,37 +54,54 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     console.log("🏢 fetchOrganizations called");
     setIsLoading(true);
     try {
-      const result = await organizationsApi.getAll();
-      console.log("🏢 API result:", result);
+      // Super admins use different endpoint
+      const isSuperAdmin = user?.roles?.includes("super_admin");
+      const result = isSuperAdmin
+        ? await organizationsApi.getAllForSuperAdmin()
+        : await organizationsApi.getAll();
+      console.log("🏢 API result (isSuperAdmin:", isSuperAdmin, "):", result);
       
       if (result.error) {
-        throw new Error(result.error);
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error al obtener organizaciones";
+        throw new Error(errorMsg);
       }
 
       const orgs = result.data as any[];
-      console.log("🏢 Organizations from API:", orgs);
-      
+      console.log("🏢 Organizations from API (RAW):", orgs);
+
       // Transform API response to match OrganizationWithRole type
-      const transformedOrgs: OrganizationWithRole[] = orgs.map((org: any) => ({
-        id: org.organizationId || org.organization_id,
-        name: org.organizationName || org.organization_name,
-        slug: org.organizationSlug || org.organization_slug,
-        logoUrl: org.organizationLogoUrl || org.logoUrl || org.logo_url,
-        subscriptionStatus: org.subscriptionStatus || org.subscription_status || "trial",
-        subscriptionPlan: org.subscriptionPlan || org.subscription_plan || "free",
-        subscriptionStripeCustomerId: org.subscriptionStripeCustomerId || org.subscription_stripe_customer_id,
-        subscriptionStripeSubscriptionId: org.subscriptionStripeSubscriptionId || org.subscription_stripe_subscription_id,
-        trialEndsAt: org.trialEndsAt || org.trial_ends_at ? new Date(org.trialEndsAt || org.trial_ends_at) : undefined,
-        settings: org.settings || {},
-        createdAt: new Date(org.createdAt || org.created_at || Date.now()),
-        updatedAt: new Date(org.updatedAt || org.updated_at || Date.now()),
-        userRole: org.userRole || org.user_role,
-      }));
+      const transformedOrgs: OrganizationWithRole[] = orgs.map((org: any) => {
+        console.log("🔍 Transforming organization:", {
+          raw: org,
+          subscriptionStatus: org.subscriptionStatus,
+          subscription_status: org.subscription_status,
+          subscriptionPlan: org.subscriptionPlan,
+          subscription_plan: org.subscription_plan,
+        });
+
+        return {
+          id: org.id || org.organizationId || org.organization_id,
+          name: org.name || org.organizationName || org.organization_name,
+          slug: org.slug || org.organizationSlug || org.organization_slug,
+          logoUrl: org.logoUrl || org.organizationLogoUrl || org.logo_url,
+          subscriptionStatus: org.subscriptionStatus || org.subscription_status || "trial",
+          subscriptionPlan: org.subscriptionPlan || org.subscription_plan || "free",
+          subscriptionStripeCustomerId: org.subscriptionStripeCustomerId || org.subscription_stripe_customer_id,
+          subscriptionStripeSubscriptionId: org.subscriptionStripeSubscriptionId || org.subscription_stripe_subscription_id,
+          trialEndsAt: org.trialEndsAt || org.trial_ends_at ? new Date(org.trialEndsAt || org.trial_ends_at) : undefined,
+          settings: org.settings || {},
+          createdAt: new Date(org.createdAt || org.created_at || Date.now()),
+          updatedAt: new Date(org.updatedAt || org.updated_at || Date.now()),
+          userRole: org.userRole || org.user_role || "owner",
+        };
+      });
 
       console.log("🏢 Transformed organizations:", transformedOrgs);
       setOrganizations(transformedOrgs);
 
       // Update current organization with fresh data from API
+      // isSuperAdmin already declared above
+
       if (transformedOrgs.length > 0) {
         if (currentOrganization) {
           // Find and update the current organization with fresh data
@@ -92,15 +109,17 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           if (updatedCurrentOrg) {
             console.log("🏢 Updating current organization with fresh data:", updatedCurrentOrg);
             setCurrentOrganization(updatedCurrentOrg);
-          } else {
-            // Current org not found, set first one
+          } else if (!isSuperAdmin) {
+            // Current org not found, set first one (only for non-superadmins)
             console.log("🏢 Current org not found, setting first:", transformedOrgs[0]);
             setCurrentOrganization(transformedOrgs[0]);
           }
-        } else {
-          // No current organization, set the first one
+        } else if (!isSuperAdmin && !isImpersonating) {
+          // No current organization, set the first one (only for non-superadmins)
           console.log("🏢 Setting first organization as current:", transformedOrgs[0]);
           setCurrentOrganization(transformedOrgs[0]);
+        } else if (isSuperAdmin) {
+          console.log("🏢 Super admin detected - leaving currentOrganization as null for global view");
         }
       }
     } catch (error) {
@@ -121,7 +140,8 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.getMembers(orgId);
       
       if (result.error) {
-        throw new Error(result.error);
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error al obtener miembros";
+        throw new Error(errorMsg);
       }
 
       const membersData = result.data as any[];
@@ -165,9 +185,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.create({ name, slug });
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error creando organización";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return null;
@@ -225,9 +246,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.update(id, updateData);
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error actualizando organización";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return false;
@@ -263,20 +285,21 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const switchOrganization = (org: OrganizationWithRole) => {
-    // Super admins can only switch organizations when impersonating
-    if (user?.roles.includes("super_admin") && !isImpersonating) {
-      toast({
-        title: "Error",
-        description: "Super admins must use impersonation to access organization views",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    // Super admins pueden cambiar de organización libremente
+    // Cuando no están impersonando, ven datos filtrados por esa organización
+    // pero mantienen sus privilegios de superadmin
     setCurrentOrganization(org);
+
+    const isSuperAdmin = user?.roles.includes("super_admin");
+    const description = isImpersonating
+      ? `Now impersonating ${org.name}`
+      : isSuperAdmin
+        ? `Now viewing ${org.name} (Super Admin)`
+        : `Now working in ${org.name}`;
+
     toast({
       title: "Organization switched",
-      description: `Now working in ${org.name}`,
+      description,
     });
   };
 
@@ -286,9 +309,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.getMember(orgId, userId);
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error obteniendo miembro";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return null;
@@ -314,9 +338,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.addMemberByEmail(orgId, email, role, name);
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error agregando miembro";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return false;
@@ -349,9 +374,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.updateMemberRole(orgId, userId, { role });
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error actualizando rol";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return false;
@@ -384,9 +410,10 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await organizationsApi.removeMember(orgId, userId);
       
       if (result.error) {
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error eliminando miembro";
         toast({
           title: "Error",
-          description: result.error,
+          description: errorMsg,
           variant: "destructive",
         });
         return false;
