@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Users, Upload } from "lucide-react";
+import { ArrowLeft, Building2, Users, Upload, Wallet, CreditCard, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import defaultLogo from "@/assets/Orderly-logo.png";
+import { PaymentMethodsList } from "@/components/PaymentMethodsList";
+import { CardTypesList } from "@/components/CardTypesList";
+import { subscriptionPlansApi } from "@/lib/api";
+import { Separator } from "@/components/ui/separator";
 
 export default function OrganizationSettings() {
   const { currentOrganization, updateOrganization, isLoading, fetchOrganizations } = useOrganization();
@@ -19,6 +23,84 @@ export default function OrganizationSettings() {
   const [logoUrl, setLogoUrl] = useState(currentOrganization?.logoUrl || "");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>(currentOrganization?.logoUrl || defaultLogo);
+  const [planDetails, setPlanDetails] = useState<any>(null);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(true);
+
+  useEffect(() => {
+    console.log("🔍 OrganizationSettings - currentOrganization FULL:", currentOrganization);
+
+    // Verificación de datos de suscripción según FRONTEND_INTEGRATION_GUIDE.md
+    if (currentOrganization) {
+      console.log("📊 Subscription Data Verification:");
+      console.log("   Plan:", currentOrganization.subscriptionPlan);
+      console.log("   Status:", currentOrganization.subscriptionStatus);
+      console.log("   Stripe Customer ID:", currentOrganization.subscriptionStripeCustomerId);
+      console.log("   Stripe Subscription ID:", currentOrganization.subscriptionStripeSubscriptionId);
+      console.log("   Trial Ends At:", currentOrganization.trialEndsAt);
+
+      // Alertas si se están usando valores por defecto
+      if (currentOrganization.subscriptionPlan === "free" && currentOrganization.subscriptionStatus === "trial") {
+        console.warn("⚠️ WARNING: Using default values for subscription. Backend might not be sending data correctly.");
+      } else {
+        console.log("✅ Subscription data loaded correctly from backend");
+      }
+    }
+
+    loadPlanDetails();
+  }, [currentOrganization?.subscriptionPlan]);
+
+  const loadPlanDetails = async () => {
+    if (!currentOrganization?.subscriptionPlan) {
+      setIsLoadingPlan(false);
+      return;
+    }
+
+    setIsLoadingPlan(true);
+
+    // First try to find in active plans
+    let result = await subscriptionPlansApi.getAll(true); // Solo planes activos
+
+    console.log("🔍 Organization Settings - Debug:", {
+      currentOrgPlan: currentOrganization.subscriptionPlan,
+      currentOrgStatus: currentOrganization.subscriptionStatus,
+      currentOrgId: currentOrganization.id,
+      currentOrgName: currentOrganization.name,
+      allPlansFromAPI: result.data
+    });
+
+    let currentPlan = null;
+
+    if (result.data) {
+      const plans = result.data as any[];
+      currentPlan = plans.find(p => p.slug === currentOrganization.subscriptionPlan);
+
+      console.log("🔍 Plan matching (active plans):", {
+        searchingFor: currentOrganization.subscriptionPlan,
+        foundPlan: currentPlan,
+        availableSlugs: plans.map(p => p.slug)
+      });
+
+      // If not found in active plans, search in all plans (including inactive)
+      if (!currentPlan) {
+        console.log("🔍 Plan not found in active plans, searching in all plans...");
+        const allPlansResult = await subscriptionPlansApi.getAll(false);
+
+        if (allPlansResult.data) {
+          const allPlans = allPlansResult.data as any[];
+          currentPlan = allPlans.find(p => p.slug === currentOrganization.subscriptionPlan);
+
+          console.log("🔍 Plan matching (all plans):", {
+            searchingFor: currentOrganization.subscriptionPlan,
+            foundPlan: currentPlan,
+            availableSlugs: allPlans.map(p => p.slug)
+          });
+        }
+      }
+
+      setPlanDetails(currentPlan || null);
+    }
+    setIsLoadingPlan(false);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -105,7 +187,7 @@ export default function OrganizationSettings() {
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general">
             <Building2 className="h-4 w-4 mr-2" />
             General
@@ -113,6 +195,14 @@ export default function OrganizationSettings() {
           <TabsTrigger value="members">
             <Users className="h-4 w-4 mr-2" />
             Miembros
+          </TabsTrigger>
+          <TabsTrigger value="payment-methods">
+            <Wallet className="h-4 w-4 mr-2" />
+            Métodos de Pago
+          </TabsTrigger>
+          <TabsTrigger value="card-types">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Tipos de Tarjetas
           </TabsTrigger>
         </TabsList>
 
@@ -200,33 +290,157 @@ export default function OrganizationSettings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Plan:</span>
-                <Badge variant="secondary" className="capitalize">
-                  {currentOrganization.subscriptionPlan}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Estado:</span>
-                <Badge 
-                  variant={
-                    currentOrganization.subscriptionStatus === "active" 
-                      ? "default" 
-                      : currentOrganization.subscriptionStatus === "trial"
-                      ? "secondary"
-                      : "destructive"
-                  }
-                  className="capitalize"
-                >
-                  {currentOrganization.subscriptionStatus}
-                </Badge>
-              </div>
-              {currentOrganization.trialEndsAt && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Fin de prueba:</span>
-                  <span className="text-sm text-muted-foreground">
-                    {new Date(currentOrganization.trialEndsAt).toLocaleDateString()}
-                  </span>
+              {isLoadingPlan ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  Cargando detalles del plan...
+                </div>
+              ) : planDetails ? (
+                <>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Plan:</span>
+                      <Badge variant="secondary" className="text-base px-3 py-1">
+                        {planDetails.name}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Estado:</span>
+                      <Badge
+                        variant={
+                          currentOrganization.subscriptionStatus === "active"
+                            ? "default"
+                            : currentOrganization.subscriptionStatus === "trial"
+                            ? "secondary"
+                            : "destructive"
+                        }
+                        className="capitalize"
+                      >
+                        {currentOrganization.subscriptionStatus}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Precio:</span>
+                      <span className="text-sm">
+                        ${parseFloat(planDetails.priceMonthly).toFixed(2)}/mes
+                      </span>
+                    </div>
+
+                    {currentOrganization.trialEndsAt && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Fin de prueba:</span>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(currentOrganization.trialEndsAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold">Límites del Plan</h4>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Pedidos por mes:</span>
+                        <span className="text-sm font-medium">
+                          {planDetails.maxOrdersPerMonth === -1
+                            ? "Ilimitado"
+                            : planDetails.maxOrdersPerMonth}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Usuarios:</span>
+                        <span className="text-sm font-medium">
+                          {planDetails.maxUsers === -1
+                            ? "Ilimitado"
+                            : planDetails.maxUsers}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Almacenamiento:</span>
+                        <span className="text-sm font-medium">
+                          {planDetails.maxStorageGb} GB
+                        </span>
+                      </div>
+                    </div>
+
+                    {planDetails.features && (
+                      <>
+                        <Separator />
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-semibold">Características</h4>
+
+                          {planDetails.features.support && (
+                            <div className="flex items-center gap-2">
+                              <Check className="h-4 w-4 text-green-600" />
+                              <span className="text-sm">
+                                Soporte: {planDetails.features.support === 'community' ? 'Comunidad' :
+                                         planDetails.features.support === 'email' ? 'Email' :
+                                         planDetails.features.support === 'priority' ? 'Prioritario' :
+                                         planDetails.features.support === 'dedicated' ? 'Dedicado' : planDetails.features.support}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2">
+                            {planDetails.features.api_access ? (
+                              <Check className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <X className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="text-sm">Acceso a API</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {planDetails.features.custom_branding ? (
+                              <Check className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <X className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="text-sm">Personalización de marca</span>
+                          </div>
+
+                          {planDetails.features.advanced_analytics !== undefined && (
+                            <div className="flex items-center gap-2">
+                              {planDetails.features.advanced_analytics ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <X className="h-4 w-4 text-muted-foreground" />
+                              )}
+                              <span className="text-sm">Analíticas avanzadas</span>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Plan:</span>
+                    <Badge variant="secondary" className="capitalize">
+                      {currentOrganization.subscriptionPlan}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Estado:</span>
+                    <Badge
+                      variant={
+                        currentOrganization.subscriptionStatus === "active"
+                          ? "default"
+                          : currentOrganization.subscriptionStatus === "trial"
+                          ? "secondary"
+                          : "destructive"
+                      }
+                      className="capitalize"
+                    >
+                      {currentOrganization.subscriptionStatus}
+                    </Badge>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -242,12 +456,40 @@ export default function OrganizationSettings() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
+              <Button
                 onClick={() => navigate("/organization/members")}
                 variant="default"
               >
                 Gestionar Miembros
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payment-methods">
+          <Card>
+            <CardHeader>
+              <CardTitle>Métodos de Pago</CardTitle>
+              <CardDescription>
+                Configura los métodos de pago disponibles para los pedidos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PaymentMethodsList />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="card-types">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tipos de Tarjetas</CardTitle>
+              <CardDescription>
+                Configura los tipos de tarjetas aceptadas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CardTypesList />
             </CardContent>
           </Card>
         </TabsContent>

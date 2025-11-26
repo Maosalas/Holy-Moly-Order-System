@@ -15,16 +15,17 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import type { Order, OrderStatus, PaymentMethod } from "@/types/order";
 import type { Quotation } from "@/types/quotation";
 import { quotationsApi, paymentMethodsApi } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, dateToLocalInput, localInputToDate } from "@/lib/utils";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface OrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "createdAt">) => void;
   initialData?: Order;
   onCancel?: () => void;
+  quotation?: Quotation;
 }
 
-export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) => {
+export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderFormProps) => {
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
@@ -35,7 +36,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
   const [orderDetails, setOrderDetails] = useState(initialData?.orderDetails || "");
   const [deliveryDate, setDeliveryDate] = useState<string>(
     initialData?.deliveryDate
-      ? new Date(initialData.deliveryDate).toISOString().slice(0, 16)
+      ? dateToLocalInput(initialData.deliveryDate)
       : ""
   );
   const [paymentMethodId, setPaymentMethodId] = useState<string>(
@@ -88,6 +89,16 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
     fetchPaymentMethods();
   }, [initialData]);
 
+  // Pre-poblar datos cuando se pasa una cotización
+  useEffect(() => {
+    if (quotation && !initialData) {
+      setSelectedQuotationId(quotation.id);
+      setClientName(quotation.clientName || "");
+      setChargeAmount(quotation.totalCost.toString());
+      // Puedes pre-poblar otros campos si es necesario
+    }
+  }, [quotation, initialData]);
+
   // Calculate cost from selected quotation
   const selectedQuotation = quotations.find(q => q.id === selectedQuotationId);
   const costAmount = selectedQuotation ? selectedQuotation.totalCost : (initialData?.costAmount || 0);
@@ -101,7 +112,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       setPhoneNumber(initialData.phoneNumber || "");
       setOrderDetails(initialData.orderDetails || "");
       const formattedDate = initialData.deliveryDate
-        ? new Date(initialData.deliveryDate).toISOString().slice(0, 16)
+        ? dateToLocalInput(initialData.deliveryDate)
         : "";
       setDeliveryDate(formattedDate);
       setPaymentMethodId(
@@ -297,7 +308,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel }: OrderFormProps) =
       clientName: clientName.trim(),
       phoneNumber: phoneNumber.trim(),
       orderDetails: orderDetails.trim(),
-      deliveryDate: new Date(deliveryDate),
+      deliveryDate: localInputToDate(deliveryDate),
       paymentMethod: selectedPaymentMethod, // Include the full object for type compatibility
       clientPhotos,
       costAmount,

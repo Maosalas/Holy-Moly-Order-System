@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { OrderPreviewDialog } from "./OrderPreviewDialog";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
+import { formatDateForDisplay } from "@/lib/utils";
 
 interface OrderListProps {
   orders: Order[];
@@ -205,7 +206,7 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting, selectedOrderI
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Fecha de entrega:</span>
                       </div>
-                      <span className="font-semibold">{new Date(order.deliveryDate).toLocaleDateString('en-US')}</span>
+                      <span className="font-semibold">{formatDateForDisplay(order.deliveryDate, 'en-US')}</span>
 
                     </div>
                     <div className="space-y-1 flex items-center gap-2 justify-between">
@@ -337,7 +338,7 @@ export const OrderList = ({ orders, onEdit, onDelete, isDeleting, selectedOrderI
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <div className="font-medium">
-                            {new Date(order.deliveryDate).toLocaleDateString('en-US', {
+                            {formatDateForDisplay(order.deliveryDate, 'en-US', {
                               month: 'short',
                               day: 'numeric',
                               year: 'numeric'

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, Trash2, Eye, Calendar, Search, Calculator } from "lucide-react";
+import { Edit, Trash2, Eye, Calendar, Search, Calculator, ShoppingCart } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { QuotationPreviewDialog } from "@/components/QuotationPreviewDialog";
 import type { Quotation } from "@/types/quotation";
@@ -16,9 +16,10 @@ interface QuotationListProps {
   quotations: Quotation[];
   onEdit: (quotation: Quotation) => void;
   onDelete: (id: string) => void;
+  onGenerateOrder: (quotation: Quotation) => void;
 }
 
-export function QuotationList({ quotations, onEdit, onDelete }: QuotationListProps) {
+export function QuotationList({ quotations, onEdit, onDelete, onGenerateOrder }: QuotationListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [previewQuotation, setPreviewQuotation] = useState<Quotation | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,6 +98,14 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
                       </div>
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onGenerateOrder(quotation)}
+                        title="Generar pedido"
+                      >
+                        <ShoppingCart className="h-4 w-4 text-green-600" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -189,7 +198,6 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
                   <TableHead className="font-semibold">Cliente</TableHead>
-                  <TableHead className="font-semibold">Tamaño</TableHead>
                   <TableHead className="font-semibold">Fecha</TableHead>
                   <TableHead className="font-semibold">Recetas</TableHead>
                   <TableHead className="font-semibold">Suministros</TableHead>
@@ -208,11 +216,7 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
                         </div>
                       )}
                     </TableCell>
-                    <TableCell>
-                      <Badge className={getSizeBadgeColor(quotation.size)}>
-                        {quotation.size}
-                      </Badge>
-                    </TableCell>
+                    
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -242,6 +246,14 @@ export function QuotationList({ quotations, onEdit, onDelete }: QuotationListPro
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end items-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onGenerateOrder(quotation)}
+                          title="Generar pedido"
+                        >
+                          <ShoppingCart className="h-4 w-4 text-green-600" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"

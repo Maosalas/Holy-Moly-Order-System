@@ -72,11 +72,12 @@ const ResetPassword = () => {
       const result = await authApi.resetPassword(token, newPassword);
 
       if (result.error) {
-        setError(result.error);
+        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error actualizando contraseña";
+        setError(errorMsg);
         toast({
           variant: "destructive",
           title: "Error",
-          description: result.error,
+          description: errorMsg,
         });
       } else {
         setSuccess(true);

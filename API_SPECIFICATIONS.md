@@ -78,11 +78,18 @@ CREATE TABLE recipes (
   url TEXT,
   units NUMERIC(10,0),
   unit_cost DECIMAL(10,2),
+  used_parameters TEXT[], -- Array of parameter keys this recipe uses (e.g., ['relleno_pavlova', 'cubierta_pavlova'])
   created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
 );
 
 CREATE INDEX idx_recipes_user_id ON recipes(user_id);
+```
+
+**Migration SQL to add `used_parameters` column:**
+```sql
+-- Add used_parameters column to existing recipes table
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS used_parameters TEXT[];
 ```
 
 ### Recipe Elaborations Table
@@ -550,6 +557,76 @@ CREATE INDEX idx_email_logs_created_at ON email_logs(created_at DESC);
 CREATE INDEX idx_email_logs_member_type_created ON email_logs(organization_member_id, email_type, created_at DESC);
 ```
 
+### Recipe Parameters Table
+
+```sql
+CREATE TABLE recipe_parameters (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
+  parameter_key VARCHAR(100) NOT NULL,
+  value DECIMAL(10,2) NOT NULL,
+  unit VARCHAR(50) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(organization_id, parameter_key)
+);
+
+CREATE INDEX idx_recipe_parameters_org_id ON recipe_parameters(organization_id);
+```
+
+**Purpose:** Stores global organization-level parameters that can be referenced in recipe variations (e.g., "Relleno_Cupcake", "Relleno_Pavlova"). This allows organizations to define reusable values across multiple recipes.
+
+**Example data:**
+- `parameter_key: "Relleno_Cupcake"`, `value: 50`, `unit: "gr"`
+- `parameter_key: "Relleno_Pavlova"`, `value: 150`, `unit: "gr"`
+
+### Recipe Variations Table
+
+```sql
+CREATE TABLE recipe_variations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipe_id UUID REFERENCES recipes(id) ON DELETE CASCADE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  is_default BOOLEAN DEFAULT false,
+  order_number INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_recipe_variations_recipe_id ON recipe_variations(recipe_id);
+```
+
+**Purpose:** Stores variations of a recipe (e.g., "Pavlova con Chocolate", "Pavlova con Fresa"). Each variation can have different elaborations with different parameters.
+
+**Example data:**
+- `name: "Pavlova con Chocolate"`, `is_default: true`, `order_number: 1`
+- `name: "Pavlova con Fresa"`, `is_default: false`, `order_number: 2`
+
+### Updated Recipe Elaborations Table
+
+The `recipe_elaborations` table has been extended with new fields to support variations and parameterized elaborations:
+
+```sql
+ALTER TABLE recipe_elaborations
+ADD COLUMN variation_id UUID REFERENCES recipe_variations(id) ON DELETE CASCADE,
+ADD COLUMN elaboration_type VARCHAR(100),
+ADD COLUMN parameter_key VARCHAR(100);
+
+CREATE INDEX idx_recipe_elaborations_variation_id ON recipe_elaborations(variation_id);
+```
+
+**New fields:**
+- `variation_id`: Links the elaboration to a specific recipe variation (optional)
+- `elaboration_type`: Type of elaboration (e.g., "base", "relleno", "cubierta", "decoracion")
+- `parameter_key`: Reference to a global parameter from `recipe_parameters` (optional)
+
+**Notes:**
+- The `parameter_key` can be used to reference organization-wide parameters for dynamic values
+- When `variation_id` is NULL, the elaboration applies to the base recipe
+- When `variation_id` is set, the elaboration is specific to that variation
+
 ---
 
 ## API Endpoints
@@ -894,9 +971,9 @@ Get all recipes for authenticated user.
 [
   {
     "id": "uuid",
-    "name": "Chocolate Cake",
-    "image": "https://storage.example.com/recipes/cake.jpg",
-    "category": "queque",
+    "name": "Pavlova",
+    "image": "https://storage.example.com/recipes/pavlova.jpg",
+    "categories": ["unidad"],
     "notes": "Some notes",
     "url": "https://recipe-link.com",
     "units": 12,
@@ -904,68 +981,96 @@ Get all recipes for authenticated user.
     "elaborations": [
       {
         "id": "uuid",
-        "name": "Masa de Chocolate",
+        "name": "Base de Merengue",
         "order": 1,
         "cost": 25.40,
+        "variationId": null,
         "ingredients": [
           {
             "id": "uuid",
             "ingredientId": "uuid",
-            "ingredientName": "Flour",
-            "quantity": 2.0,
-            "units": "kg",
+            "ingredientName": "Egg Whites",
+            "quantity": 6.0,
+            "units": "unidades",
             "cost": 10.20
           },
           {
             "id": "uuid",
             "ingredientId": "uuid",
-            "ingredientName": "Cocoa Powder",
+            "ingredientName": "Sugar",
             "quantity": 0.5,
             "units": "kg",
             "cost": 15.20
           }
         ]
-      },
-      {
-        "id": "uuid",
-        "name": "Ganache",
-        "order": 2,
-        "cost": 20.40,
-        "ingredients": [
-          {
-            "id": "uuid",
-            "ingredientId": "uuid",
-            "ingredientName": "Dark Chocolate",
-            "quantity": 0.3,
-            "units": "kg",
-            "cost": 12.00
-          },
-          {
-            "id": "uuid",
-            "ingredientId": "uuid",
-            "ingredientName": "Heavy Cream",
-            "quantity": 0.2,
-            "units": "L",
-            "cost": 8.40
-          }
-        ]
       }
     ],
-    "multipliers": [
+    "variations": [
       {
-        "id": "uuid",
-        "size": "pequeño",
-        "multiplier": 1.0
+        "id": "var-1",
+        "name": "Pavlova con Chocolate",
+        "isDefault": true,
+        "orderNumber": 1,
+        "elaborations": [
+          {
+            "id": "elab-2",
+            "name": "Relleno de Chocolate",
+            "order": 1,
+            "cost": 20.40,
+            "variationId": "var-1",
+            "ingredients": [
+              {
+                "id": "uuid",
+                "ingredientId": "uuid",
+                "ingredientName": "Dark Chocolate",
+                "quantity": 0.3,
+                "units": "kg",
+                "cost": 12.00
+              },
+              {
+                "id": "uuid",
+                "ingredientId": "uuid",
+                "ingredientName": "Heavy Cream",
+                "quantity": 0.2,
+                "units": "L",
+                "cost": 8.40
+              }
+            ]
+          }
+        ]
       },
       {
-        "id": "uuid",
-        "size": "mediano",
-        "multiplier": 1.5
-      },
-      {
-        "id": "uuid",
-        "size": "grande",
-        "multiplier": 2.5
+        "id": "var-2",
+        "name": "Pavlova con Fresa",
+        "isDefault": false,
+        "orderNumber": 2,
+        "elaborations": [
+          {
+            "id": "elab-3",
+            "name": "Relleno de Fresa",
+            "order": 1,
+            "cost": 18.60,
+            "variationId": "var-2",
+            "ingredients": [
+              {
+                "id": "uuid",
+                "ingredientId": "uuid",
+                "ingredientName": "Strawberries",
+                "quantity": 0.5,
+                "units": "kg",
+                "cost": 10.00
+              },
+              {
+                "id": "uuid",
+                "ingredientId": "uuid",
+                "ingredientName": "Whipped Cream",
+                "quantity": 0.3,
+                "units": "L",
+                "cost": 8.60
+              }
+            ]
+          }
+        ]
       }
     ],
     "totalCost": 45.80,
@@ -977,15 +1082,15 @@ Get all recipes for authenticated user.
 
 **Notes:**
 
-- `elaborations`: Array of recipe elaborations/steps, each containing its own ingredients
+- `elaborations`: Array of base recipe elaborations/steps with `variationId = null`
 - `elaborations[].cost`: **CALCULATED FIELD** - Sum of all ingredient costs for that elaboration (not stored in DB)
-- `totalCost`: **CALCULATED FIELD** - Sum of all elaboration costs (stored in `recipes.total_cost`)
+- `elaborations[].variationId`: NULL for base elaborations, UUID for variation-specific elaborations
+- `variations`: **NEW** - Array of recipe variations, each with its own set of elaborations
+- `variations[].isDefault`: Indicates which variation is the default one
+- `variations[].orderNumber`: Display order for variations
+- `totalCost`: **CALCULATED FIELD** - Sum of all base elaboration costs (stored in `recipes.total_cost`)
 - `unitCost`: **CALCULATED FIELD** - `totalCost / units` (stored in `recipes.unit_cost`)
-- `multipliers`: Stored in separate tables based on category:
-  - `category = 'queque'` → stored in `cake_multipliers` table
-  - `category = 'relleno'` → stored in `filling_multipliers` table
-  - `category = 'cubierta'` → stored in `covering_multipliers` table
-  - `category = 'unidad'` or `'otro'` → no multipliers stored
+- `multipliers`: Only included for categories "queque", "relleno", "cubierta"
 
 #### POST /api/recipes
 
@@ -997,66 +1102,81 @@ Create a new recipe.
 
 ```json
 {
-  "name": "Chocolate Cake",
-  "image": "https://storage.example.com/recipes/cake.jpg",
-  "category": "queque",
+  "name": "Pavlova",
+  "image": "https://storage.example.com/recipes/pavlova.jpg",
+  "categories": ["unidad"],
   "notes": "Some notes about the recipe",
   "url": "https://recipe-link.com",
   "units": 12,
   "elaborations": [
     {
-      "name": "Masa de Chocolate",
+      "name": "Base de Merengue",
       "order": 1,
       "ingredients": [
         {
           "ingredientId": "uuid",
-          "ingredientName": "Flour",
-          "quantity": 2.0,
-          "units": "kg",
+          "ingredientName": "Egg Whites",
+          "quantity": 6.0,
+          "units": "unidades",
           "cost": 10.20
         },
         {
           "ingredientId": "uuid",
-          "ingredientName": "Cocoa Powder",
+          "ingredientName": "Sugar",
           "quantity": 0.5,
           "units": "kg",
           "cost": 15.20
         }
       ]
-    },
-    {
-      "name": "Ganache",
-      "order": 2,
-      "ingredients": [
-        {
-          "ingredientId": "uuid",
-          "ingredientName": "Dark Chocolate",
-          "quantity": 0.3,
-          "units": "kg",
-          "cost": 12.00
-        },
-        {
-          "ingredientId": "uuid",
-          "ingredientName": "Heavy Cream",
-          "quantity": 0.2,
-          "units": "L",
-          "cost": 8.40
-        }
-      ]
     }
   ],
-  "multipliers": [
+  "variations": [
     {
-      "size": "pequeño",
-      "multiplier": 1.0
+      "name": "Pavlova con Chocolate",
+      "isDefault": true,
+      "orderNumber": 1,
+      "elaborations": [
+        {
+          "name": "Relleno de Chocolate",
+          "order": 1,
+          "ingredients": [
+            {
+              "ingredientId": "uuid",
+              "ingredientName": "Dark Chocolate",
+              "quantity": 0.3,
+              "units": "kg",
+              "cost": 12.00
+            },
+            {
+              "ingredientId": "uuid",
+              "ingredientName": "Heavy Cream",
+              "quantity": 0.2,
+              "units": "L",
+              "cost": 8.40
+            }
+          ]
+        }
+      ]
     },
     {
-      "size": "mediano",
-      "multiplier": 1.5
-    },
-    {
-      "size": "grande",
-      "multiplier": 2.5
+      "name": "Pavlova con Fresa",
+      "isDefault": false,
+      "orderNumber": 2,
+      "elaborations": [
+        {
+          "name": "Relleno de Fresa",
+          "order": 1,
+          "ingredients": [
+            {
+              "ingredientId": "uuid",
+              "ingredientName": "Strawberries",
+              "quantity": 0.5,
+              "units": "kg",
+              "cost": 10.00
+            }
+          ]
+        }
+      ]
     }
   ]
 }
@@ -1064,16 +1184,22 @@ Create a new recipe.
 
 **Notes:**
 
-- `elaborations`: Required array of elaborations, each with name, order, and ingredients
+- `elaborations`: Required array of base elaborations (with `variationId = null`)
 - `elaborations[].ingredients`: Array of ingredients specific to that elaboration
 - **DO NOT SEND** `elaborations[].cost` in request - backend calculates it automatically
-- **DO NOT SEND** `totalCost` in request - backend calculates as sum of all elaboration costs
+- **DO NOT SEND** `elaborations[].variationId` in base elaborations - it will be NULL
+- `variations`: **NEW** - Optional array of recipe variations
+  - Each variation must have `name`, `orderNumber`, and at least one elaboration
+  - `isDefault`: Mark one variation as the default (optional, defaults to false)
+  - Variation elaborations support the same fields as base elaborations
+- **DO NOT SEND** `totalCost` in request - backend calculates as sum of all base elaboration costs
 - **DO NOT SEND** `unitCost` in request - backend calculates as `totalCost / units` (if units provided)
 - `multipliers`: Optional, only for categories "queque", "relleno", "cubierta"
   - Stored in specific tables: `cake_multipliers`, `filling_multipliers`, `covering_multipliers`
   - Each table has UNIQUE constraint on `(recipe_id, size)`
 - For "unidad" and "otro" categories, multipliers should NOT be included
 - When updating a recipe with multipliers, old multipliers are deleted and replaced with new ones
+- When updating a recipe with variations, old variations are deleted and replaced with new ones
 
 **Response (201):** Same as GET response
 
@@ -1504,27 +1630,31 @@ Get all quotations for authenticated user.
     "recipes": [
       {
         "recipeId": "uuid",
+        "recipeName": "Pavlova",
+        "variationId": "var-1",
+        "variationName": "Pavlova con Chocolate",
+        "recipeType": {
+          "id": "uuid",
+          "name": "unidad",
+          "description": "Receta por unidad"
+        },
+        "unitCost": 5000.00,
+        "quantity": 6,
+        "totalCost": 30000.00
+      },
+      {
+        "recipeId": "uuid",
         "recipeName": "Queque de Vainilla",
+        "variationId": null,
+        "variationName": null,
         "recipeType": {
           "id": "uuid",
           "name": "queque",
           "description": "Receta de queque o bizcocho"
         },
-        "unitCost": 5000.00,
-        "quantity": 1,
-        "totalCost": 5000.00
-      },
-      {
-        "recipeId": "uuid",
-        "recipeName": "Relleno de Fresa",
-        "recipeType": {
-          "id": "uuid",
-          "name": "relleno",
-          "description": "Receta de relleno"
-        },
         "unitCost": 2000.00,
-        "quantity": 2,
-        "totalCost": 4000.00
+        "quantity": 1,
+        "totalCost": 2000.00
       }
     ],
     "selectedSupplies": [
@@ -1592,19 +1722,23 @@ Create a new quotation.
   "recipes": [
     {
       "recipeId": "uuid",
-      "recipeName": "Queque de Vainilla",
+      "recipeName": "Pavlova",
+      "variationId": "var-1",
+      "variationName": "Pavlova con Chocolate",
       "recipeTypeId": "uuid",
       "unitCost": 5000.00,
-      "quantity": 1,
-      "totalCost": 5000.00
+      "quantity": 6,
+      "totalCost": 30000.00
     },
     {
       "recipeId": "uuid",
-      "recipeName": "Relleno de Fresa",
+      "recipeName": "Queque de Vainilla",
+      "variationId": null,
+      "variationName": null,
       "recipeTypeId": "uuid",
       "unitCost": 2000.00,
-      "quantity": 2,
-      "totalCost": 4000.00
+      "quantity": 1,
+      "totalCost": 2000.00
     }
   ],
   "selectedSupplies": [
@@ -1639,7 +1773,7 @@ Create a new quotation.
       "totalPrice": 1500.00
     }
   ],
-  "totalCost": 13300.00,
+  "totalCost": 34800.00,
   "notes": "Cliente prefiere bajo azúcar"
 }
 ```
@@ -1649,6 +1783,10 @@ Create a new quotation.
 **Notes:**
 
 - `recipeTypeId` in each recipe is **required** and references an existing recipe type from `recipe_types` table
+- `variationId`: **NEW** - Optional UUID referencing a specific recipe variation
+- `variationName`: **NEW** - Optional name of the selected variation (stored for reference)
+- When `variationId` is NULL, the base recipe is used (no variation)
+- When `variationId` is provided, it should reference a valid variation from `recipe_variations` table
 - The recipe type details are populated when the quotation is retrieved
 - `totalCost` is automatically calculated by summing all recipe costs, supply costs, and additional expenses
 
@@ -2400,6 +2538,183 @@ Resend welcome email to a member.
 **Notes:**
 - Only organization owners and admins can resend welcome emails
 - Creates a new entry in `email_logs` table
+
+---
+
+### Recipe Parameters
+
+Recipe parameters are global organization-level values that can be referenced in recipe variations (e.g., "Relleno_Cupcake", "Relleno_Pavlova"). They allow organizations to define reusable values across multiple recipes.
+
+#### GET /api/organizations/:orgId/recipe-parameters
+
+Get all recipe parameters for an organization.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "organizationId": "uuid",
+      "parameterKey": "Relleno_Cupcake",
+      "value": 50.00,
+      "unit": "gr",
+      "description": "Cantidad de relleno para cupcakes",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "uuid",
+      "organizationId": "uuid",
+      "parameterKey": "Relleno_Pavlova",
+      "value": 150.00,
+      "unit": "gr",
+      "description": "Cantidad de relleno para pavlova",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+**Notes:**
+- Returns all parameters ordered by `parameterKey` alphabetically
+- User must be a member of the organization to access its parameters
+
+#### GET /api/organizations/:orgId/recipe-parameters/:id
+
+Get a specific recipe parameter by ID.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "organizationId": "uuid",
+    "parameterKey": "Relleno_Cupcake",
+    "value": 50.00,
+    "unit": "gr",
+    "description": "Cantidad de relleno para cupcakes",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+**Response (404):** Recipe parameter not found
+
+#### POST /api/organizations/:orgId/recipe-parameters
+
+Create a new recipe parameter.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "parameterKey": "Relleno_Cupcake",
+  "value": 50.00,
+  "unit": "gr",
+  "description": "Cantidad de relleno para cupcakes"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "organizationId": "uuid",
+    "parameterKey": "Relleno_Cupcake",
+    "value": 50.00,
+    "unit": "gr",
+    "description": "Cantidad de relleno para cupcakes",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+**Response (409):** A parameter with the same key already exists for this organization
+
+**Notes:**
+- `parameterKey` must be unique per organization (enforced by UNIQUE constraint)
+- `parameterKey`, `value`, and `unit` are required fields
+- `description` is optional
+
+#### PUT /api/organizations/:orgId/recipe-parameters/:id
+
+Update a recipe parameter.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+
+```json
+{
+  "parameterKey": "Relleno_Cupcake_Grande",
+  "value": 75.00,
+  "unit": "gr",
+  "description": "Cantidad de relleno para cupcakes grandes"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "organizationId": "uuid",
+    "parameterKey": "Relleno_Cupcake_Grande",
+    "value": 75.00,
+    "unit": "gr",
+    "description": "Cantidad de relleno para cupcakes grandes",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T14:20:00Z"
+  }
+}
+```
+
+**Response (404):** Recipe parameter not found
+**Response (409):** A parameter with the new key already exists
+
+**Notes:**
+- All fields are optional in the update
+- When changing `parameterKey`, the new key must not conflict with existing parameters
+
+#### DELETE /api/organizations/:orgId/recipe-parameters/:id
+
+Delete a recipe parameter.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Recipe parameter deleted successfully"
+}
+```
+
+**Response (404):** Recipe parameter not found
+
+**Notes:**
+- Deleting a parameter that is referenced by recipe elaborations may cause issues
+- Consider implementing a soft delete or validation before deletion in production
 
 ---
 
@@ -3368,6 +3683,42 @@ export interface User {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// src/types/recipe-parameter.ts
+export interface RecipeParameter {
+  id: string;
+  organizationId: string;
+  parameterKey: string;
+  value: number;
+  unit: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// src/types/recipe-variation.ts
+export interface RecipeVariation {
+  id: string;
+  recipeId: string;
+  name: string;
+  description: string | null;
+  isDefault: boolean;
+  orderNumber: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// src/types/recipe.ts - Update RecipeElaboration interface
+export interface RecipeElaboration {
+  id: string;
+  recipeId: string;
+  name: string;
+  orderNumber: number;
+  variationId?: string | null; // New field for variations
+  cost?: number; // Calculated field
+  ingredients: RecipeIngredient[];
+  createdAt: Date;
+}
 ```
 
 ---
@@ -3419,6 +3770,9 @@ All foreign key relationships have indexes:
 - `idx_email_logs_org_member_id`
 - `idx_email_logs_created_at`
 - `idx_email_logs_member_type_created`
+- `idx_recipe_parameters_org_id`
+- `idx_recipe_variations_recipe_id`
+- `idx_recipe_elaborations_variation_id`
 
 ### Unique Constraints
 
@@ -3436,6 +3790,7 @@ All foreign key relationships have indexes:
 - `subscription_plans.slug` - UNIQUE
 - `organizations.slug` - UNIQUE
 - `organization_members(organization_id, user_id)` - UNIQUE
+- `recipe_parameters(organization_id, parameter_key)` - UNIQUE
 
 ---
 

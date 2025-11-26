@@ -13,11 +13,16 @@ export function useSupplies() {
   return useQuery({
     queryKey: supplyKeys.all,
     queryFn: async () => {
-      const { data, error } = await suppliesApi.getAll();
-      if (error) throw new Error(error);
-      return (data as any[]) || [];
+      const result = await suppliesApi.getAll();
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al obtener suministros";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data || [];
     },
-    staleTime: 60000, // 1 minuto - suministros no cambian tan seguido
+    staleTime: 60000,
     refetchOnWindowFocus: true,
   });
 }
@@ -29,9 +34,14 @@ export function useCreateSupply() {
 
   return useMutation({
     mutationFn: async (supply: any) => {
-      const { data, error } = await suppliesApi.create(supply);
-      if (error) throw new Error(error);
-      return data;
+      const result = await suppliesApi.create(supply);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al crear suministro";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: supplyKeys.all });
@@ -57,9 +67,14 @@ export function useUpdateSupply() {
 
   return useMutation({
     mutationFn: async ({ id, supply }: { id: string; supply: any }) => {
-      const { data, error } = await suppliesApi.update(id, supply);
-      if (error) throw new Error(error);
-      return data;
+      const result = await suppliesApi.update(id, supply);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al actualizar suministro";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: supplyKeys.all });
@@ -85,8 +100,13 @@ export function useDeleteSupply() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await suppliesApi.delete(id);
-      if (error) throw new Error(error);
+      const result = await suppliesApi.delete(id);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error as any)?.message || "Error al eliminar suministro";
+        throw new Error(errorMsg);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: supplyKeys.all });

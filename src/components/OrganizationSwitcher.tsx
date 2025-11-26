@@ -1,4 +1,4 @@
-import { Check, ChevronsUpDown, Building2, Plus, Settings } from "lucide-react";
+import { Check, ChevronsUpDown, Building2, Plus, Settings, Eye, Globe } from "lucide-react";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -37,15 +37,10 @@ export function OrganizationSwitcher() {
   const [newOrgSlug, setNewOrgSlug] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const { organizations, currentOrganization, switchOrganization, createOrganization } = useOrganization();
-  const { user, isImpersonating } = useAuth();
+  const { user, isImpersonating, setCurrentOrganization } = useAuth();
   const navigate = useNavigate();
 
   const isSuperAdmin = user?.roles?.includes("super_admin");
-
-  // Hide OrganizationSwitcher for super_admins who are not impersonating
-  if (isSuperAdmin && !isImpersonating) {
-    return null;
-  }
 
   const handleCreateOrganization = async () => {
     if (!newOrgName.trim() || !newOrgSlug.trim()) return;
@@ -72,8 +67,15 @@ export function OrganizationSwitcher() {
     setNewOrgSlug(slug);
   };
 
-  // When impersonating, disable organization switching
-  const canSwitchOrganization = !isSuperAdmin || !isImpersonating;
+  // Super admins can always switch, impersonating users cannot
+  const canSwitchOrganization = !isImpersonating;
+
+  // Determinar el texto y el icono a mostrar
+  const displayText = isSuperAdmin && !currentOrganization
+    ? "Todas las Organizaciones"
+    : currentOrganization?.name || "Seleccionar organización";
+
+  const DisplayIcon = isSuperAdmin && !currentOrganization ? Globe : Building2;
 
   return (
     <Popover open={canSwitchOrganization ? open : false} onOpenChange={setOpen}>
@@ -82,14 +84,23 @@ export function OrganizationSwitcher() {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between bg-card"
+          className={cn(
+            "w-[200px] justify-between bg-card",
+            isSuperAdmin && !isImpersonating && "border-primary/50"
+          )}
           disabled={!canSwitchOrganization}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <Building2 className="h-4 w-4 shrink-0" />
+            <DisplayIcon className={cn(
+              "h-4 w-4 shrink-0",
+              isSuperAdmin && !isImpersonating && "text-primary"
+            )} />
             <span className="truncate">
-              {currentOrganization?.name || "Seleccionar organización"}
+              {displayText}
             </span>
+            {isSuperAdmin && !isImpersonating && (
+              <Eye className="h-3 w-3 text-primary shrink-0" />
+            )}
           </div>
           {canSwitchOrganization && <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
         </Button>
@@ -99,6 +110,34 @@ export function OrganizationSwitcher() {
           {isSuperAdmin && <CommandInput placeholder="Buscar organización..." />}
           <CommandList>
             <CommandEmpty>No se encontraron organizaciones.</CommandEmpty>
+            {isSuperAdmin && (
+              <>
+                <CommandGroup heading="Vista Global">
+                  <CommandItem
+                    onSelect={() => {
+                      setCurrentOrganization(null);
+                      setOpen(false);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        !currentOrganization ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <Globe className="mr-2 h-4 w-4 text-primary" />
+                    <div className="flex flex-col">
+                      <span>Ver Todas</span>
+                      <span className="text-xs text-muted-foreground">
+                        Datos de todas las organizaciones
+                      </span>
+                    </div>
+                  </CommandItem>
+                </CommandGroup>
+                <CommandSeparator />
+              </>
+            )}
             <CommandGroup heading="Organizaciones">
               {organizations.map((org) => (
                 <CommandItem

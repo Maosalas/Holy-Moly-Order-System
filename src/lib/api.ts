@@ -15,12 +15,33 @@ const getAuthToken = (): string | null => {
   return parsed.token || null;
 };
 
-// Get current organization ID from localStorage
+// Get current organization ID from user's auth data
 const getCurrentOrgId = (): string | null => {
-  const org = localStorage.getItem("holy-moly-current-org");
-  if (!org) return null;
-  const parsed = JSON.parse(org);
-  return parsed.id || null;
+  const auth = localStorage.getItem("holy-moly-auth");
+  if (!auth) return null;
+  try {
+    const parsed = JSON.parse(auth);
+    return parsed.user?.currentOrganizationId || null;
+  } catch (error) {
+    console.error("Error parsing auth data:", error);
+    return null;
+  }
+};
+
+// Get auth user roles from localStorage
+const getUserRoles = (): string[] => {
+  const auth = localStorage.getItem("holy-moly-auth");
+  if (!auth) return [];
+  const parsed = JSON.parse(auth);
+  return parsed.user?.roles || [];
+};
+
+// Get impersonation state
+const isImpersonating = (): boolean => {
+  const impersonation = localStorage.getItem("holy-moly-impersonation");
+  if (!impersonation) return false;
+  const parsed = JSON.parse(impersonation);
+  return parsed.isImpersonating || false;
 };
 
 // Generic fetch wrapper
@@ -31,11 +52,20 @@ async function apiFetch<T>(
 ): Promise<ApiResponse<T>> {
   const token = getAuthToken();
   const orgId = getCurrentOrgId();
+  const roles = getUserRoles();
+  const impersonating = isImpersonating();
+
+  // Solo enviar X-Organization-Id si:
+  // 1. includeOrgHeader es true
+  // 2. Hay un orgId
+  // 3. NO es superadmin O está impersonando
+  const shouldIncludeOrgHeader = includeOrgHeader && orgId &&
+    (!roles.includes("super_admin") || impersonating);
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
-    ...(includeOrgHeader && orgId && { "X-Organization-Id": orgId }),
+    ...(shouldIncludeOrgHeader && { "X-Organization-Id": orgId }),
     ...options.headers,
   };
 
@@ -372,27 +402,47 @@ export const quotationsApi = {
 
 // Organizations API
 export const recipeParametersApi = {
-  getAll: () => 
-    apiFetch<any[]>(`/organizations/${getCurrentOrgId()}/recipe-parameters`, {
+  getAll: () => {
+    const orgId = getCurrentOrgId();
+    if (!orgId) {
+      return Promise.resolve({ error: "No organization ID found. Please log in again." });
+    }
+    return apiFetch<any[]>(`/organizations/${orgId}/recipe-parameters`, {
       method: "GET",
-    }),
+    });
+  },
 
-  create: (data: any) =>
-    apiFetch<any>(`/organizations/${getCurrentOrgId()}/recipe-parameters`, {
+  create: (data: any) => {
+    const orgId = getCurrentOrgId();
+    if (!orgId) {
+      return Promise.resolve({ error: "No organization ID found. Please log in again." });
+    }
+    return apiFetch<any>(`/organizations/${orgId}/recipe-parameters`, {
       method: "POST",
       body: JSON.stringify(data),
-    }),
+    });
+  },
 
-  update: (id: string, data: any) =>
-    apiFetch<any>(`/organizations/${getCurrentOrgId()}/recipe-parameters/${id}`, {
+  update: (id: string, data: any) => {
+    const orgId = getCurrentOrgId();
+    if (!orgId) {
+      return Promise.resolve({ error: "No organization ID found. Please log in again." });
+    }
+    return apiFetch<any>(`/organizations/${orgId}/recipe-parameters/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
-    }),
+    });
+  },
 
-  delete: (id: string) =>
-    apiFetch<void>(`/organizations/${getCurrentOrgId()}/recipe-parameters/${id}`, {
+  delete: (id: string) => {
+    const orgId = getCurrentOrgId();
+    if (!orgId) {
+      return Promise.resolve({ error: "No organization ID found. Please log in again." });
+    }
+    return apiFetch<void>(`/organizations/${orgId}/recipe-parameters/${id}`, {
       method: "DELETE",
-    }),
+    });
+  },
 };
 
 export const organizationsApi = {
@@ -515,6 +565,53 @@ export const subscriptionPlansApi = {
     apiFetch(`/super-admin/subscription-plans/${id}`, {
       method: "DELETE",
     }, false),
+
+  // Plan Features Management
+  getPlanFeatures: (planId: string) =>
+    apiFetch(`/subscription-plans/${planId}/features`, { method: "GET" }),
+
+  updateAllPlanFeatures: (planId: string, features: Record<string, any>) =>
+    apiFetch(`/subscription-plans/${planId}/features`, {
+      method: "PUT",
+      body: JSON.stringify(features),
+    }, false),
+
+  updatePlanFeature: (planId: string, featureKey: string, data: { value: any }) =>
+    apiFetch(`/subscription-plans/${planId}/features/${featureKey}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, false),
+
+  deletePlanFeature: (planId: string, featureKey: string) =>
+    apiFetch(`/subscription-plans/${planId}/features/${featureKey}`, {
+      method: "DELETE",
+    }, false),
+};
+
+// Subscription Features API
+export const subscriptionFeaturesApi = {
+  getAll: () =>
+    apiFetch("/subscription-features", { method: "GET" }),
+
+  getById: (id: string) =>
+    apiFetch(`/subscription-features/${id}`, { method: "GET" }),
+
+  create: (data: any) =>
+    apiFetch("/subscription-features", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, false),
+
+  update: (id: string, data: any) =>
+    apiFetch(`/subscription-features/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }, false),
+
+  delete: (id: string) =>
+    apiFetch(`/subscription-features/${id}`, {
+      method: "DELETE",
+    }, false),
 };
 
 // Super Admin API
@@ -546,5 +643,19 @@ export const superAdminApi = {
   impersonateOrganization: (orgId: string) =>
     apiFetch(`/super-admin/organizations/${orgId}/impersonate`, {
       method: "POST",
+    }, false),
+
+  // Send confirmation email to specific user in organization
+  resendConfirmationEmail: (orgId: string, userId: string) =>
+    apiFetch(`/super-admin/organizations/${orgId}/resend-confirmation`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }, false),
+
+  // Send password reset email to specific user in organization
+  sendPasswordResetEmail: (orgId: string, userId: string) =>
+    apiFetch(`/super-admin/organizations/${orgId}/send-password-reset`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
     }, false),
 };
