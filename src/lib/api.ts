@@ -565,6 +565,53 @@ export const subscriptionPlansApi = {
     apiFetch(`/super-admin/subscription-plans/${id}`, {
       method: "DELETE",
     }, false),
+
+  // Plan Features Management
+  getPlanFeatures: (planId: string) =>
+    apiFetch(`/subscription-plans/${planId}/features`, { method: "GET" }),
+
+  updateAllPlanFeatures: (planId: string, features: Record<string, any>) =>
+    apiFetch(`/subscription-plans/${planId}/features`, {
+      method: "PUT",
+      body: JSON.stringify(features),
+    }, false),
+
+  updatePlanFeature: (planId: string, featureKey: string, data: { value: any }) =>
+    apiFetch(`/subscription-plans/${planId}/features/${featureKey}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }, false),
+
+  deletePlanFeature: (planId: string, featureKey: string) =>
+    apiFetch(`/subscription-plans/${planId}/features/${featureKey}`, {
+      method: "DELETE",
+    }, false),
+};
+
+// Subscription Features API
+export const subscriptionFeaturesApi = {
+  getAll: () =>
+    apiFetch("/subscription-features", { method: "GET" }),
+
+  getById: (id: string) =>
+    apiFetch(`/subscription-features/${id}`, { method: "GET" }),
+
+  create: (data: any) =>
+    apiFetch("/subscription-features", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, false),
+
+  update: (id: string, data: any) =>
+    apiFetch(`/subscription-features/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }, false),
+
+  delete: (id: string) =>
+    apiFetch(`/subscription-features/${id}`, {
+      method: "DELETE",
+    }, false),
 };
 
 // Super Admin API

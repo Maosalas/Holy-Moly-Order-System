@@ -32,9 +32,15 @@ interface OrganizationSettingsDialogProps {
 interface SubscriptionPlanOption {
   id: string;
   name: string;
-  code: SubscriptionPlan;
-  price: number;
-  features: any[];
+  slug: string;
+  priceMonthly: string;
+  priceYearly: string;
+  maxOrdersPerMonth: number;
+  maxUsers: number;
+  maxStorageGb: number;
+  features: any;
+  active: boolean;
+  createdAt: string;
 }
 
 const OrganizationSettingsDialog = ({
@@ -43,7 +49,7 @@ const OrganizationSettingsDialog = ({
   organization,
   onSuccess,
 }: OrganizationSettingsDialogProps) => {
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | "">("");
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
   const [isUpdatingPlan, setIsUpdatingPlan] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isSendingPasswordReset, setIsSendingPasswordReset] = useState(false);
@@ -228,7 +234,7 @@ const OrganizationSettingsDialog = ({
             <div className="space-y-2">
               <Select
                 value={selectedPlan}
-                onValueChange={(value) => setSelectedPlan(value as SubscriptionPlan)}
+                onValueChange={(value) => setSelectedPlan(value)}
                 disabled={isLoadingPlans}
               >
                 <SelectTrigger id="plan">
@@ -245,13 +251,11 @@ const OrganizationSettingsDialog = ({
                     </SelectItem>
                   ) : (
                     subscriptionPlans.map((plan) => {
-                      const price = plan.price || 0;
-                      const displayPrice = typeof price === 'number'
-                        ? price.toFixed(2)
-                        : price;
+                      const price = parseFloat(plan.priceMonthly) || 0;
+                      const displayPrice = price.toFixed(2);
 
                       return (
-                        <SelectItem key={plan.id} value={plan.code}>
+                        <SelectItem key={plan.id} value={plan.slug}>
                           {plan.name} - ${displayPrice}/mes
                         </SelectItem>
                       );

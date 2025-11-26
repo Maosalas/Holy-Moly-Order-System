@@ -67,24 +67,34 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
 
       const orgs = result.data as any[];
-      console.log("🏢 Organizations from API:", orgs);
-      
+      console.log("🏢 Organizations from API (RAW):", orgs);
+
       // Transform API response to match OrganizationWithRole type
-      const transformedOrgs: OrganizationWithRole[] = orgs.map((org: any) => ({
-        id: org.id || org.organizationId || org.organization_id,
-        name: org.name || org.organizationName || org.organization_name,
-        slug: org.slug || org.organizationSlug || org.organization_slug,
-        logoUrl: org.logoUrl || org.organizationLogoUrl || org.logo_url,
-        subscriptionStatus: org.subscriptionStatus || org.subscription_status || "trial",
-        subscriptionPlan: org.subscriptionPlan || org.subscription_plan || "free",
-        subscriptionStripeCustomerId: org.subscriptionStripeCustomerId || org.subscription_stripe_customer_id,
-        subscriptionStripeSubscriptionId: org.subscriptionStripeSubscriptionId || org.subscription_stripe_subscription_id,
-        trialEndsAt: org.trialEndsAt || org.trial_ends_at ? new Date(org.trialEndsAt || org.trial_ends_at) : undefined,
-        settings: org.settings || {},
-        createdAt: new Date(org.createdAt || org.created_at || Date.now()),
-        updatedAt: new Date(org.updatedAt || org.updated_at || Date.now()),
-        userRole: org.userRole || org.user_role || "owner",
-      }));
+      const transformedOrgs: OrganizationWithRole[] = orgs.map((org: any) => {
+        console.log("🔍 Transforming organization:", {
+          raw: org,
+          subscriptionStatus: org.subscriptionStatus,
+          subscription_status: org.subscription_status,
+          subscriptionPlan: org.subscriptionPlan,
+          subscription_plan: org.subscription_plan,
+        });
+
+        return {
+          id: org.id || org.organizationId || org.organization_id,
+          name: org.name || org.organizationName || org.organization_name,
+          slug: org.slug || org.organizationSlug || org.organization_slug,
+          logoUrl: org.logoUrl || org.organizationLogoUrl || org.logo_url,
+          subscriptionStatus: org.subscriptionStatus || org.subscription_status || "trial",
+          subscriptionPlan: org.subscriptionPlan || org.subscription_plan || "free",
+          subscriptionStripeCustomerId: org.subscriptionStripeCustomerId || org.subscription_stripe_customer_id,
+          subscriptionStripeSubscriptionId: org.subscriptionStripeSubscriptionId || org.subscription_stripe_subscription_id,
+          trialEndsAt: org.trialEndsAt || org.trial_ends_at ? new Date(org.trialEndsAt || org.trial_ends_at) : undefined,
+          settings: org.settings || {},
+          createdAt: new Date(org.createdAt || org.created_at || Date.now()),
+          updatedAt: new Date(org.updatedAt || org.updated_at || Date.now()),
+          userRole: org.userRole || org.user_role || "owner",
+        };
+      });
 
       console.log("🏢 Transformed organizations:", transformedOrgs);
       setOrganizations(transformedOrgs);

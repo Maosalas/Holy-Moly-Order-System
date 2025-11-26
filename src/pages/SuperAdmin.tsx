@@ -12,7 +12,7 @@ import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Building2, Users, TrendingUp, Eye, Plus, Settings, Trash2 } from "lucide-react";
 import CreateOrganizationDialog from "@/components/CreateOrganizationDialog";
-import SubscriptionPlansManager from "@/components/SubscriptionPlansManager";
+import CompleteSubscriptionManager from "@/components/CompleteSubscriptionManager";
 import DeleteOrganizationDialog from "@/components/DeleteOrganizationDialog";
 import OrganizationSettingsDialog from "@/components/OrganizationSettingsDialog";
 
@@ -216,7 +216,7 @@ const SuperAdmin = () => {
           </TabsTrigger>
           <TabsTrigger value="plans">
             <Settings className="h-4 w-4 mr-2" />
-            Planes de Suscripción
+            Planes y Features
           </TabsTrigger>
         </TabsList>
 
@@ -298,7 +298,7 @@ const SuperAdmin = () => {
         </TabsContent>
 
         <TabsContent value="plans">
-          <SubscriptionPlansManager />
+          <CompleteSubscriptionManager />
         </TabsContent>
       </Tabs>
 
