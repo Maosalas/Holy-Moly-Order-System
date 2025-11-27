@@ -55,11 +55,13 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
   const [needsCakeTopper, setNeedsCakeTopper] = useState(initialData?.needsCakeTopper || false);
   const [topperDetails, setTopperDetails] = useState(initialData?.topperDetails || "");
   const [topperPhotos, setTopperPhotos] = useState<string[]>(initialData?.topperPhotos || []);
-  const [statuses, setStatuses] = useState<OrderStatus[]>(
-    initialData?.statuses
+  // Inicializar statuses eliminando duplicados desde el inicio
+  const [statuses, setStatuses] = useState<OrderStatus[]>(() => {
+    const extractedStatuses = initialData?.statuses
       ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
-      : ["waiting_for_payment"]
-  );
+      : ["waiting_for_payment"];
+    return [...new Set(extractedStatuses)];
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load quotations and payment methods from API
@@ -131,11 +133,11 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
       setNeedsCakeTopper(initialData.needsCakeTopper || false);
       setTopperDetails(initialData.topperDetails || "");
       setTopperPhotos(initialData.topperPhotos || []);
-      setStatuses(
-        initialData.statuses
-          ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
-          : ["waiting_for_payment"]
-      );
+      // Extraer statuses y eliminar duplicados
+      const extractedStatuses = initialData.statuses
+        ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
+        : ["waiting_for_payment"];
+      setStatuses([...new Set(extractedStatuses)]);
     } else {
       // Reset form when creating new order
       setSelectedQuotationId("");
@@ -302,10 +304,12 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
       return;
     }
 
-    // Para actualizaciones, solo enviar el último status; para creación, enviar el array inicial
-    const statusesToSend = isUpdate 
-      ? [statuses[statuses.length - 1] || "waiting_for_payment"]
-      : (statuses.length > 0 ? statuses : ["waiting_for_payment"]);
+    // Enviar todos los status únicos seleccionados (sin duplicados)
+    console.log('🔍 DEBUG - statuses ANTES de filtrar:', statuses);
+    const uniqueStatuses = [...new Set(statuses)];
+    console.log('🔍 DEBUG - uniqueStatuses DESPUES de filtrar:', uniqueStatuses);
+    const statusesToSend = uniqueStatuses.length > 0 ? uniqueStatuses : ["waiting_for_payment"];
+    console.log('🔍 DEBUG - statusesToSend (lo que se enviará al backend):', statusesToSend);
 
     const orderData: Omit<Order, "id" | "createdAt"> = {
       organizationId: currentOrganization?.id || "",

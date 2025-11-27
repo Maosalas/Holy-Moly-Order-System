@@ -119,6 +119,10 @@ export function generateICS(order: Order, action: 'create' | 'update' | 'delete'
   const status = action === 'delete' ? 'CANCELLED' : 'CONFIRMED';
   const method = action === 'delete' ? 'CANCEL' : action === 'update' ? 'REQUEST' : 'PUBLISH';
 
+  // SEQUENCE es crucial para que los calendarios reconozcan actualizaciones del mismo evento
+  // create: 0, update: 1, delete: 2
+  const sequence = action === 'create' ? 0 : action === 'update' ? 1 : 2;
+
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -126,6 +130,7 @@ export function generateICS(order: Order, action: 'create' | 'update' | 'delete'
     `METHOD:${method}`,
     'BEGIN:VEVENT',
     `UID:order-${order.id}@yourdomain.com`,
+    `SEQUENCE:${sequence}`,
     `DTSTAMP:${formatDate(new Date())}`,
     `DTSTART:${formatDate(order.deliveryDate)}`,
     `DTEND:${formatDate(order.deliveryDate)}`,
@@ -144,7 +149,9 @@ export function downloadICS(order: Order, action: 'create' | 'update' | 'delete'
   const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `order-${order.clientName}-${action}.ics`;
+  // Usar el mismo nombre de archivo para que el calendario reconozca que es el mismo evento
+  // El UID y SEQUENCE se encargan de indicar si es creación, actualización o cancelación
+  link.download = `order-${order.id}.ics`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
