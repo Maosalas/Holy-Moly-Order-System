@@ -60,7 +60,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
     const extractedStatuses = initialData?.statuses
       ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
       : ["waiting_for_payment"];
-    return [...new Set(extractedStatuses)];
+    return [...new Set(extractedStatuses)] as OrderStatus[];
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -137,7 +137,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
       const extractedStatuses = initialData.statuses
         ? initialData.statuses.map(s => typeof s === 'string' ? s : s.status)
         : ["waiting_for_payment"];
-      setStatuses([...new Set(extractedStatuses)]);
+      setStatuses([...new Set(extractedStatuses)] as OrderStatus[]);
     } else {
       // Reset form when creating new order
       setSelectedQuotationId("");
