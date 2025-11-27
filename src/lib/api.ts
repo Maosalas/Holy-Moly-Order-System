@@ -659,3 +659,21 @@ export const superAdminApi = {
       body: JSON.stringify({ userId }),
     }, false),
 };
+
+// Stripe API
+export const stripeApi = {
+  createCheckoutSession: (data: { planId: string; organizationId: string; billingInterval: 'monthly' | 'yearly' }) =>
+    apiFetch("/stripe/create-checkout-session", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  createPortalSession: (organizationId: string) =>
+    apiFetch("/stripe/create-portal-session", {
+      method: "POST",
+      body: JSON.stringify({ organizationId }),
+    }),
+
+  getSubscriptionStatus: (organizationId: string) =>
+    apiFetch(`/stripe/subscription-status/${organizationId}`, { method: "GET" }),
+};

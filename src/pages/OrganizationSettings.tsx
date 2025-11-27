@@ -14,6 +14,8 @@ import { PaymentMethodsList } from "@/components/PaymentMethodsList";
 import { CardTypesList } from "@/components/CardTypesList";
 import { subscriptionPlansApi } from "@/lib/api";
 import { Separator } from "@/components/ui/separator";
+import { StripeCheckout } from "@/components/StripeCheckout";
+import { createCustomerPortalSession } from "@/lib/stripe";
 
 export default function OrganizationSettings() {
   const { currentOrganization, updateOrganization, isLoading, fetchOrganizations } = useOrganization();
@@ -25,6 +27,9 @@ export default function OrganizationSettings() {
   const [logoPreview, setLogoPreview] = useState<string>(currentOrganization?.logoUrl || defaultLogo);
   const [planDetails, setPlanDetails] = useState<any>(null);
   const [isLoadingPlan, setIsLoadingPlan] = useState(true);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<any>(null);
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
 
   useEffect(() => {
     console.log("🔍 OrganizationSettings - currentOrganization FULL:", currentOrganization);
@@ -59,6 +64,11 @@ export default function OrganizationSettings() {
 
     // First try to find in active plans
     let result = await subscriptionPlansApi.getAll(true); // Solo planes activos
+    
+    // Save available plans for checkout
+    if (result.data) {
+      setAvailablePlans(result.data as any[]);
+    }
 
     console.log("🔍 Organization Settings - Debug:", {
       currentOrgPlan: currentOrganization.subscriptionPlan,
@@ -160,6 +170,17 @@ export default function OrganizationSettings() {
       // Recargar las organizaciones para actualizar el logo en todo el sistema
       await fetchOrganizations();
     }
+  };
+
+  const handleSubscribeToPlan = (plan: any) => {
+    setSelectedPlanForCheckout(plan);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleManageSubscription = async () => {
+    if (!currentOrganization) return;
+    
+    await createCustomerPortalSession(currentOrganization.id);
   };
 
   if (!currentOrganization) {
@@ -412,20 +433,42 @@ export default function OrganizationSettings() {
                               )}
                               <span className="text-sm">Analíticas avanzadas</span>
                             </div>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Plan:</span>
-                    <Badge variant="secondary" className="capitalize">
-                      {currentOrganization.subscriptionPlan}
-                    </Badge>
-                  </div>
+                           )}
+                         </div>
+                       </>
+                     )}
+                   </div>
+
+                   <Separator className="my-4" />
+
+                   {/* Subscription Actions */}
+                   <div className="space-y-3">
+                     {currentOrganization.subscriptionStripeCustomerId ? (
+                       <Button
+                         onClick={handleManageSubscription}
+                         variant="outline"
+                         className="w-full"
+                       >
+                         Gestionar Suscripción
+                       </Button>
+                     ) : (
+                       <Button
+                         onClick={() => handleSubscribeToPlan(planDetails)}
+                         className="w-full"
+                       >
+                         Activar Suscripción
+                       </Button>
+                     )}
+                   </div>
+                 </>
+               ) : (
+                 <div className="space-y-4">
+                   <div className="flex items-center justify-between">
+                     <span className="text-sm font-medium">Plan:</span>
+                     <Badge variant="secondary" className="capitalize">
+                       {currentOrganization.subscriptionPlan}
+                     </Badge>
+                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Estado:</span>
                     <Badge
@@ -441,6 +484,85 @@ export default function OrganizationSettings() {
                       {currentOrganization.subscriptionStatus}
                     </Badge>
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Available Plans Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Planes Disponibles</CardTitle>
+              <CardDescription>
+                Explora y compara los planes de suscripción disponibles
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingPlan ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Cargando planes...
+                </div>
+              ) : availablePlans.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hay planes disponibles
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {availablePlans.map((plan) => {
+                    const isCurrentPlan = plan.slug === currentOrganization.subscriptionPlan;
+                    const monthlyPrice = parseFloat(plan.priceMonthly) || 0;
+                    const yearlyPrice = parseFloat(plan.priceYearly) || 0;
+                    
+                    return (
+                      <Card 
+                        key={plan.id} 
+                        className={isCurrentPlan ? "border-primary shadow-md" : ""}
+                      >
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg">{plan.name}</CardTitle>
+                            {isCurrentPlan && (
+                              <Badge variant="default">Actual</Badge>
+                            )}
+                          </div>
+                          <CardDescription className="text-2xl font-bold">
+                            ${monthlyPrice.toFixed(2)}
+                            <span className="text-sm font-normal text-muted-foreground">/mes</span>
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">Pedidos/mes:</span>
+                              <span className="font-medium">
+                                {plan.maxOrdersPerMonth === -1 ? "Ilimitado" : plan.maxOrdersPerMonth}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">Usuarios:</span>
+                              <span className="font-medium">
+                                {plan.maxUsers === -1 ? "Ilimitado" : plan.maxUsers}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">Almacenamiento:</span>
+                              <span className="font-medium">{plan.maxStorageGb} GB</span>
+                            </div>
+                          </div>
+                          
+                          {canManage && !isCurrentPlan && (
+                            <Button
+                              onClick={() => handleSubscribeToPlan(plan)}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              Cambiar a este plan
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -494,6 +616,19 @@ export default function OrganizationSettings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Stripe Checkout Dialog */}
+      {selectedPlanForCheckout && (
+        <StripeCheckout
+          planId={selectedPlanForCheckout.id}
+          planName={selectedPlanForCheckout.name}
+          priceMonthly={parseFloat(selectedPlanForCheckout.priceMonthly) || 0}
+          priceYearly={parseFloat(selectedPlanForCheckout.priceYearly) || 0}
+          organizationId={currentOrganization.id}
+          open={isCheckoutOpen}
+          onOpenChange={setIsCheckoutOpen}
+        />
+      )}
     </div>
   );
 }
