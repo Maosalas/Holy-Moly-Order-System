@@ -210,7 +210,10 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </AvatarFallback>
               </Avatar>
 
-              <Button variant="ghost" size="sm" onClick={logout} className="gap-2 hidden md:flex">
+              <Button variant="ghost" size="sm" onClick={async () => {
+                await logout();
+                navigate("/");
+              }} className="gap-2 hidden md:flex">
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
               </Button>
