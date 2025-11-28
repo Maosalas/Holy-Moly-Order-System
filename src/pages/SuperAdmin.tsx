@@ -83,7 +83,7 @@ const SuperAdmin = () => {
     await switchOrganization(org);
 
     // Navigate to organization dashboard
-    navigate("/");
+    navigate("/dashboard");
 
     toast({
       title: "Impersonating Organization",
