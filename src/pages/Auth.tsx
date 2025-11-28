@@ -28,7 +28,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
 
@@ -71,7 +71,7 @@ const Auth = () => {
         title: "¡Bienvenido de vuelta!",
         description: "Has iniciado sesión exitosamente.",
       });
-      navigate("/");
+      navigate("/dashboard");
     } else {
       toast({
         variant: "destructive",
@@ -99,7 +99,7 @@ const Auth = () => {
         title: "¡Cuenta creada!",
         description: "Bienvenido a Holy Moly Bakery.",
       });
-      navigate("/");
+      navigate("/dashboard");
     } else {
       toast({
         variant: "destructive",

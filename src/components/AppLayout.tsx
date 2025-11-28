@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/collapsible";
 
 const menuItems = [
-  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Pedidos", url: "/orders", icon: ShoppingBag },
   { title: "Cotizador", url: "/quotations", icon: Calculator },
   {

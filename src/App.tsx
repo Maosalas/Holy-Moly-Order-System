@@ -10,6 +10,7 @@ import { SuperAdminRoute } from "./components/SuperAdminRoute";
 import { AppLayout } from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
+import Landing from "./pages/Landing";
 import Ingredients from "./pages/Ingredients";
 import Supplies from "./pages/Supplies";
 import Orders from "./pages/Orders";
@@ -47,10 +48,11 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
               <Route path="/recipes" element={<ProtectedRoute><AppLayout><Index /></AppLayout></ProtectedRoute>} />
               <Route path="/ingredients" element={<ProtectedRoute><AppLayout><Ingredients /></AppLayout></ProtectedRoute>} />
               <Route path="/supplies" element={<ProtectedRoute><AppLayout><Supplies /></AppLayout></ProtectedRoute>} />
