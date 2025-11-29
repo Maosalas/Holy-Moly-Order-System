@@ -1,24 +1,66 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ChefHat, 
-  DollarSign, 
-  Users, 
-  BarChart, 
-  Package, 
-  FileText, 
-  CheckCircle2, 
+import {
+  ChefHat,
+  DollarSign,
+  Users,
+  BarChart,
+  Package,
+  FileText,
+  CheckCircle2,
   ArrowRight,
   Sparkles,
   Shield,
   Zap
 } from "lucide-react";
 import logo from "@/assets/Orderly-logo.png";
+import { useSubscriptionPlans } from "@/hooks/use-subscription-plans";
+import { subscriptionPlansApi, subscriptionFeaturesApi } from "@/lib/api";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { plans: dbPlans, isLoading: plansLoading } = useSubscriptionPlans(true);
+  const [planFeatures, setPlanFeatures] = useState<Record<string, any>>({});
+  const [allFeatures, setAllFeatures] = useState<any[]>([]);
+  const [loadingFeatures, setLoadingFeatures] = useState(true);
+
+  // Load all features and plan-specific features
+  useEffect(() => {
+    const loadFeatures = async () => {
+      setLoadingFeatures(true);
+
+      // Load all available features
+      const featuresResult = await subscriptionFeaturesApi.getAll();
+      if (!featuresResult.error) {
+        setAllFeatures((featuresResult.data as any[]) || []);
+      }
+
+      // Load features for each plan
+      if (dbPlans.length > 0) {
+        const featuresMap: Record<string, any> = {};
+
+        for (const plan of dbPlans) {
+          const planFeaturesResult = await subscriptionPlansApi.getPlanFeatures(plan.id);
+          if (!planFeaturesResult.error) {
+            featuresMap[plan.id] = planFeaturesResult.data || {};
+          }
+        }
+
+        setPlanFeatures(featuresMap);
+      }
+
+      setLoadingFeatures(false);
+    };
+
+    if (!plansLoading && dbPlans.length > 0) {
+      loadFeatures();
+    } else if (!plansLoading) {
+      setLoadingFeatures(false);
+    }
+  }, [dbPlans, plansLoading]);
 
   const features = [
     {
@@ -53,70 +95,94 @@ export default function Landing() {
     }
   ];
 
-  const plans = [
-    {
-      name: "Starter",
-      price: 29,
-      interval: "mes",
-      description: "Perfecto para comenzar",
-      features: [
-        "Hasta 100 órdenes/mes",
-        "5 usuarios incluidos",
-        "10 GB almacenamiento",
-        "Soporte por email",
-        "Gestión básica de recetas"
-      ],
-      highlighted: false
-    },
-    {
-      name: "Professional",
-      price: 99,
-      interval: "mes",
-      description: "Para negocios en crecimiento",
-      features: [
-        "Hasta 500 órdenes/mes",
-        "15 usuarios incluidos",
-        "50 GB almacenamiento",
-        "Soporte prioritario",
-        "Análisis avanzados",
-        "Reportes personalizados"
-      ],
-      highlighted: true
-    },
-    {
-      name: "Enterprise",
-      price: 299,
-      interval: "mes",
-      description: "Para operaciones a gran escala",
-      features: [
-        "Órdenes ilimitadas",
-        "Usuarios ilimitados",
-        "500 GB almacenamiento",
-        "Soporte 24/7 dedicado",
-        "Marca personalizada",
-        "Acceso a API",
-        "Integraciones avanzadas"
-      ],
-      highlighted: false
+  const handleSelectPlan = (planId: string, planSlug: string) => {
+    // Save selected plan to localStorage for the checkout flow
+    localStorage.setItem('selected_plan', JSON.stringify({ planId, planSlug }));
+    // Navigate to auth with plan parameter
+    navigate(`/auth?plan=${planSlug}`);
+  };
+
+  // Transform database plans to UI format
+  const plans = dbPlans.map((plan, index) => {
+    const featuresList: string[] = [];
+
+    // Add basic plan info
+    if (plan.maxOrdersPerMonth === -1) {
+      featuresList.push("Órdenes ilimitadas");
+    } else {
+      featuresList.push(`Hasta ${plan.maxOrdersPerMonth} órdenes/mes`);
     }
-  ];
+
+    if (plan.maxUsers === -1) {
+      featuresList.push("Usuarios ilimitados");
+    } else {
+      featuresList.push(`${plan.maxUsers} usuarios incluidos`);
+    }
+
+    featuresList.push(`${plan.maxStorageGb} GB almacenamiento`);
+
+    // Add features from database
+    const currentPlanFeatures = planFeatures[plan.id] || {};
+
+    // Sort features by display_order and add to list
+    const sortedFeatures = allFeatures
+      .filter(feature => {
+        const value = currentPlanFeatures[feature.key];
+        // Include feature if it has a value and it's not false
+        return value !== undefined && value !== false;
+      })
+      .sort((a, b) => {
+        const orderA = a.display_order || a.displayOrder || 0;
+        const orderB = b.display_order || b.displayOrder || 0;
+        return orderA - orderB;
+      });
+
+    for (const feature of sortedFeatures) {
+      const value = currentPlanFeatures[feature.key];
+      const valueType = feature.value_type || feature.valueType;
+
+      // Format feature based on type
+      if (valueType === 'boolean' && value === true) {
+        featuresList.push(feature.name);
+      } else if (valueType === 'string' && value) {
+        featuresList.push(value); // Use the string value directly
+      } else if (valueType === 'number' && value) {
+        // For numbers, show with the feature name
+        featuresList.push(`${feature.name}: ${value}`);
+      }
+    }
+
+    return {
+      id: plan.id,
+      slug: plan.slug,
+      name: plan.name,
+      price: plan.priceMonthly,
+      interval: "mes",
+      description: plan.slug === "starter" ? "Perfecto para comenzar" :
+                   plan.slug === "professional" ? "Para negocios en crecimiento" :
+                   plan.slug === "enterprise" ? "Para operaciones a gran escala" :
+                   "Plan personalizado",
+      features: featuresList,
+      highlighted: index === 1 || plan.slug === "professional" // Highlight middle plan or professional
+    };
+  });
 
   const testimonials = [
     {
-      name: "María González",
-      role: "Propietaria, Dulce Pasión",
-      content: "Holy Moly transformó completamente mi negocio. Ahora puedo calcular costos exactos y optimizar mis precios."
+      name: "Tatiana",
+      role: "Propietaria, Holy Moly",
+      content: "Orderly transformó completamente mi negocio. Ahora puedo calcular costos exactos y optimizar mis precios."
     },
-    {
-      name: "Carlos Ramírez",
-      role: "Chef Ejecutivo, Delicias Artesanales",
-      content: "La gestión de recetas y órdenes es increíble. Ahorro horas cada semana en tareas administrativas."
-    },
-    {
-      name: "Ana Martínez",
-      role: "Gerente, Pastelerías Royale",
-      content: "El control de inventario y gastos nos ayudó a reducir costos en un 30%. Una herramienta indispensable."
-    }
+    // {
+    //   name: "Carlos Ramírez",
+    //   role: "Chef Ejecutivo, Delicias Artesanales",
+    //   content: "La gestión de recetas y órdenes es increíble. Ahorro horas cada semana en tareas administrativas."
+    // },
+    // {
+    //   name: "Ana Martínez",
+    //   role: "Gerente, Pastelerías Royale",
+    //   content: "El control de inventario y gastos nos ayudó a reducir costos en un 30%. Una herramienta indispensable."
+    // }
   ];
 
   return (
@@ -126,17 +192,16 @@ export default function Landing() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <img src={logo} alt="Holy Moly Logo" className="h-10 w-10" />
-              <span className="text-xl font-bold">Holy Moly</span>
+              <img src={logo} alt="Holy Moly Logo" className="h-10 w-50" />
             </div>
             <div className="flex items-center gap-3">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => navigate("/auth")}
               >
                 Iniciar Sesión
               </Button>
-              <Button 
+              <Button
                 onClick={() => navigate("/auth")}
                 className="gap-2"
               >
@@ -161,20 +226,20 @@ export default function Landing() {
             <span className="text-primary">eficiencia</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Controla recetas, inventario, costos y órdenes desde una sola plataforma. 
+            Controla recetas, inventario, costos y órdenes desde una sola plataforma.
             Optimiza tu operación y aumenta tu rentabilidad.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               onClick={() => navigate("/auth")}
               className="text-lg gap-2"
             >
               Comenzar Prueba Gratis
               <ArrowRight className="w-5 h-5" />
             </Button>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="outline"
               className="text-lg"
             >
@@ -274,47 +339,58 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {plans.map((plan, index) => (
-              <Card 
-                key={index} 
-                className={`relative ${plan.highlighted ? 'border-primary border-2 shadow-lg scale-105' : ''}`}
-              >
-                {plan.highlighted && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground">
-                      Más Popular
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader className="text-center pb-8">
-                  <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
-                  <CardDescription className="mb-4">{plan.description}</CardDescription>
-                  <div className="space-y-1">
-                    <div className="text-4xl font-bold">${plan.price}</div>
-                    <div className="text-muted-foreground">por {plan.interval}</div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, fIndex) => (
-                      <li key={fIndex} className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button 
-                    className="w-full mt-6" 
-                    variant={plan.highlighted ? "default" : "outline"}
-                    onClick={() => navigate("/auth")}
-                  >
-                    Comenzar Ahora
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {plansLoading || loadingFeatures ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <p className="mt-4 text-muted-foreground">Cargando planes...</p>
+            </div>
+          ) : plans.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No hay planes disponibles en este momento</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8">
+              {plans.map((plan, index) => (
+                <Card
+                  key={index}
+                  className={`relative flex flex-col ${plan.highlighted ? 'border-primary border-2 shadow-lg scale-105' : ''}`}
+                >
+                  {plan.highlighted && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground">
+                        Más Popular
+                      </Badge>
+                    </div>
+                  )}
+                  <CardHeader className="text-center pb-8">
+                    <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
+                    <CardDescription className="mb-4">{plan.description}</CardDescription>
+                    <div className="space-y-1">
+                      <div className="text-4xl font-bold">${plan.price}</div>
+                      <div className="text-muted-foreground">por {plan.interval}</div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col">
+                    <ul className="space-y-3 flex-1">
+                      {plan.features.map((feature, fIndex) => (
+                        <li key={fIndex} className="flex items-start gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      className="w-full mt-6"
+                      variant={plan.highlighted ? "default" : "outline"}
+                      onClick={() => handleSelectPlan(plan.id, plan.slug)}
+                    >
+                      Comenzar Ahora
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -363,8 +439,8 @@ export default function Landing() {
             Únete a cientos de pastelerías que ya optimizaron su operación
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               onClick={() => navigate("/auth")}
               className="text-lg gap-2"
             >
@@ -380,11 +456,10 @@ export default function Landing() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <img src={logo} alt="Holy Moly Logo" className="h-8 w-8" />
-              <span className="font-bold">Holy Moly</span>
+              <img src={logo} alt="Holy Moly Logo" className="h-8 w-50" />
             </div>
             <div className="text-sm text-muted-foreground">
-              © 2025 Holy Moly. Todos los derechos reservados.
+              © 2025 Orderly. Todos los derechos reservados.
             </div>
           </div>
         </div>

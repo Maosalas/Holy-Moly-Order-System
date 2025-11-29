@@ -16,6 +16,10 @@ export default function SubscriptionSuccess() {
   const [planDetails, setPlanDetails] = useState<any>(null);
 
   useEffect(() => {
+    // Clean up localStorage after successful subscription
+    localStorage.removeItem('selected_plan');
+    localStorage.removeItem('selected_plan_slug');
+
     // Get plan details from URL params or organization context
     const planName = searchParams.get("plan") || currentOrganization?.subscriptionPlan || "Professional";
     const billingInterval = searchParams.get("interval") || "monthly";

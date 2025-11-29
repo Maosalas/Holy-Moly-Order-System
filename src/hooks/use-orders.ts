@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 export const orderKeys = {
   all: ['orders'] as const,
   detail: (id: string) => ['orders', id] as const,
+  usage: ['orders', 'usage'] as const,
 };
 
 // Hook para obtener todos los pedidos
@@ -63,8 +64,9 @@ export function useCreateOrder() {
       return (result as any).data;
     },
     onSuccess: () => {
-      // Invalida y refresca la lista de pedidos
+      // Invalida y refresca la lista de pedidos y el usage
       queryClient.invalidateQueries({ queryKey: orderKeys.all });
+      queryClient.invalidateQueries({ queryKey: orderKeys.usage });
       toast({
         title: "Pedido creado",
         description: "El pedido se ha creado exitosamente",
@@ -124,14 +126,15 @@ export function useDeleteOrder() {
     mutationFn: async (id: string) => {
       const result = await ordersApi.delete(id);
       if (result.error) {
-        const errorMsg = typeof result.error === 'string' 
-          ? result.error 
+        const errorMsg = typeof result.error === 'string'
+          ? result.error
           : (result.error as any)?.message || "Error al eliminar pedido";
         throw new Error(errorMsg);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: orderKeys.all });
+      queryClient.invalidateQueries({ queryKey: orderKeys.usage });
       toast({
         title: "Pedido eliminado",
         description: "El pedido se ha eliminado exitosamente",
@@ -144,5 +147,32 @@ export function useDeleteOrder() {
         variant: "destructive",
       });
     },
+  });
+}
+
+// Hook para obtener el uso de órdenes del mes actual
+export function useOrdersUsage() {
+  return useQuery({
+    queryKey: orderKeys.usage,
+    queryFn: async () => {
+      const result = await ordersApi.getUsage();
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string'
+          ? result.error
+          : (result.error as any)?.message || "Error al obtener uso de órdenes";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data as {
+        currentCount: number;
+        limit: number | null;
+        canCreate: boolean;
+        planSlug: string;
+        remaining: number | null;
+        isUnlimited: boolean;
+      };
+    },
+    staleTime: 30000, // 30 segundos
+    refetchOnWindowFocus: true,
+    refetchInterval: 60000, // Refetch cada minuto para mantener actualizado
   });
 }

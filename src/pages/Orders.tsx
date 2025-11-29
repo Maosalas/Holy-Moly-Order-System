@@ -4,6 +4,7 @@ import { OrderForm } from "@/components/OrderForm";
 import { OrderList } from "@/components/OrderList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { ShoppingListDialog } from "@/components/ShoppingListDialog";
+import { OrderLimitIndicator } from "@/components/OrderLimitIndicator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Order } from "@/types/order";
 import { ordersApi, quotationsApi } from "@/lib/api";
-import { useOrders, useCreateOrder, useUpdateOrder, useDeleteOrder, useOrder } from "@/hooks/use-orders";
+import { useOrders, useCreateOrder, useUpdateOrder, useDeleteOrder, useOrder, useOrdersUsage } from "@/hooks/use-orders";
 import type { Quotation } from "@/types/quotation";
 
 const Orders = () => {
@@ -21,6 +22,7 @@ const Orders = () => {
 
   // Usar React Query hooks
   const { data: orders = [], isLoading } = useOrders();
+  const { data: usage } = useOrdersUsage();
   const createOrder = useCreateOrder();
   const updateOrder = useUpdateOrder();
   const deleteOrder = useDeleteOrder();
@@ -178,13 +180,16 @@ const Orders = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold">
-            {user?.roles?.includes("cake_topper_provider") ? "Pedidos de Toppers" : "Pedidos de Clientes"}
-          </h2>
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-bold">
+              {user?.roles?.includes("cake_topper_provider") ? "Pedidos de Toppers" : "Pedidos de Clientes"}
+            </h2>
+            <OrderLimitIndicator variant="badge" />
+          </div>
           <p className="text-muted-foreground mt-1">
-            {user?.roles?.includes("cake_topper_provider") 
-              ? "Pedidos que requieren toppers para pasteles" 
+            {user?.roles?.includes("cake_topper_provider")
+              ? "Pedidos que requieren toppers para pasteles"
               : "Administra todos los pedidos de tus clientes"}
           </p>
         </div>
@@ -210,6 +215,7 @@ const Orders = () => {
               onClick={() => setIsFormOpen(true)}
               size="lg"
               className="gap-2"
+              disabled={usage && !usage.canCreate}
             >
               <Plus className="h-5 w-5" />
               Nuevo Pedido
@@ -217,6 +223,11 @@ const Orders = () => {
           )}
         </div>
       </div>
+
+      {/* Mostrar alerta de límite de órdenes */}
+      {!user?.roles?.includes("cake_topper_provider") && (
+        <OrderLimitIndicator variant="alert" showUpgradeButton />
+      )}
 
       {isFormOpen ? (
         <OrderForm

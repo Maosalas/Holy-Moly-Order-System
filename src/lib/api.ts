@@ -248,6 +248,8 @@ export const ordersApi = {
     apiFetch(`/orders/${id}`, {
       method: "DELETE",
     }),
+
+  getUsage: () => apiFetch("/orders/usage", { method: "GET" }),
 };
 
 // Expenses API

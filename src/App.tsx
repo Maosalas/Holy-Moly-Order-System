@@ -26,6 +26,7 @@ import OrganizationMembers from "./pages/OrganizationMembers";
 import SuperAdmin from "./pages/SuperAdmin";
 import RecipeParameters from "./pages/RecipeParameters";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +51,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/checkout" element={<Checkout />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />

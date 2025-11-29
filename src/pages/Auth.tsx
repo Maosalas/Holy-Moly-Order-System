@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import logo from "@/assets/Orderly-logo.png";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, signup, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
@@ -71,7 +72,14 @@ const Auth = () => {
         title: "¡Bienvenido de vuelta!",
         description: "Has iniciado sesión exitosamente.",
       });
-      navigate("/dashboard");
+
+      // Check if there's a plan selected
+      const planSlug = searchParams.get('plan') || localStorage.getItem('selected_plan_slug');
+      if (planSlug) {
+        navigate(`/checkout?plan=${planSlug}`);
+      } else {
+        navigate("/dashboard");
+      }
     } else {
       toast({
         variant: "destructive",
@@ -99,7 +107,14 @@ const Auth = () => {
         title: "¡Cuenta creada!",
         description: "Bienvenido a Holy Moly Bakery.",
       });
-      navigate("/dashboard");
+
+      // Check if there's a plan selected
+      const planSlug = searchParams.get('plan') || localStorage.getItem('selected_plan_slug');
+      if (planSlug) {
+        navigate(`/checkout?plan=${planSlug}`);
+      } else {
+        navigate("/dashboard");
+      }
     } else {
       toast({
         variant: "destructive",

@@ -1,15 +1,5 @@
 📋 Lista Completa: Conversión Holy Moly a SaaS Multi-Tenant
 
-✅ Fase 6: Onboarding
- 6.1 Crear página de registro público
- 6.2 Crear wizard de setup inicial
- 6.3 Auto-crear organización al registrarse
- 6.4 Página de bienvenida
-✅ Fase 7: Super Admin Panel
-
- 7.2 Dashboard de métricas globales
- 7.3 Lista y gestión de todas las organizaciones
- 7.4 Impersonación de organizaciones (para soporte)
 ✅ Fase 8: Stripe Integration
  8.1 Habilitar integración de Stripe
  8.2 Crear productos y precios en Stripe
@@ -17,8 +7,12 @@
  8.4 Webhooks de Stripe (subscription.created, updated, deleted)
  8.5 UI de billing y gestión de suscripción
  8.6 Enforcement de límites por plan
+ 8.7 Actualizar el backend para redirigir a /subscription/success después del checkout exitoso de Stripe
+ 8.8 Agregar notificaciones por email cuando una suscripción se activa, renueva o cancela
+ 8.9 Crear webhooks de Stripe para sincronizar el estado de las suscripciones con la base de datos
 ✅ Fase 9: Features Adicionales
  9.1 Sistema de invitaciones por email
  9.2 Auditoría de acciones (quien hizo qué)
  9.3 Exportación de datos por organización
  9.4 Branding personalizado por organización
+ ✅: Adicionales

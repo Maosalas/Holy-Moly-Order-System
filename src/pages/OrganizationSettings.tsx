@@ -172,14 +172,23 @@ export default function OrganizationSettings() {
     }
   };
 
-  const handleSubscribeToPlan = (plan: any) => {
-    setSelectedPlanForCheckout(plan);
-    setIsCheckoutOpen(true);
+  const handleSubscribeToPlan = async (plan: any) => {
+    if (!currentOrganization) return;
+
+    // If user already has a Stripe customer ID (existing subscription),
+    // redirect to Customer Portal to manage subscription changes
+    if (currentOrganization.subscriptionStripeCustomerId) {
+      await createCustomerPortalSession(currentOrganization.id);
+    } else {
+      // New subscription - open checkout dialog
+      setSelectedPlanForCheckout(plan);
+      setIsCheckoutOpen(true);
+    }
   };
 
   const handleManageSubscription = async () => {
     if (!currentOrganization) return;
-    
+
     await createCustomerPortalSession(currentOrganization.id);
   };
 
@@ -556,7 +565,9 @@ export default function OrganizationSettings() {
                               className="w-full"
                               variant="outline"
                             >
-                              Cambiar a este plan
+                              {currentOrganization.subscriptionStripeCustomerId
+                                ? "Cambiar a este plan"
+                                : "Seleccionar plan"}
                             </Button>
                           )}
                         </CardContent>
