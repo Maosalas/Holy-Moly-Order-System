@@ -230,8 +230,8 @@ export default function Landing() {
             Optimiza tu operación y aumenta tu rentabilidad.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Button
-              size="lg"
+            <Button 
+              size="lg" 
               onClick={() => navigate("/auth")}
               className="text-lg gap-2"
             >
@@ -339,58 +339,47 @@ export default function Landing() {
             </p>
           </div>
 
-          {plansLoading || loadingFeatures ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              <p className="mt-4 text-muted-foreground">Cargando planes...</p>
-            </div>
-          ) : plans.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No hay planes disponibles en este momento</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-3 gap-8">
-              {plans.map((plan, index) => (
-                <Card
-                  key={index}
-                  className={`relative flex flex-col ${plan.highlighted ? 'border-primary border-2 shadow-lg scale-105' : ''}`}
-                >
-                  {plan.highlighted && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground">
-                        Más Popular
-                      </Badge>
-                    </div>
-                  )}
-                  <CardHeader className="text-center pb-8">
-                    <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
-                    <CardDescription className="mb-4">{plan.description}</CardDescription>
-                    <div className="space-y-1">
-                      <div className="text-4xl font-bold">${plan.price}</div>
-                      <div className="text-muted-foreground">por {plan.interval}</div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col">
-                    <ul className="space-y-3 flex-1">
-                      {plan.features.map((feature, fIndex) => (
-                        <li key={fIndex} className="flex items-start gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-sm">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      className="w-full mt-6"
-                      variant={plan.highlighted ? "default" : "outline"}
-                      onClick={() => handleSelectPlan(plan.id, plan.slug)}
-                    >
-                      Comenzar Ahora
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <div className="grid md:grid-cols-3 gap-8">
+            {plans.map((plan, index) => (
+              <Card 
+                key={index} 
+                className={`relative ${plan.highlighted ? 'border-primary border-2 shadow-lg scale-105' : ''}`}
+              >
+                {plan.highlighted && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-primary text-primary-foreground">
+                      Más Popular
+                    </Badge>
+                  </div>
+                )}
+                <CardHeader className="text-center pb-8">
+                  <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
+                  <CardDescription className="mb-4">{plan.description}</CardDescription>
+                  <div className="space-y-1">
+                    <div className="text-4xl font-bold">${plan.price}</div>
+                    <div className="text-muted-foreground">por {plan.interval}</div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-3">
+                    {plan.features.map((feature, fIndex) => (
+                      <li key={fIndex} className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button 
+                    className="w-full mt-6" 
+                    variant={plan.highlighted ? "default" : "outline"}
+                    onClick={() => navigate("/auth")}
+                  >
+                    Comenzar Ahora
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -439,8 +428,8 @@ export default function Landing() {
             Únete a cientos de pastelerías que ya optimizaron su operación
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Button
-              size="lg"
+            <Button 
+              size="lg" 
               onClick={() => navigate("/auth")}
               className="text-lg gap-2"
             >

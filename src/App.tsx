@@ -7,6 +7,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { SuperAdminRoute } from "./components/SuperAdminRoute";
+import { RequireOrganization } from "./components/RequireOrganization";
 import { AppLayout } from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
@@ -27,6 +28,7 @@ import SuperAdmin from "./pages/SuperAdmin";
 import RecipeParameters from "./pages/RecipeParameters";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import Checkout from "./pages/Checkout";
+import CreateOrganization from "./pages/CreateOrganization";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,19 +56,26 @@ const App = () => (
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
-              <Route path="/recipes" element={<ProtectedRoute><AppLayout><Index /></AppLayout></ProtectedRoute>} />
-              <Route path="/ingredients" element={<ProtectedRoute><AppLayout><Ingredients /></AppLayout></ProtectedRoute>} />
-              <Route path="/supplies" element={<ProtectedRoute><AppLayout><Supplies /></AppLayout></ProtectedRoute>} />
-              <Route path="/orders" element={<ProtectedRoute><AppLayout><Orders /></AppLayout></ProtectedRoute>} />
-              <Route path="/expenses" element={<ProtectedRoute><AppLayout><Expenses /></AppLayout></ProtectedRoute>} />
-              <Route path="/quotations" element={<ProtectedRoute><AppLayout><Quotations /></AppLayout></ProtectedRoute>} />
-              <Route path="/user/settings" element={<ProtectedRoute><AppLayout><UserSettings /></AppLayout></ProtectedRoute>} />
-              <Route path="/organization/settings" element={<ProtectedRoute><AppLayout><OrganizationSettings /></AppLayout></ProtectedRoute>} />
-              <Route path="/organization/members" element={<ProtectedRoute><AppLayout><OrganizationMembers /></AppLayout></ProtectedRoute>} />
-              <Route path="/recipe-parameters" element={<ProtectedRoute><AppLayout><RecipeParameters /></AppLayout></ProtectedRoute>} />
+              
+              {/* Checkout and organization setup - authenticated but no org required */}
+              <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+              <Route path="/create-organization" element={<ProtectedRoute><CreateOrganization /></ProtectedRoute>} />
+              <Route path="/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
+
+              {/* Protected routes that require organization */}
+              <Route path="/dashboard" element={<ProtectedRoute><RequireOrganization><AppLayout><Dashboard /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/recipes" element={<ProtectedRoute><RequireOrganization><AppLayout><Index /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/ingredients" element={<ProtectedRoute><RequireOrganization><AppLayout><Ingredients /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/supplies" element={<ProtectedRoute><RequireOrganization><AppLayout><Supplies /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/orders" element={<ProtectedRoute><RequireOrganization><AppLayout><Orders /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/expenses" element={<ProtectedRoute><RequireOrganization><AppLayout><Expenses /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/quotations" element={<ProtectedRoute><RequireOrganization><AppLayout><Quotations /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/user/settings" element={<ProtectedRoute><RequireOrganization><AppLayout><UserSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/organization/settings" element={<ProtectedRoute><RequireOrganization><AppLayout><OrganizationSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/organization/members" element={<ProtectedRoute><RequireOrganization><AppLayout><OrganizationMembers /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/recipe-parameters" element={<ProtectedRoute><RequireOrganization><AppLayout><RecipeParameters /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/super-admin" element={<SuperAdminRoute><AppLayout><SuperAdmin /></AppLayout></SuperAdminRoute>} />
-              <Route path="/subscription/success" element={<ProtectedRoute><AppLayout><SubscriptionSuccess /></AppLayout></ProtectedRoute>} />
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

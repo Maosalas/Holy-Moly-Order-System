@@ -1,75 +1,72 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOrganization } from "@/contexts/OrganizationContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Loader2, Check, CreditCard } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionPlans } from "@/hooks/use-subscription-plans";
-import { StripeCheckout } from "@/components/StripeCheckout";
-import logo from "@/assets/Orderly-logo.png";
+import { initializeStripeCheckout } from "@/lib/stripe";
 
-export default function Checkout() {
+const Checkout = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isAuthenticated } = useAuth();
-  const { currentOrganization } = useOrganization();
+  const { isAuthenticated, user } = useAuth();
+  const { toast } = useToast();
   const { plans, isLoading: plansLoading } = useSubscriptionPlans(true);
-
-  const [selectedPlan, setSelectedPlan] = useState<any>(null);
-  const [showCheckout, setShowCheckout] = useState(false);
-
-  // Clean up localStorage when checkout is initiated
-  const handleCheckoutOpen = () => {
-    setShowCheckout(true);
-    // Clean up after user clicks to go to Stripe
-    localStorage.removeItem('selected_plan');
-    localStorage.removeItem('selected_plan_slug');
-  };
+  
+  const [selectedPlan, setSelectedPlan] = useState<string>(searchParams.get('plan') || 'starter');
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    // Check if user is authenticated
     if (!isAuthenticated) {
-      // Get plan from URL and save it to localStorage before redirecting to auth
-      const planSlug = searchParams.get('plan');
-      if (planSlug) {
-        localStorage.setItem('selected_plan_slug', planSlug);
-        navigate(`/auth?plan=${planSlug}`);
-      } else {
-        navigate('/auth');
-      }
-      return;
+      navigate('/auth');
     }
+  }, [isAuthenticated, navigate]);
 
-    // Get selected plan from localStorage or URL params
-    const planSlug = searchParams.get('plan') ||
-                     localStorage.getItem('selected_plan_slug');
+  const plan = plans.find(p => p.slug === selectedPlan);
 
-    if (!planSlug) {
-      navigate('/');
-      return;
+  const handleProceedToPayment = async () => {
+    if (!plan || !user) return;
+
+    setIsProcessing(true);
+    try {
+      // Since user just signed up and doesn't have an organization yet,
+      // we'll store the plan selection and proceed to Stripe
+      // The organization will be created after successful payment
+      
+      // For now, we'll create a temporary organization ID or handle this differently
+      // Let's redirect to a page that will handle this
+      toast({
+        title: "Redirigiendo a Stripe...",
+        description: "Por favor completa tu pago para continuar.",
+      });
+
+      // Store selected plan in localStorage temporarily
+      localStorage.setItem('pendingSubscription', JSON.stringify({
+        planId: plan.id,
+        planSlug: plan.slug,
+        billingInterval
+      }));
+
+      // Redirect to subscription success page which will handle organization creation
+      navigate(`/subscription/success?plan=${plan.slug}&interval=${billingInterval}&pending=true`);
+      
+    } catch (error) {
+      console.error('Error processing checkout:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo procesar el pago. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
     }
-
-    // Find the plan from the database
-    if (!plansLoading && plans.length > 0) {
-      const plan = plans.find(p => p.slug === planSlug);
-      if (plan) {
-        setSelectedPlan(plan);
-      } else {
-        // Plan not found, redirect to home
-        navigate('/');
-      }
-    }
-  }, [isAuthenticated, searchParams, plans, plansLoading, navigate]);
-
-  useEffect(() => {
-    // Check if organization already has an active subscription
-    if (currentOrganization && currentOrganization.subscriptionStatus === 'active') {
-      // Already subscribed, redirect to dashboard
-      navigate('/dashboard');
-    }
-  }, [currentOrganization, navigate]);
+  };
 
   if (!isAuthenticated || plansLoading) {
     return (
@@ -79,18 +76,16 @@ export default function Checkout() {
     );
   }
 
-  if (!selectedPlan) {
+  if (!plan) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
           <CardHeader>
             <CardTitle>Plan no encontrado</CardTitle>
-            <CardDescription>
-              El plan seleccionado no está disponible
-            </CardDescription>
+            <CardDescription>El plan seleccionado no está disponible.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate('/')}>
+            <Button onClick={() => navigate('/auth')} className="w-full">
               Volver al inicio
             </Button>
           </CardContent>
@@ -99,161 +94,123 @@ export default function Checkout() {
     );
   }
 
+  const price = billingInterval === 'monthly' ? plan.priceMonthly : plan.priceYearly;
+  const savings = billingInterval === 'yearly' ? Math.round((plan.priceMonthly * 12 - plan.priceYearly) / (plan.priceMonthly * 12) * 100) : 0;
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img src={logo} alt="Holy Moly Logo" className="h-10 w-50" />
-            </div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/')}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver
-            </Button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Content */}
-      <div className="container max-w-4xl mx-auto py-12 px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">Completa tu suscripción</h1>
-          <p className="text-muted-foreground">
-            Estás a un paso de comenzar con {selectedPlan.name}
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4 flex items-center justify-center">
+      <div className="max-w-2xl w-full space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold">Completa tu suscripción</h1>
+          <p className="text-muted-foreground">Selecciona la frecuencia de pago y procede al checkout</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-6">
           {/* Plan Details */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-2xl">{selectedPlan.name}</CardTitle>
-                <Badge variant="default">Seleccionado</Badge>
-              </div>
-              <CardDescription>
-                {selectedPlan.slug === "starter" ? "Perfecto para comenzar" :
-                 selectedPlan.slug === "professional" ? "Para negocios en crecimiento" :
-                 selectedPlan.slug === "enterprise" ? "Para operaciones a gran escala" :
-                 "Plan personalizado"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Pricing */}
-              <div className="text-center py-4 bg-primary/5 rounded-lg">
-                <div className="text-3xl font-bold">${selectedPlan.priceMonthly}</div>
-                <div className="text-sm text-muted-foreground">por mes</div>
-                {selectedPlan.priceYearly && (
-                  <div className="mt-2 text-sm">
-                    o ${selectedPlan.priceYearly}/año
-                    <span className="text-green-600 ml-1">
-                      (Ahorra ${(selectedPlan.priceMonthly * 12 - selectedPlan.priceYearly).toFixed(2)})
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Features */}
-              <div>
-                <h3 className="font-semibold mb-3">Incluye:</h3>
-                <ul className="space-y-2">
-                  {selectedPlan.maxOrdersPerMonth === -1 ? (
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Órdenes ilimitadas</span>
-                    </li>
-                  ) : (
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Hasta {selectedPlan.maxOrdersPerMonth} órdenes/mes</span>
-                    </li>
-                  )}
-                  {selectedPlan.maxUsers === -1 ? (
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Usuarios ilimitados</span>
-                    </li>
-                  ) : (
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">{selectedPlan.maxUsers} usuarios incluidos</span>
-                    </li>
-                  )}
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{selectedPlan.maxStorageGb} GB almacenamiento</span>
-                  </li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payment */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Método de pago</CardTitle>
-              <CardDescription>
-                Procesado de forma segura a través de Stripe
-              </CardDescription>
+              <CardTitle className="flex items-center justify-between">
+                {plan.name}
+                <Badge>{selectedPlan}</Badge>
+              </CardTitle>
+              <CardDescription>Características del plan</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Al hacer clic en "Proceder al pago", serás redirigido a Stripe para completar de forma segura tu información de pago.
-                </p>
-              </div>
-
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={handleCheckoutOpen}
-              >
-                Proceder al Pago
-              </Button>
-
-              <div className="text-xs text-center text-muted-foreground space-y-1">
-                <p>✓ Encriptación SSL de 256 bits</p>
-                <p>✓ Cancela en cualquier momento</p>
-                <p>✓ Garantía de devolución de 30 días</p>
+                <div className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-primary" />
+                  <span>{plan.maxOrdersPerMonth === -1 ? 'Órdenes ilimitadas' : `${plan.maxOrdersPerMonth} órdenes/mes`}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-primary" />
+                  <span>{plan.maxUsers === -1 ? 'Usuarios ilimitados' : `${plan.maxUsers} usuarios`}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-primary" />
+                  <span>{plan.maxStorageGb} GB de almacenamiento</span>
+                </div>
+                {plan.features.support && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span>Soporte {plan.features.support}</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
+
+          {/* Payment Options */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Opciones de pago</CardTitle>
+              <CardDescription>Selecciona la frecuencia de facturación</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <RadioGroup value={billingInterval} onValueChange={(val) => setBillingInterval(val as 'monthly' | 'yearly')}>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => setBillingInterval('monthly')}>
+                  <RadioGroupItem value="monthly" id="monthly" />
+                  <Label htmlFor="monthly" className="flex-1 cursor-pointer">
+                    <div className="flex justify-between items-center">
+                      <span>Mensual</span>
+                      <span className="font-semibold">${plan.priceMonthly.toFixed(2)}/mes</span>
+                    </div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => setBillingInterval('yearly')}>
+                  <RadioGroupItem value="yearly" id="yearly" />
+                  <Label htmlFor="yearly" className="flex-1 cursor-pointer">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span>Anual</span>
+                        {savings > 0 && <Badge variant="secondary">Ahorra {savings}%</Badge>}
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold">${plan.priceYearly.toFixed(2)}/año</div>
+                        <div className="text-xs text-muted-foreground">${(plan.priceYearly / 12).toFixed(2)}/mes</div>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              <div className="pt-4 border-t space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>${price.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-lg">
+                  <span>Total</span>
+                  <span>${price.toFixed(2)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {billingInterval === 'monthly' ? 'Facturado mensualmente' : 'Facturado anualmente'}
+                </p>
+              </div>
+
+              <Button 
+                className="w-full" 
+                size="lg" 
+                onClick={handleProceedToPayment}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Proceder al Pago
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-
-        {/* Info Section */}
-        <Card className="mt-8">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-2">
-              <h3 className="font-semibold">¿Tienes preguntas?</h3>
-              <p className="text-sm text-muted-foreground">
-                Contáctanos en soporte@holymoly.com o revisa nuestras{" "}
-                <a href="#" className="text-primary hover:underline">
-                  preguntas frecuentes
-                </a>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
-
-      {/* Stripe Checkout Dialog */}
-      {currentOrganization && (
-        <StripeCheckout
-          planId={selectedPlan.id}
-          planName={selectedPlan.name}
-          priceMonthly={selectedPlan.priceMonthly}
-          priceYearly={selectedPlan.priceYearly}
-          organizationId={currentOrganization.id}
-          open={showCheckout}
-          onOpenChange={setShowCheckout}
-        />
-      )}
     </div>
   );
-}
+};
+
+export default Checkout;

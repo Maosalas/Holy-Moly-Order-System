@@ -16,6 +16,7 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const { login, signup, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const planFromUrl = searchParams.get('plan') || 'free';
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [signupForm, setSignupForm] = useState({
@@ -105,15 +106,15 @@ const Auth = () => {
     if (success) {
       toast({
         title: "¡Cuenta creada!",
-        description: "Bienvenido a Holy Moly Bakery.",
+        description: "Ahora configura tu suscripción.",
       });
-
-      // Check if there's a plan selected
-      const planSlug = searchParams.get('plan') || localStorage.getItem('selected_plan_slug');
-      if (planSlug) {
-        navigate(`/checkout?plan=${planSlug}`);
+      
+      // Redirect to checkout with selected plan
+      if (planFromUrl && planFromUrl !== 'free') {
+        navigate(`/checkout?plan=${planFromUrl}`);
       } else {
-        navigate("/dashboard");
+        // Free plan - go directly to create organization
+        navigate("/create-organization");
       }
     } else {
       toast({
