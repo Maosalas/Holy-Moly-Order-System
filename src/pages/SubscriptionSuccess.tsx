@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,10 +13,26 @@ import { es } from "date-fns/locale";
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth();
   const { currentOrganization } = useOrganization();
   const [planDetails, setPlanDetails] = useState<any>(null);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
+
+    // Check if this is a pending subscription (new user flow)
+    const isPending = searchParams.get('pending');
+    if (isPending === 'true') {
+      // Redirect to create organization after a brief moment
+      const timer = setTimeout(() => {
+        navigate('/create-organization');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+    
     // Get plan details from URL params or organization context
     const planName = searchParams.get("plan") || currentOrganization?.subscriptionPlan || "Professional";
     const billingInterval = searchParams.get("interval") || "monthly";
@@ -74,7 +91,7 @@ export default function SubscriptionSuccess() {
       ...plan,
       nextBillingDate: calculatedNextBilling,
     });
-  }, [searchParams, currentOrganization]);
+  }, [searchParams, currentOrganization, isAuthenticated, navigate]);
 
   if (!planDetails) {
     return null;
@@ -166,11 +183,18 @@ export default function SubscriptionSuccess() {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button
-                onClick={() => navigate("/dashboard")}
+                onClick={() => {
+                  const isPending = searchParams.get('pending');
+                  if (isPending === 'true') {
+                    navigate("/create-organization");
+                  } else {
+                    navigate("/dashboard");
+                  }
+                }}
                 className="flex-1"
                 size="lg"
               >
-                Ir al Dashboard
+                {searchParams.get('pending') === 'true' ? 'Crear Organización' : 'Ir al Dashboard'}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
               <Button
