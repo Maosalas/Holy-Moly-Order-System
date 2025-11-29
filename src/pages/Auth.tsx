@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,10 @@ import logo from "@/assets/Orderly-logo.png";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, signup, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const planFromUrl = searchParams.get('plan') || 'free';
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [signupForm, setSignupForm] = useState({
@@ -97,9 +99,16 @@ const Auth = () => {
     if (success) {
       toast({
         title: "¡Cuenta creada!",
-        description: "Bienvenido a Holy Moly Bakery.",
+        description: "Ahora configura tu suscripción.",
       });
-      navigate("/dashboard");
+      
+      // Redirect to checkout with selected plan
+      if (planFromUrl && planFromUrl !== 'free') {
+        navigate(`/checkout?plan=${planFromUrl}`);
+      } else {
+        // Free plan - go directly to create organization
+        navigate("/create-organization");
+      }
     } else {
       toast({
         variant: "destructive",
