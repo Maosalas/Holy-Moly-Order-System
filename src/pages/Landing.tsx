@@ -232,7 +232,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
             <Button 
               size="lg" 
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/auth?plan=free")}
               className="text-lg gap-2"
             >
               Comenzar Prueba Gratis
@@ -369,10 +369,10 @@ export default function Landing() {
                       </li>
                     ))}
                   </ul>
-                  <Button 
+                   <Button 
                     className="w-full mt-6" 
                     variant={plan.highlighted ? "default" : "outline"}
-                    onClick={() => navigate("/auth")}
+                    onClick={() => navigate(`/auth?plan=${plan.name.toLowerCase()}`)}
                   >
                     Comenzar Ahora
                   </Button>
@@ -430,7 +430,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
             <Button 
               size="lg" 
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/auth?plan=free")}
               className="text-lg gap-2"
             >
               Comenzar Gratis Ahora
