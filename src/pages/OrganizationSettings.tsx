@@ -16,6 +16,7 @@ import { subscriptionPlansApi } from "@/lib/api";
 import { Separator } from "@/components/ui/separator";
 import { StripeCheckout } from "@/components/StripeCheckout";
 import { createCustomerPortalSession } from "@/lib/stripe";
+import { FeatureGuard } from "@/components/FeatureGuard";
 
 export default function OrganizationSettings() {
   const { currentOrganization, updateOrganization, isLoading, fetchOrganizations } = useOrganization();
@@ -269,40 +270,42 @@ export default function OrganizationSettings() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="logoFile">Logo de la Organización</Label>
-                {logoPreview && (
-                  <div className="mb-4 flex justify-center">
-                    <img 
-                      src={logoPreview} 
-                      alt="Logo preview" 
-                      className="h-24 w-24 object-contain rounded-lg border border-border"
+              <FeatureGuard feature="custom_branding">
+                <div className="space-y-2">
+                  <Label htmlFor="logoFile">Logo de la Organización</Label>
+                  {logoPreview && (
+                    <div className="mb-4 flex justify-center">
+                      <img
+                        src={logoPreview}
+                        alt="Logo preview"
+                        className="h-24 w-24 object-contain rounded-lg border border-border"
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="logoFile"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      disabled={!canManage}
+                      className="cursor-pointer"
                     />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={!canManage}
+                      onClick={() => document.getElementById('logoFile')?.click()}
+                    >
+                      <Upload className="h-4 w-4" />
+                    </Button>
                   </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="logoFile"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    disabled={!canManage}
-                    className="cursor-pointer"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    disabled={!canManage}
-                    onClick={() => document.getElementById('logoFile')?.click()}
-                  >
-                    <Upload className="h-4 w-4" />
-                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Formatos aceptados: JPG, PNG, GIF. Máximo 5MB.
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Formatos aceptados: JPG, PNG, GIF. Máximo 5MB.
-                </p>
-              </div>
+              </FeatureGuard>
 
               {canManage && (
                 <Button onClick={handleSave} disabled={isLoading}>

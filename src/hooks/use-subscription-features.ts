@@ -1,8 +1,10 @@
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Hook para verificar si la organización actual tiene acceso a features específicos
  * basándose en su plan de suscripción.
+ * Los super_admin tienen acceso a todos los features sin necesidad de suscripción.
  *
  * @example
  * ```tsx
@@ -17,6 +19,7 @@ import { useOrganization } from "@/contexts/OrganizationContext";
  */
 export function useSubscriptionFeatures() {
   const { currentOrganization } = useOrganization();
+  const { user } = useAuth();
 
   /**
    * Configuración de acceso a features por plan
@@ -72,8 +75,14 @@ export function useSubscriptionFeatures() {
 
   /**
    * Verifica si el plan actual tiene acceso a un feature específico
+   * Los super_admin tienen acceso a todos los features
    */
   const hasFeatureAccess = (feature: string): boolean => {
+    // Super admins tienen acceso a todos los features
+    if (user?.roles.includes("super_admin")) {
+      return true;
+    }
+
     if (!currentOrganization) {
       console.warn('⚠️ useSubscriptionFeatures: No organization context available');
       return false;
@@ -119,8 +128,14 @@ export function useSubscriptionFeatures() {
 
   /**
    * Verifica si la suscripción está activa
+   * Los super_admin siempre retornan true
    */
   const isSubscriptionActive = (): boolean => {
+    // Super admins no necesitan suscripción activa
+    if (user?.roles.includes("super_admin")) {
+      return true;
+    }
+
     const status = getSubscriptionStatus();
     return status === 'active' || status === 'trial';
   };

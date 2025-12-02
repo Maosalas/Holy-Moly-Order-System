@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { organizationsApi } from "@/lib/api";
 import logo from "@/assets/Orderly-logo.png";
@@ -14,7 +13,7 @@ import logo from "@/assets/Orderly-logo.png";
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, signup, isAuthenticated } = useAuth();
+  const { login, signup, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const planFromUrl = searchParams.get('plan') || 'free';
 
@@ -23,7 +22,7 @@ const Auth = () => {
     email: "",
     password: "",
     name: "",
-    role: "owner" as "owner" | "cake_topper_provider" | "super_admin",
+    role: "owner" as const,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [organizationLogo, setOrganizationLogo] = useState<string | null>(null);
@@ -64,17 +63,23 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { success, error } = await login(loginForm.email, loginForm.password);
+    const { success, error, user } = await login(loginForm.email, loginForm.password);
 
     setIsLoading(false);
 
-    if (success) {
+    if (success && user) {
       toast({
         title: "¡Bienvenido de vuelta!",
         description: "Has iniciado sesión exitosamente.",
       });
 
-      // Check if there's a plan selected
+      // Si el usuario es super_admin, redirigir directamente sin pasar por checkout u organización
+      if (user.roles.includes("super_admin")) {
+        navigate("/super-admin");
+        return;
+      }
+
+      // Para usuarios normales, verificar si hay un plan seleccionado
       const planSlug = searchParams.get('plan') || localStorage.getItem('selected_plan_slug');
       if (planSlug) {
         navigate(`/checkout?plan=${planSlug}`);
@@ -187,29 +192,29 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
+                  <Label htmlFor="signup-name">Nombre Completo</Label>
                   <Input
                     id="signup-name"
                     type="text"
-                    placeholder="John Doe"
+                    placeholder="Juan Pérez"
                     value={signupForm.name}
                     onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">Correo Electrónico</Label>
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="tu@ejemplo.com"
                     value={signupForm.email}
                     onChange={(e) => handleEmailChange(e.target.value, false)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">Contraseña</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -220,26 +225,8 @@ const Auth = () => {
                     minLength={6}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-role">Account Type</Label>
-                  <Select
-                    value={signupForm.role}
-                    onValueChange={(value: "owner" | "cake_topper_provider" | "super_admin") =>
-                      setSignupForm({ ...signupForm, role: value })
-                    }
-                  >
-                    <SelectTrigger id="signup-role">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="owner">Bakery Owner</SelectItem>
-                      <SelectItem value="cake_topper_provider">Cake Topper Provide</SelectItem>
-                      <SelectItem value="super_admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating account..." : "Create Account"}
+                  {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
                 </Button>
               </form>
             </TabsContent>

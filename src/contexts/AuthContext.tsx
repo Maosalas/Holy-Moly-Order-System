@@ -11,8 +11,8 @@ interface AuthContextType extends AuthState {
   startImpersonation: (orgId: string) => void;
   stopImpersonation: () => void;
   updateUser: (user: User) => void;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin") => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  signup: (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin") => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
 }
 
@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     const result = await authApi.login(email, password);
 
     if (result.error) {
@@ -129,10 +129,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, token: apiResponse.token }));
     setAuthState({ user, isAuthenticated: true });
 
-    return { success: true };
+    return { success: true, user };
   };
 
-  const signup = async (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin"): Promise<{ success: boolean; error?: string }> => {
+  const signup = async (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin"): Promise<{ success: boolean; error?: string; user?: User }> => {
     const result = await authApi.signup(email, password, name, role);
 
     if (result.error) {
@@ -151,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, token: apiResponse.token }));
     setAuthState({ user, isAuthenticated: true });
 
-    return { success: true };
+    return { success: true, user };
   };
 
   const startImpersonation = (orgId: string) => {
