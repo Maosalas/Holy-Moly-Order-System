@@ -111,17 +111,16 @@ const Auth = () => {
     if (success) {
       toast({
         title: "¡Cuenta creada!",
-        description: "Ahora configura tu suscripción.",
+        description: "Ahora crea tu organización.",
       });
       
-      // Store selected plan for checkout
+      // Store selected plan for after organization creation
       if (planFromUrl) {
         localStorage.setItem('selected_plan_slug', planFromUrl);
       }
       
-      // All plans (including free trial) go through checkout first
-      // Free trial in Stripe still requires payment method for future billing
-      navigate(`/checkout?plan=${planFromUrl}`);
+      // New flow: signup -> create organization -> checkout -> dashboard
+      navigate('/create-organization');
     } else {
       toast({
         variant: "destructive",
