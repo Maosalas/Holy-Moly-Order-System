@@ -59,7 +59,7 @@ export const createCustomerPortalSession = async (
   organizationId: string
 ): Promise<string | null> => {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/stripe/create-portal-session`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/stripe/create-billing-portal-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -73,11 +73,20 @@ export const createCustomerPortalSession = async (
       throw new Error(error.message || 'Error creating portal session');
     }
 
-    const { url } = await response.json();
-    
+    const data = await response.json();
+    console.log('Portal session response:', data);
+
+    // Handle both response formats: { url } or { data: { url } }
+    const url = data.url || data.data?.url;
+
+    if (!url) {
+      console.error('No URL found in response:', data);
+      throw new Error('No portal URL returned from server');
+    }
+
     // Redirect to Stripe Customer Portal
     window.location.href = url;
-    
+
     return url;
   } catch (error) {
     console.error('Error creating customer portal session:', error);

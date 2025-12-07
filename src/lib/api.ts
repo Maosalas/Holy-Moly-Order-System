@@ -671,7 +671,7 @@ export const stripeApi = {
     }),
 
   createPortalSession: (organizationId: string) =>
-    apiFetch("/stripe/create-portal-session", {
+    apiFetch("/stripe/create-billing-portal-session", {
       method: "POST",
       body: JSON.stringify({ organizationId }),
     }),
