@@ -21,17 +21,23 @@ const Checkout = () => {
   const [selectedPlan, setSelectedPlan] = useState<string>(searchParams.get('plan') || 'starter');
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
+  const organizationId = searchParams.get('orgId');
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/auth');
+      return;
     }
-  }, [isAuthenticated, navigate]);
+    // If no organization ID, redirect to create one first
+    if (!organizationId) {
+      navigate('/create-organization');
+    }
+  }, [isAuthenticated, navigate, organizationId]);
 
   const plan = plans.find(p => p.slug === selectedPlan);
 
   const handleProceedToPayment = async () => {
-    if (!plan || !user) return;
+    if (!plan || !user || !organizationId) return;
 
     setIsProcessing(true);
     try {
@@ -40,20 +46,13 @@ const Checkout = () => {
         description: "Por favor completa tu pago para continuar.",
       });
 
-      // Store selected plan in localStorage for after payment
-      localStorage.setItem('pendingSubscription', JSON.stringify({
-        planId: plan.id,
-        planSlug: plan.slug,
-        planName: plan.name,
-        billingInterval,
-        userId: user.id
-      }));
+      // Clear the selected plan from localStorage
+      localStorage.removeItem('selected_plan_slug');
 
-      // Call Stripe checkout - use 'pending' as organizationId for new users
-      // The backend should handle this case and create the subscription linked to the user
+      // Call Stripe checkout with the actual organization ID
       const result = await initializeStripeCheckout({
         planId: plan.id,
-        organizationId: 'pending', // Special flag for new users without org
+        organizationId: organizationId,
         billingInterval
       });
 

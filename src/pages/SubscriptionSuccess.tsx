@@ -23,27 +23,9 @@ export default function SubscriptionSuccess() {
       return;
     }
 
-    // Check if user has a pending subscription (new user flow from Stripe)
-    const pendingSubscription = localStorage.getItem('pendingSubscription');
-    const sessionId = searchParams.get('session_id');
-    
-    // If coming back from Stripe checkout (has session_id) and has pending subscription
-    if (sessionId && pendingSubscription) {
-      // Payment was successful, redirect to create organization
-      const timer = setTimeout(() => {
-        navigate('/create-organization');
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-    
-    // Check if this is a pending subscription (legacy flow)
-    const isPending = searchParams.get('pending');
-    if (isPending === 'true') {
-      const timer = setTimeout(() => {
-        navigate('/create-organization');
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
+    // Clean up any pending subscription data
+    localStorage.removeItem('pendingSubscription');
+    localStorage.removeItem('selected_plan_slug');
     
     // Get plan details from URL params or organization context
     const planName = searchParams.get("plan") || currentOrganization?.subscriptionPlan || "Professional";
@@ -195,18 +177,11 @@ export default function SubscriptionSuccess() {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button
-                onClick={() => {
-                  const isPending = searchParams.get('pending');
-                  if (isPending === 'true') {
-                    navigate("/create-organization");
-                  } else {
-                    navigate("/dashboard");
-                  }
-                }}
+                onClick={() => navigate("/dashboard")}
                 className="flex-1"
                 size="lg"
               >
-                {searchParams.get('pending') === 'true' ? 'Crear Organización' : 'Ir al Dashboard'}
+                Ir al Dashboard
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
               <Button

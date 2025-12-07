@@ -123,10 +123,12 @@ const CreateOrganization = () => {
 
       toast({
         title: "¡Organización creada!",
-        description: `${name} ha sido creada exitosamente.`,
+        description: `${name} ha sido creada exitosamente. Ahora completa tu suscripción.`,
       });
 
-      navigate("/dashboard");
+      // Get selected plan from localStorage and redirect to checkout
+      const selectedPlan = localStorage.getItem('selected_plan_slug') || 'starter';
+      navigate(`/checkout?plan=${selectedPlan}&orgId=${org.id}`);
     } catch (error: any) {
       console.error("Error creating organization:", error);
       toast({
