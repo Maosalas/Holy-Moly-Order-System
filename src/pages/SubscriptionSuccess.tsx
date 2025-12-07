@@ -23,10 +23,22 @@ export default function SubscriptionSuccess() {
       return;
     }
 
-    // Check if this is a pending subscription (new user flow)
+    // Check if user has a pending subscription (new user flow from Stripe)
+    const pendingSubscription = localStorage.getItem('pendingSubscription');
+    const sessionId = searchParams.get('session_id');
+    
+    // If coming back from Stripe checkout (has session_id) and has pending subscription
+    if (sessionId && pendingSubscription) {
+      // Payment was successful, redirect to create organization
+      const timer = setTimeout(() => {
+        navigate('/create-organization');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+    
+    // Check if this is a pending subscription (legacy flow)
     const isPending = searchParams.get('pending');
     if (isPending === 'true') {
-      // Redirect to create organization after a brief moment
       const timer = setTimeout(() => {
         navigate('/create-organization');
       }, 2000);

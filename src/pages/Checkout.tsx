@@ -35,27 +35,33 @@ const Checkout = () => {
 
     setIsProcessing(true);
     try {
-      // Since user just signed up and doesn't have an organization yet,
-      // we'll store the plan selection and proceed to Stripe
-      // The organization will be created after successful payment
-      
-      // For now, we'll create a temporary organization ID or handle this differently
-      // Let's redirect to a page that will handle this
       toast({
         title: "Redirigiendo a Stripe...",
         description: "Por favor completa tu pago para continuar.",
       });
 
-      // Store selected plan in localStorage temporarily
+      // Store selected plan in localStorage for after payment
       localStorage.setItem('pendingSubscription', JSON.stringify({
         planId: plan.id,
         planSlug: plan.slug,
-        billingInterval
+        planName: plan.name,
+        billingInterval,
+        userId: user.id
       }));
 
-      // Redirect to subscription success page which will handle organization creation
-      navigate(`/subscription/success?plan=${plan.slug}&interval=${billingInterval}&pending=true`);
+      // Call Stripe checkout - use 'pending' as organizationId for new users
+      // The backend should handle this case and create the subscription linked to the user
+      const result = await initializeStripeCheckout({
+        planId: plan.id,
+        organizationId: 'pending', // Special flag for new users without org
+        billingInterval
+      });
+
+      if (!result) {
+        throw new Error('No se pudo iniciar el checkout de Stripe');
+      }
       
+      // initializeStripeCheckout already redirects to Stripe
     } catch (error) {
       console.error('Error processing checkout:', error);
       toast({
@@ -63,7 +69,6 @@ const Checkout = () => {
         description: "No se pudo procesar el pago. Intenta de nuevo.",
         variant: "destructive",
       });
-    } finally {
       setIsProcessing(false);
     }
   };
