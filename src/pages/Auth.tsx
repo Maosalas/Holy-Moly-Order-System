@@ -114,13 +114,14 @@ const Auth = () => {
         description: "Ahora configura tu suscripción.",
       });
       
-      // Redirect to checkout with selected plan
-      if (planFromUrl && planFromUrl !== 'free') {
-        navigate(`/checkout?plan=${planFromUrl}`);
-      } else {
-        // Free plan - go directly to create organization
-        navigate("/create-organization");
+      // Store selected plan for checkout
+      if (planFromUrl) {
+        localStorage.setItem('selected_plan_slug', planFromUrl);
       }
+      
+      // All plans (including free trial) go through checkout first
+      // Free trial in Stripe still requires payment method for future billing
+      navigate(`/checkout?plan=${planFromUrl}`);
     } else {
       toast({
         variant: "destructive",
