@@ -23,30 +23,50 @@ export interface CheckoutSessionResponse {
 export const initializeStripeCheckout = async (
   data: CheckoutSessionData
 ): Promise<CheckoutSessionResponse | null> => {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  const authToken = getAuthToken();
+  
+  console.log('🔄 Initiating Stripe checkout...', {
+    apiUrl,
+    planId: data.planId,
+    organizationId: data.organizationId,
+    billingInterval: data.billingInterval,
+    hasAuthToken: !!authToken
+  });
+  
   try {
-    // Call backend to create checkout session
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/stripe/create-checkout-session`, {
+    const response = await fetch(`${apiUrl}/stripe/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAuthToken()}`,
+        'Authorization': `Bearer ${authToken}`,
       },
       body: JSON.stringify(data),
     });
 
+    console.log('📡 Stripe API response status:', response.status);
+
     if (!response.ok) {
       const error = await response.json();
+      console.error('❌ Stripe checkout error:', error);
       throw new Error(error.message || 'Error creating checkout session');
     }
 
     const session: CheckoutSessionResponse = await response.json();
+    console.log('✅ Checkout session created:', { sessionId: session.sessionId, hasUrl: !!session.url });
+    
+    if (!session.url) {
+      console.error('❌ No URL in checkout session response');
+      throw new Error('No checkout URL returned from server');
+    }
     
     // Redirect to Stripe Checkout
+    console.log('🔗 Redirecting to Stripe checkout URL...');
     window.location.href = session.url;
     
     return session;
   } catch (error) {
-    console.error('Error initializing Stripe checkout:', error);
+    console.error('❌ Error initializing Stripe checkout:', error);
     return null;
   }
 };
