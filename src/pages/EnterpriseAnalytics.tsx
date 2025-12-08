@@ -34,13 +34,19 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Loader2,
-  Calendar
+  Calendar as CalendarIcon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, subDays, subMonths, subYears, startOfDay } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, subDays, subMonths, subYears, differenceInDays } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
-type DateRangePreset = '7d' | '30d' | '3m' | '1y';
+type DateRangePreset = '7d' | '30d' | '3m' | '1y' | 'custom';
 
 interface DateRangeOption {
   label: string;
@@ -160,24 +166,65 @@ function formatDate(dateStr: string): string {
 export default function EnterpriseAnalytics() {
   const { currentOrganization } = useOrganization();
   const [selectedRange, setSelectedRange] = useState<DateRangePreset>('30d');
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const dateRange = useMemo(() => {
+    if (selectedRange === 'custom' && customDateRange?.from && customDateRange?.to) {
+      return {
+        startDate: format(customDateRange.from, 'yyyy-MM-dd'),
+        endDate: format(customDateRange.to, 'yyyy-MM-dd'),
+      };
+    }
     const option = DATE_RANGE_OPTIONS.find(o => o.value === selectedRange);
     return option?.getRange() || DATE_RANGE_OPTIONS[1].getRange();
-  }, [selectedRange]);
+  }, [selectedRange, customDateRange]);
 
   const period = useMemo(() => {
+    if (selectedRange === 'custom' && customDateRange?.from && customDateRange?.to) {
+      const days = differenceInDays(customDateRange.to, customDateRange.from);
+      if (days <= 14) return 'daily' as const;
+      if (days <= 90) return 'weekly' as const;
+      return 'monthly' as const;
+    }
     if (selectedRange === '7d') return 'daily' as const;
     if (selectedRange === '30d') return 'daily' as const;
     if (selectedRange === '3m') return 'weekly' as const;
     return 'monthly' as const;
-  }, [selectedRange]);
+  }, [selectedRange, customDateRange]);
 
   const analyticsOptions = useMemo(() => ({
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
     period,
   }), [dateRange, period]);
+
+  const handlePresetChange = (value: string) => {
+    if (value === 'custom') {
+      setSelectedRange('custom');
+      setIsCalendarOpen(true);
+    } else {
+      setSelectedRange(value as DateRangePreset);
+    }
+  };
+
+  const handleDateRangeSelect = (range: DateRange | undefined) => {
+    setCustomDateRange(range);
+    if (range?.from && range?.to) {
+      setIsCalendarOpen(false);
+    }
+  };
+
+  const getDisplayLabel = () => {
+    if (selectedRange === 'custom' && customDateRange?.from && customDateRange?.to) {
+      return `${format(customDateRange.from, 'dd MMM', { locale: es })} - ${format(customDateRange.to, 'dd MMM yyyy', { locale: es })}`;
+    }
+    const option = DATE_RANGE_OPTIONS.find(o => o.value === selectedRange);
+    return option?.label || 'Seleccionar período';
+  };
   
   const { data: summary, isLoading: summaryLoading } = useAnalyticsSummary(analyticsOptions);
   const { data: revenue, isLoading: revenueLoading } = useRevenueAnalytics(analyticsOptions);
@@ -242,19 +289,63 @@ export default function EnterpriseAnalytics() {
               Métricas y análisis detallados de {currentOrganization?.name}
             </p>
           </div>
-          <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as DateRangePreset)}>
-            <SelectTrigger className="w-[180px]">
-              <Calendar className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Seleccionar período" />
-            </SelectTrigger>
-            <SelectContent>
-              {DATE_RANGE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={selectedRange} onValueChange={handlePresetChange}>
+              <SelectTrigger className="w-[180px]">
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                <SelectValue>{getDisplayLabel()}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {DATE_RANGE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">Personalizado...</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {selectedRange === 'custom' && (
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !customDateRange && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {customDateRange?.from ? (
+                      customDateRange.to ? (
+                        <>
+                          {format(customDateRange.from, "dd/MM/yy")} -{" "}
+                          {format(customDateRange.to, "dd/MM/yy")}
+                        </>
+                      ) : (
+                        format(customDateRange.from, "dd/MM/yyyy")
+                      )
+                    ) : (
+                      <span>Seleccionar fechas</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={customDateRange?.from}
+                    selected={customDateRange}
+                    onSelect={handleDateRangeSelect}
+                    numberOfMonths={2}
+                    locale={es}
+                    className="pointer-events-auto"
+                    disabled={(date) => date > new Date()}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
         </div>
 
         {/* Stats Grid */}
