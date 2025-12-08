@@ -72,6 +72,7 @@ const App = () => (
               <Route path="/quotations" element={<ProtectedRoute><RequireOrganization><AppLayout><Quotations /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/user/settings" element={<ProtectedRoute><RequireOrganization><AppLayout><UserSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/organization/settings" element={<ProtectedRoute><RequireOrganization><AppLayout><OrganizationSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/settings/subscription" element={<ProtectedRoute><RequireOrganization><AppLayout><OrganizationSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/organization/members" element={<ProtectedRoute><RequireOrganization><AppLayout><OrganizationMembers /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/recipe-parameters" element={<ProtectedRoute><RequireOrganization><AppLayout><RecipeParameters /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/super-admin" element={<SuperAdminRoute><AppLayout><SuperAdmin /></AppLayout></SuperAdminRoute>} />
