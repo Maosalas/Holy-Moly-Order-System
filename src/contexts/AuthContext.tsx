@@ -8,6 +8,7 @@ interface AuthContextType extends AuthState {
   setCurrentOrganization: (org: OrganizationWithRole | null) => void;
   isImpersonating: boolean;
   impersonatedOrgId: string | null;
+  isLoading: boolean;
   startImpersonation: (orgId: string) => void;
   stopImpersonation: () => void;
   updateUser: (user: User) => void;
@@ -31,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentOrganization, setCurrentOrganizationState] = useState<OrganizationWithRole | null>(null);
   const [isImpersonating, setIsImpersonating] = useState<boolean>(false);
   const [impersonatedOrgId, setImpersonatedOrgId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Load current organization from localStorage on mount
   useEffect(() => {
@@ -73,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const checkAuth = async () => {
+      setIsLoading(true);
       const stored = localStorage.getItem(AUTH_STORAGE_KEY);
       if (stored) {
         const authData = JSON.parse(stored);
@@ -106,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         console.log("ℹ️ No stored auth found");
       }
+      setIsLoading(false);
     };
     checkAuth();
   }, []);
@@ -200,6 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentOrganization,
       isImpersonating,
       impersonatedOrgId,
+      isLoading,
       startImpersonation,
       stopImpersonation,
       updateUser,
