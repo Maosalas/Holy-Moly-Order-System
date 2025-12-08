@@ -28,6 +28,8 @@ import SuperAdmin from "./pages/SuperAdmin";
 import RecipeParameters from "./pages/RecipeParameters";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import Checkout from "./pages/Checkout";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import PortalReturn from "./pages/PortalReturn";
 import CreateOrganization from "./pages/CreateOrganization";
 import EnterpriseAnalytics from "./pages/EnterpriseAnalytics";
 
@@ -60,6 +62,8 @@ const App = () => (
               
               {/* Checkout and organization setup - authenticated but no org required */}
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+              <Route path="/checkout-success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
+              <Route path="/portal-return" element={<ProtectedRoute><PortalReturn /></ProtectedRoute>} />
               <Route path="/create-organization" element={<ProtectedRoute><CreateOrganization /></ProtectedRoute>} />
               <Route path="/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
 

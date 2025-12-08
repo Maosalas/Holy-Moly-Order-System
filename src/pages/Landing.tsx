@@ -152,16 +152,23 @@ export default function Landing() {
       }
     }
 
+    // Generate description based on slug
+    const getDescription = (slug: string) => {
+      const slugLower = slug.toLowerCase();
+      if (slugLower === 'free' || slugLower === 'gratis') return "Perfecto para probar la plataforma";
+      if (slugLower === 'starter' || slugLower === 'inicial') return "Perfecto para comenzar";
+      if (slugLower === 'professional' || slugLower === 'profesional') return "Para negocios en crecimiento";
+      if (slugLower === 'enterprise' || slugLower === 'empresarial') return "Para operaciones a gran escala";
+      return "Plan personalizado";
+    };
+
     return {
       id: plan.id,
       slug: plan.slug,
-      name: plan.name,
+      name: plan.name, // Use name directly from database
       price: plan.priceMonthly,
       interval: "mes",
-      description: plan.slug === "starter" ? "Perfecto para comenzar" :
-                   plan.slug === "professional" ? "Para negocios en crecimiento" :
-                   plan.slug === "enterprise" ? "Para operaciones a gran escala" :
-                   "Plan personalizado",
+      description: getDescription(plan.slug),
       features: featuresList,
       highlighted: index === 1 || plan.slug === "professional" // Highlight middle plan or professional
     };
@@ -237,13 +244,6 @@ export default function Landing() {
             >
               Comenzar Prueba Gratis
               <ArrowRight className="w-5 h-5" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-lg"
-            >
-              Ver Demo
             </Button>
           </div>
           <p className="text-sm text-muted-foreground pt-2">

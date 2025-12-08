@@ -22,6 +22,7 @@ const Checkout = () => {
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
   const organizationId = searchParams.get('orgId');
+  const canceled = searchParams.get('canceled');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -33,6 +34,21 @@ const Checkout = () => {
       navigate('/create-organization');
     }
   }, [isAuthenticated, navigate, organizationId]);
+
+  // Handle canceled checkout
+  useEffect(() => {
+    if (canceled === 'true') {
+      toast({
+        title: "Checkout cancelado",
+        description: "El proceso de pago fue cancelado. Puedes intentarlo de nuevo cuando estés listo.",
+        variant: "default",
+      });
+      // Remove the canceled parameter from URL
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('canceled');
+      navigate(`/checkout?${newSearchParams.toString()}`, { replace: true });
+    }
+  }, [canceled, toast, navigate, searchParams]);
 
   const plan = plans.find(p => p.slug === selectedPlan);
 
