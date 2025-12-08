@@ -724,3 +724,38 @@ export const analyticsApi = {
   getIngredients: (organizationId: string, options: AnalyticsOptions = {}) =>
     apiFetch<IngredientsAnalytics>(`/analytics/ingredients?${buildAnalyticsParams(organizationId, options)}`, { method: "GET" }),
 };
+
+// Inventory API
+export const inventoryApi = {
+  getItems: () => apiFetch("/inventory/items", { method: "GET" }),
+  
+  createItem: (item: any) =>
+    apiFetch("/inventory/items", {
+      method: "POST",
+      body: JSON.stringify(item),
+    }),
+    
+  updateItem: (id: string, item: any) =>
+    apiFetch(`/inventory/items/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(item),
+    }),
+    
+  getAlerts: () => apiFetch("/inventory/alerts", { method: "GET" }),
+  
+  resolveAlert: (alertId: string) =>
+    apiFetch(`/inventory/alerts/${alertId}/resolve`, { method: "PATCH" }),
+    
+  markAlertRead: (alertId: string) =>
+    apiFetch(`/inventory/alerts/${alertId}/read`, { method: "PATCH" }),
+    
+  getPurchases: () => apiFetch("/inventory/purchases", { method: "GET" }),
+  
+  createPurchase: (purchase: any) =>
+    apiFetch("/inventory/purchases", {
+      method: "POST",
+      body: JSON.stringify(purchase),
+    }),
+    
+  getMovements: () => apiFetch("/inventory/movements", { method: "GET" }),
+};
