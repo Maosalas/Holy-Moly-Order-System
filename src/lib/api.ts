@@ -1,3 +1,12 @@
+import { 
+  RevenueAnalytics, 
+  OrdersAnalytics, 
+  CustomersAnalytics, 
+  ProductsAnalytics, 
+  IngredientsAnalytics,
+  AnalyticsSummary 
+} from "@/types/analytics";
+
 // Read API URL from environment variables
 // Falls back to localhost if not defined
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -678,4 +687,40 @@ export const stripeApi = {
 
   getSubscriptionStatus: (organizationId: string) =>
     apiFetch(`/stripe/subscription-status/${organizationId}`, { method: "GET" }),
+};
+
+// Analytics API
+interface AnalyticsOptions {
+  startDate?: string;
+  endDate?: string;
+  period?: 'daily' | 'weekly' | 'monthly';
+}
+
+const buildAnalyticsParams = (organizationId: string, options: AnalyticsOptions = {}): string => {
+  const params = new URLSearchParams();
+  params.append('organization_id', organizationId);
+  if (options.startDate) params.append('start_date', options.startDate);
+  if (options.endDate) params.append('end_date', options.endDate);
+  if (options.period) params.append('period', options.period);
+  return params.toString();
+};
+
+export const analyticsApi = {
+  getSummary: (organizationId: string, options: AnalyticsOptions = {}) =>
+    apiFetch<AnalyticsSummary>(`/analytics/summary?${buildAnalyticsParams(organizationId, options)}`, { method: "GET" }),
+
+  getRevenue: (organizationId: string, options: AnalyticsOptions = {}) =>
+    apiFetch<RevenueAnalytics>(`/analytics/revenue?${buildAnalyticsParams(organizationId, options)}`, { method: "GET" }),
+
+  getOrders: (organizationId: string, options: AnalyticsOptions = {}) =>
+    apiFetch<OrdersAnalytics>(`/analytics/orders?${buildAnalyticsParams(organizationId, options)}`, { method: "GET" }),
+
+  getCustomers: (organizationId: string, options: AnalyticsOptions = {}) =>
+    apiFetch<CustomersAnalytics>(`/analytics/customers?${buildAnalyticsParams(organizationId, options)}`, { method: "GET" }),
+
+  getProducts: (organizationId: string, options: AnalyticsOptions = {}) =>
+    apiFetch<ProductsAnalytics>(`/analytics/products?${buildAnalyticsParams(organizationId, options)}`, { method: "GET" }),
+
+  getIngredients: (organizationId: string, options: AnalyticsOptions = {}) =>
+    apiFetch<IngredientsAnalytics>(`/analytics/ingredients?${buildAnalyticsParams(organizationId, options)}`, { method: "GET" }),
 };
