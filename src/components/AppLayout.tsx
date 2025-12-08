@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings, Sliders, ChevronDown, Bell, Search } from "lucide-react";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings, Sliders, ChevronDown, Bell, Search, BarChart3 } from "lucide-react";
+import { useSubscriptionFeatures } from "@/hooks/use-subscription-features";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { OrganizationSwitcher } from "@/components/OrganizationSwitcher";
@@ -51,9 +52,11 @@ function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const { user, isImpersonating } = useAuth();
+  const { hasFeatureAccess } = useSubscriptionFeatures();
   const collapsed = state === "collapsed";
 
   const isSuperAdmin = user?.roles?.includes("super_admin");
+  const hasAnalytics = hasFeatureAccess('advanced_analytics');
   
   // Filter menu items based on role and impersonation status
   let visibleMenuItems = menuItems;
@@ -125,6 +128,16 @@ function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+              {hasAnalytics && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location.pathname === "/analytics"} className="hover:bg-muted/50">
+                    <NavLink to="/analytics">
+                      <BarChart3 className="h-5 w-5" />
+                      {!collapsed && <span>Analytics</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               {isSuperAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location.pathname === "/super-admin"} className="hover:bg-muted/50">
