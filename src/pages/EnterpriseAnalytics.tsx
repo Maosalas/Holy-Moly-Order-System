@@ -34,8 +34,15 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Loader2,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Download,
+  FileSpreadsheet,
+  FileText
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -218,6 +225,138 @@ export default function EnterpriseAnalytics() {
     }
   };
 
+  const exportToPDF = () => {
+    if (isLoading) {
+      toast.error("Espera a que los datos carguen");
+      return;
+    }
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Title
+    doc.setFontSize(20);
+    doc.text("Reporte de Analytics", pageWidth / 2, 20, { align: "center" });
+    
+    // Organization and date range
+    doc.setFontSize(12);
+    doc.text(`Organización: ${currentOrganization?.name || "N/A"}`, 14, 35);
+    doc.text(`Período: ${dateRange.startDate} - ${dateRange.endDate}`, 14, 42);
+    
+    // Summary Stats
+    doc.setFontSize(14);
+    doc.text("Resumen General", 14, 55);
+    
+    autoTable(doc, {
+      startY: 60,
+      head: [["Métrica", "Valor", "Cambio"]],
+      body: [
+        ["Ingresos Totales", formatCurrency(summary?.revenue?.total || 0), `${(summary?.revenue?.growth || 0).toFixed(1)}%`],
+        ["Pedidos", formatNumber(summary?.orders?.total || 0), `${(summary?.orders?.growth || 0).toFixed(1)}%`],
+        ["Clientes Activos", formatNumber(summary?.customers?.total || 0), `${(summary?.customers?.retention || 0).toFixed(1)}%`],
+        ["Productos Vendidos", formatNumber(summary?.products?.totalSold || 0), "-"],
+      ],
+    });
+
+    // Revenue by period
+    if (revenueChartData.length > 0) {
+      const lastY = (doc as any).lastAutoTable?.finalY || 90;
+      doc.setFontSize(14);
+      doc.text("Ingresos por Período", 14, lastY + 15);
+      
+      autoTable(doc, {
+        startY: lastY + 20,
+        head: [["Fecha", "Ingresos", "Pedidos"]],
+        body: revenueChartData.map(item => [
+          item.date,
+          formatCurrency(item.revenue),
+          item.orders.toString(),
+        ]),
+      });
+    }
+
+    // Top products
+    if (products?.topProducts && products.topProducts.length > 0) {
+      const lastY = (doc as any).lastAutoTable?.finalY || 120;
+      doc.setFontSize(14);
+      doc.text("Productos Más Vendidos", 14, lastY + 15);
+      
+      autoTable(doc, {
+        startY: lastY + 20,
+        head: [["Producto", "Vendidos", "Ingresos"]],
+        body: products.topProducts.slice(0, 10).map(item => [
+          item.recipeName,
+          item.totalSold.toString(),
+          formatCurrency(item.totalRevenue),
+        ]),
+      });
+    }
+
+    doc.save(`analytics-${currentOrganization?.name || "reporte"}-${dateRange.startDate}.pdf`);
+    toast.success("PDF exportado correctamente");
+  };
+
+  const exportToExcel = () => {
+    if (isLoading) {
+      toast.error("Espera a que los datos carguen");
+      return;
+    }
+
+    // Create CSV content (Excel compatible)
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Header
+    csvContent += `Reporte de Analytics - ${currentOrganization?.name || "N/A"}\n`;
+    csvContent += `Período: ${dateRange.startDate} - ${dateRange.endDate}\n\n`;
+    
+    // Summary
+    csvContent += "RESUMEN GENERAL\n";
+    csvContent += "Métrica,Valor,Cambio\n";
+    csvContent += `Ingresos Totales,${summary?.revenue?.total || 0},${(summary?.revenue?.growth || 0).toFixed(1)}%\n`;
+    csvContent += `Pedidos,${summary?.orders?.total || 0},${(summary?.orders?.growth || 0).toFixed(1)}%\n`;
+    csvContent += `Clientes Activos,${summary?.customers?.total || 0},${(summary?.customers?.retention || 0).toFixed(1)}%\n`;
+    csvContent += `Productos Vendidos,${summary?.products?.totalSold || 0},-\n\n`;
+    
+    // Revenue data
+    if (revenueChartData.length > 0) {
+      csvContent += "INGRESOS POR PERÍODO\n";
+      csvContent += "Fecha,Ingresos,Pedidos\n";
+      revenueChartData.forEach(item => {
+        csvContent += `${item.date},${item.revenue},${item.orders}\n`;
+      });
+      csvContent += "\n";
+    }
+    
+    // Top products
+    if (products?.topProducts && products.topProducts.length > 0) {
+      csvContent += "PRODUCTOS MÁS VENDIDOS\n";
+      csvContent += "Producto,Vendidos,Ingresos\n";
+      products.topProducts.slice(0, 10).forEach(item => {
+        csvContent += `"${item.recipeName}",${item.totalSold},${item.totalRevenue}\n`;
+      });
+      csvContent += "\n";
+    }
+
+    // Top ingredients
+    if (ingredients?.topIngredients && ingredients.topIngredients.length > 0) {
+      csvContent += "USO DE INGREDIENTES\n";
+      csvContent += "Ingrediente,Cantidad Usada,Unidad,Veces Usado\n";
+      ingredients.topIngredients.forEach(item => {
+        csvContent += `"${item.ingredientName}",${item.totalUsed},${item.unit},${item.timesUsed}\n`;
+      });
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `analytics-${currentOrganization?.name || "reporte"}-${dateRange.startDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success("Excel (CSV) exportado correctamente");
+  };
+
   const getDisplayLabel = () => {
     if (selectedRange === 'custom' && customDateRange?.from && customDateRange?.to) {
       return `${format(customDateRange.from, 'dd MMM', { locale: es })} - ${format(customDateRange.to, 'dd MMM yyyy', { locale: es })}`;
@@ -289,7 +428,7 @@ export default function EnterpriseAnalytics() {
               Métricas y análisis detallados de {currentOrganization?.name}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Select value={selectedRange} onValueChange={handlePresetChange}>
               <SelectTrigger className="w-[180px]">
                 <CalendarIcon className="h-4 w-4 mr-2" />
@@ -345,6 +484,25 @@ export default function EnterpriseAnalytics() {
                 </PopoverContent>
               </Popover>
             )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={isLoading}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={exportToPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Exportar a PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToExcel}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Exportar a Excel (CSV)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
