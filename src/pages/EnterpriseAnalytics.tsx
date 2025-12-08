@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FeatureGuard } from "@/components/FeatureGuard";
 import { useOrganization } from "@/contexts/OrganizationContext";
@@ -32,9 +33,55 @@ import {
   Package,
   ArrowUpRight,
   ArrowDownRight,
-  Loader2
+  Loader2,
+  Calendar
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format, subDays, subMonths, subYears, startOfDay } from "date-fns";
+
+type DateRangePreset = '7d' | '30d' | '3m' | '1y';
+
+interface DateRangeOption {
+  label: string;
+  value: DateRangePreset;
+  getRange: () => { startDate: string; endDate: string };
+}
+
+const DATE_RANGE_OPTIONS: DateRangeOption[] = [
+  {
+    label: 'Últimos 7 días',
+    value: '7d',
+    getRange: () => ({
+      startDate: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
+      endDate: format(new Date(), 'yyyy-MM-dd'),
+    }),
+  },
+  {
+    label: 'Últimos 30 días',
+    value: '30d',
+    getRange: () => ({
+      startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
+      endDate: format(new Date(), 'yyyy-MM-dd'),
+    }),
+  },
+  {
+    label: 'Últimos 3 meses',
+    value: '3m',
+    getRange: () => ({
+      startDate: format(subMonths(new Date(), 3), 'yyyy-MM-dd'),
+      endDate: format(new Date(), 'yyyy-MM-dd'),
+    }),
+  },
+  {
+    label: 'Último año',
+    value: '1y',
+    getRange: () => ({
+      startDate: format(subYears(new Date(), 1), 'yyyy-MM-dd'),
+      endDate: format(new Date(), 'yyyy-MM-dd'),
+    }),
+  },
+];
 
 interface StatCardProps {
   title: string;
@@ -112,12 +159,31 @@ function formatDate(dateStr: string): string {
 
 export default function EnterpriseAnalytics() {
   const { currentOrganization } = useOrganization();
+  const [selectedRange, setSelectedRange] = useState<DateRangePreset>('30d');
+
+  const dateRange = useMemo(() => {
+    const option = DATE_RANGE_OPTIONS.find(o => o.value === selectedRange);
+    return option?.getRange() || DATE_RANGE_OPTIONS[1].getRange();
+  }, [selectedRange]);
+
+  const period = useMemo(() => {
+    if (selectedRange === '7d') return 'daily' as const;
+    if (selectedRange === '30d') return 'daily' as const;
+    if (selectedRange === '3m') return 'weekly' as const;
+    return 'monthly' as const;
+  }, [selectedRange]);
+
+  const analyticsOptions = useMemo(() => ({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+    period,
+  }), [dateRange, period]);
   
-  const { data: summary, isLoading: summaryLoading } = useAnalyticsSummary();
-  const { data: revenue, isLoading: revenueLoading } = useRevenueAnalytics({ period: 'monthly' });
-  const { data: orders, isLoading: ordersLoading } = useOrdersAnalytics();
-  const { data: products, isLoading: productsLoading } = useProductsAnalytics();
-  const { data: ingredients, isLoading: ingredientsLoading } = useIngredientsAnalytics();
+  const { data: summary, isLoading: summaryLoading } = useAnalyticsSummary(analyticsOptions);
+  const { data: revenue, isLoading: revenueLoading } = useRevenueAnalytics(analyticsOptions);
+  const { data: orders, isLoading: ordersLoading } = useOrdersAnalytics(analyticsOptions);
+  const { data: products, isLoading: productsLoading } = useProductsAnalytics(analyticsOptions);
+  const { data: ingredients, isLoading: ingredientsLoading } = useIngredientsAnalytics(analyticsOptions);
 
   const isLoading = summaryLoading || revenueLoading || ordersLoading || productsLoading || ingredientsLoading;
 
@@ -169,11 +235,26 @@ export default function EnterpriseAnalytics() {
       }
     >
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-          <p className="text-muted-foreground">
-            Métricas y análisis detallados de {currentOrganization?.name}
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+            <p className="text-muted-foreground">
+              Métricas y análisis detallados de {currentOrganization?.name}
+            </p>
+          </div>
+          <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as DateRangePreset)}>
+            <SelectTrigger className="w-[180px]">
+              <Calendar className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Seleccionar período" />
+            </SelectTrigger>
+            <SelectContent>
+              {DATE_RANGE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Stats Grid */}
