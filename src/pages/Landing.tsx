@@ -339,40 +339,62 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 items-center">
             {plans.map((plan, index) => (
               <Card 
                 key={index} 
-                className={`relative ${plan.highlighted ? 'border-primary border-2 shadow-lg scale-105' : ''}`}
+                className={`relative overflow-hidden transition-all duration-300 ${
+                  plan.highlighted 
+                    ? 'bg-[hsl(222,47%,20%)] text-white border-0 shadow-2xl scale-105 z-10' 
+                    : 'bg-card border border-border hover:shadow-lg'
+                }`}
               >
                 {plan.highlighted && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground">
-                      Más Popular
+                  <div className="absolute top-4 right-4">
+                    <Badge className="bg-amber-400 text-[hsl(222,47%,20%)] font-semibold text-xs px-3 py-1">
+                      Mejor Valor
                     </Badge>
                   </div>
                 )}
-                <CardHeader className="text-center pb-8">
-                  <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
-                  <CardDescription className="mb-4">{plan.description}</CardDescription>
-                  <div className="space-y-1">
-                    <div className="text-4xl font-bold">${plan.price}</div>
-                    <div className="text-muted-foreground">por {plan.interval}</div>
+                <CardHeader className="text-center pt-8 pb-4">
+                  <CardTitle className={`text-lg font-semibold tracking-wide uppercase mb-6 ${
+                    plan.highlighted ? 'text-white' : 'text-foreground'
+                  }`}>
+                    {plan.name}
+                  </CardTitle>
+                  <div className={`text-5xl font-bold ${
+                    plan.highlighted ? 'text-white' : 'text-primary'
+                  }`}>
+                    ${plan.price}
+                  </div>
+                  <div className={`text-sm uppercase tracking-wider mt-2 ${
+                    plan.highlighted ? 'text-blue-200' : 'text-muted-foreground'
+                  }`}>
+                    {plan.description}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-3">
+                <CardContent className="pt-6 pb-8">
+                  <ul className="space-y-3 mb-8">
                     {plan.features.map((feature, fIndex) => (
                       <li key={fIndex} className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm">{feature}</span>
+                        <CheckCircle2 className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                          plan.highlighted ? 'text-blue-200' : 'text-primary'
+                        }`} />
+                        <span className={`text-sm ${
+                          plan.highlighted ? 'text-blue-100' : 'text-muted-foreground'
+                        }`}>
+                          {feature}
+                        </span>
                       </li>
                     ))}
                   </ul>
-                   <Button 
-                    className="w-full mt-6" 
-                    variant={plan.highlighted ? "default" : "outline"}
-                    onClick={() => navigate(`/auth?plan=${plan.name.toLowerCase()}`)}
+                  <Button 
+                    className={`w-full font-semibold ${
+                      plan.highlighted 
+                        ? 'bg-white text-[hsl(222,47%,20%)] hover:bg-blue-50' 
+                        : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    }`}
+                    onClick={() => handleSelectPlan(plan.id, plan.slug)}
                   >
                     Comenzar Ahora
                   </Button>
