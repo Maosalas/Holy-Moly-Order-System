@@ -32,6 +32,7 @@ import CheckoutSuccess from "./pages/CheckoutSuccess";
 import PortalReturn from "./pages/PortalReturn";
 import CreateOrganization from "./pages/CreateOrganization";
 import EnterpriseAnalytics from "./pages/EnterpriseAnalytics";
+import Inventory from "./pages/Inventory";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,6 +82,7 @@ const App = () => (
               <Route path="/organization/members" element={<ProtectedRoute><RequireOrganization><AppLayout><OrganizationMembers /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/recipe-parameters" element={<ProtectedRoute><RequireOrganization><AppLayout><RecipeParameters /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute><RequireOrganization><AppLayout><EnterpriseAnalytics /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/inventory" element={<ProtectedRoute><RequireOrganization><AppLayout><Inventory /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/super-admin" element={<SuperAdminRoute><AppLayout><SuperAdmin /></AppLayout></SuperAdminRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
