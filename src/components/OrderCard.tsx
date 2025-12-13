@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { Order } from "@/types/order";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Trash2, MessageCircle, Calendar, Package } from "lucide-react";
+import { Edit, Trash2, MessageCircle, Calendar, Package, Link2, Check, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TopperUploadDialog } from "./TopperUploadDialog";
 import { formatDateForDisplay, parseDateFromDB } from "@/lib/utils";
+import { ordersApi } from "@/lib/api";
+import { toast } from "@/hooks/use-toast";
 
 interface OrderCardProps {
   order: Order;
@@ -13,10 +16,40 @@ interface OrderCardProps {
 }
 
 export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
   const handleWhatsApp = () => {
     const message = `Hola ${order.clientName}! Te hablamos de Holy Moly acerca de tu orden ${order.orderDetails}`;
     const url = `https://wa.me/${order.phoneNumber.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
+  };
+
+  const handleGeneratePortalLink = async () => {
+    setIsGeneratingLink(true);
+    try {
+      const { data, error } = await ordersApi.generatePortalToken(order.id);
+      if (error) throw new Error(error);
+      
+      const portalUrl = `${window.location.origin}/portal/${data.token}`;
+      await navigator.clipboard.writeText(portalUrl);
+      
+      setLinkCopied(true);
+      toast({
+        title: "Enlace copiado",
+        description: "El enlace del portal del cliente ha sido copiado al portapapeles",
+      });
+      
+      setTimeout(() => setLinkCopied(false), 3000);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "No se pudo generar el enlace",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingLink(false);
+    }
   };
 
   const deliveryDate = parseDateFromDB(order.deliveryDate);
@@ -157,6 +190,22 @@ export const OrderCard = ({ order, onEdit, onDelete }: OrderCardProps) => {
         </div>
       </CardContent>
       <CardFooter className="gap-2 flex-wrap">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleGeneratePortalLink}
+          disabled={isGeneratingLink}
+          className="flex-1 gap-2"
+        >
+          {isGeneratingLink ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : linkCopied ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <Link2 className="h-4 w-4" />
+          )}
+          {linkCopied ? "Copiado" : "Portal"}
+        </Button>
         <Button
           variant="outline"
           size="sm"

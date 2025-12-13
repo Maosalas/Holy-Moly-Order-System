@@ -33,6 +33,7 @@ import PortalReturn from "./pages/PortalReturn";
 import CreateOrganization from "./pages/CreateOrganization";
 import EnterpriseAnalytics from "./pages/EnterpriseAnalytics";
 import Inventory from "./pages/Inventory";
+import CustomerPortal from "./pages/CustomerPortal";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/portal/:token" element={<CustomerPortal />} />
               
               {/* Checkout and organization setup - authenticated but no org required */}
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
