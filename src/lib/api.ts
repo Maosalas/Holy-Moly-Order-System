@@ -259,6 +259,15 @@ export const ordersApi = {
     }),
 
   getUsage: () => apiFetch("/orders/usage", { method: "GET" }),
+
+  // Customer Portal
+  generatePortalToken: (orderId: string) =>
+    apiFetch<{ token: string }>(`/orders/${orderId}/portal-token`, {
+      method: "POST",
+    }),
+
+  getByPortalToken: (token: string) =>
+    apiFetch(`/orders/portal/${token}`, { method: "GET" }, false), // No auth needed for public portal
 };
 
 // Expenses API
