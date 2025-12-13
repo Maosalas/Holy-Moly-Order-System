@@ -1,20 +1,23 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Package, 
-  AlertTriangle, 
-  ShoppingCart, 
-  History, 
-  Plus, 
+import {
+  Package,
+  AlertTriangle,
+  ShoppingCart,
+  History,
+  Plus,
   Bell,
   TrendingDown,
   CheckCircle2
 } from "lucide-react";
 import { FeatureGuard } from "@/components/FeatureGuard";
-import { useInventoryItems, useInventoryAlerts, useInventoryPurchases, useInventoryMovements, useResolveAlert, useMarkAlertRead } from "@/hooks/use-inventory";
+import { useInventoryItems, useInventoryAlerts, useInventoryPurchases, useInventoryMovements, useResolveAlert, useMarkAlertRead, useDeleteInventoryItem } from "@/hooks/use-inventory";
+import { useIngredients } from "@/hooks/use-ingredients";
+import { useSupplies } from "@/hooks/use-supplies";
 import { InventoryItemsList } from "@/components/inventory/InventoryItemsList";
 import { InventoryAlertsList } from "@/components/inventory/InventoryAlertsList";
 import { InventoryPurchaseForm } from "@/components/inventory/InventoryPurchaseForm";
@@ -24,17 +27,33 @@ import { AddInventoryItemDialog } from "@/components/inventory/AddInventoryItemD
 import { InventoryItem, InventoryAlert } from "@/types/inventory";
 
 export default function Inventory() {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("items");
   const [isPurchaseFormOpen, setIsPurchaseFormOpen] = useState(false);
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [selectedItemForPurchase, setSelectedItemForPurchase] = useState<InventoryItem | null>(null);
+  const [preSelectedExpenseId, setPreSelectedExpenseId] = useState<string | null>(null);
 
   const { data: items = [], isLoading: isLoadingItems } = useInventoryItems();
   const { data: alerts = [], isLoading: isLoadingAlerts } = useInventoryAlerts();
   const { data: purchases = [], isLoading: isLoadingPurchases } = useInventoryPurchases();
   const { data: movements = [], isLoading: isLoadingMovements } = useInventoryMovements();
+  const { data: ingredients = [] } = useIngredients();
+  const { data: supplies = [] } = useSupplies();
   const resolveAlertMutation = useResolveAlert();
   const markAlertReadMutation = useMarkAlertRead();
+  const deleteItemMutation = useDeleteInventoryItem();
+
+  // Check if navigated from expense creation
+  useEffect(() => {
+    if (location.state?.expenseId) {
+      setPreSelectedExpenseId(location.state.expenseId);
+      setIsPurchaseFormOpen(true);
+      setActiveTab("purchases");
+      // Clear the state after using it
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   // Stats
   const stats = useMemo(() => {
@@ -63,6 +82,10 @@ export default function Inventory() {
 
   const handleMarkAlertRead = async (alertId: string) => {
     await markAlertReadMutation.mutateAsync(alertId);
+  };
+
+  const handleDeleteItem = async (item: InventoryItem) => {
+    await deleteItemMutation.mutateAsync(item.id);
   };
 
   return (
@@ -190,10 +213,11 @@ export default function Inventory() {
           </TabsList>
 
           <TabsContent value="items">
-            <InventoryItemsList 
-              items={items as InventoryItem[]} 
+            <InventoryItemsList
+              items={items as InventoryItem[]}
               isLoading={isLoadingItems}
               onRestock={handleRestock}
+              onDelete={handleDeleteItem}
             />
           </TabsContent>
 
@@ -226,14 +250,17 @@ export default function Inventory() {
         </Tabs>
 
         {/* Purchase Form Dialog */}
-        <InventoryPurchaseForm 
+        <InventoryPurchaseForm
           isOpen={isPurchaseFormOpen}
           onClose={() => {
             setIsPurchaseFormOpen(false);
             setSelectedItemForPurchase(null);
+            setPreSelectedExpenseId(null);
           }}
           selectedItem={selectedItemForPurchase}
-          items={items as InventoryItem[]}
+          preSelectedExpenseId={preSelectedExpenseId}
+          ingredients={ingredients as any[]}
+          supplies={supplies as any[]}
         />
 
         {/* Add Item Dialog */}

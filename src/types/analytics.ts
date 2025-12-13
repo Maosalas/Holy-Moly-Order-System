@@ -106,6 +106,12 @@ export interface AnalyticsSummary {
     totalSold: number;
     topSelling: string;
   };
+  expenses: {
+    total: number;
+    growth: number;
+    count: number;
+    averageExpense: number;
+  };
   period: {
     startDate: string;
     endDate: string;

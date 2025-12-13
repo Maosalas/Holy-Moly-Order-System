@@ -19,12 +19,27 @@ export function useInventoryItems() {
     queryFn: async () => {
       const result = await inventoryApi.getItems();
       if (result.error) {
-        const errorMsg = typeof result.error === 'string' 
-          ? result.error 
+        const errorMsg = typeof result.error === 'string'
+          ? result.error
           : (result.error as any)?.message || "Error al obtener inventario";
         throw new Error(errorMsg);
       }
-      return (result as any).data || [];
+      const items = (result as any).data || [];
+      // Transform backend fields to frontend expected format
+      return items.map((item: any) => ({
+        ...item,
+        itemName: item.itemName || item.item_name || item.name,
+        itemType: item.itemType || item.item_type || item.category,
+        currentStock: item.currentStock ?? item.current_stock,
+        minStockThreshold: item.minStockThreshold ?? item.min_stock_threshold ?? item.minimumStock,
+        isLowStock: item.isLowStock ?? item.is_low_stock ?? (item.currentStock < (item.minimumStock || item.minStockThreshold || 0)),
+        lastRestockDate: item.lastRestockDate || item.last_restock_date,
+        createdAt: item.createdAt || item.created_at,
+        updatedAt: item.updatedAt || item.updated_at,
+        organizationId: item.organizationId || item.organization_id,
+        ingredientId: item.ingredientId || item.ingredient_id,
+        supplyId: item.supplyId || item.supply_id,
+      }));
     },
     staleTime: 30000,
     refetchOnWindowFocus: true,
@@ -38,12 +53,26 @@ export function useInventoryAlerts() {
     queryFn: async () => {
       const result = await inventoryApi.getAlerts();
       if (result.error) {
-        const errorMsg = typeof result.error === 'string' 
-          ? result.error 
+        const errorMsg = typeof result.error === 'string'
+          ? result.error
           : (result.error as any)?.message || "Error al obtener alertas";
         throw new Error(errorMsg);
       }
-      return (result as any).data || [];
+      const alerts = (result as any).data || [];
+      // Transform snake_case to camelCase
+      return alerts.map((alert: any) => ({
+        ...alert,
+        itemName: alert.itemName || alert.item_name,
+        currentStock: alert.currentStock ?? alert.current_stock,
+        minStockThreshold: alert.minStockThreshold ?? alert.min_stock_threshold,
+        alertType: alert.alertType || alert.alert_type,
+        isRead: alert.isRead ?? alert.is_read,
+        isResolved: alert.isResolved ?? alert.is_resolved,
+        createdAt: alert.createdAt || alert.created_at,
+        resolvedAt: alert.resolvedAt || alert.resolved_at,
+        organizationId: alert.organizationId || alert.organization_id,
+        inventoryItemId: alert.inventoryItemId || alert.inventory_item_id,
+      }));
     },
     staleTime: 30000,
     refetchOnWindowFocus: true,
@@ -58,12 +87,22 @@ export function useInventoryPurchases() {
     queryFn: async () => {
       const result = await inventoryApi.getPurchases();
       if (result.error) {
-        const errorMsg = typeof result.error === 'string' 
-          ? result.error 
+        const errorMsg = typeof result.error === 'string'
+          ? result.error
           : (result.error as any)?.message || "Error al obtener compras";
         throw new Error(errorMsg);
       }
-      return (result as any).data || [];
+      const purchases = (result as any).data || [];
+      // Transform snake_case to camelCase
+      return purchases.map((purchase: any) => ({
+        ...purchase,
+        itemName: purchase.itemName || purchase.item_name,
+        supplierName: purchase.supplierName || purchase.supplier_name,
+        purchaseDate: purchase.purchaseDate || purchase.purchase_date,
+        createdAt: purchase.createdAt || purchase.created_at,
+        organizationId: purchase.organizationId || purchase.organization_id,
+        inventoryItemId: purchase.inventoryItemId || purchase.inventory_item_id,
+      }));
     },
     staleTime: 60000,
   });
@@ -76,12 +115,25 @@ export function useInventoryMovements() {
     queryFn: async () => {
       const result = await inventoryApi.getMovements();
       if (result.error) {
-        const errorMsg = typeof result.error === 'string' 
-          ? result.error 
+        const errorMsg = typeof result.error === 'string'
+          ? result.error
           : (result.error as any)?.message || "Error al obtener movimientos";
         throw new Error(errorMsg);
       }
-      return (result as any).data || [];
+      const movements = (result as any).data || [];
+      // Transform snake_case to camelCase
+      return movements.map((movement: any) => ({
+        ...movement,
+        itemName: movement.itemName || movement.item_name,
+        movementType: movement.movementType || movement.movement_type,
+        previousStock: movement.previousStock ?? movement.previous_stock,
+        newStock: movement.newStock ?? movement.new_stock,
+        referenceType: movement.referenceType || movement.reference_type,
+        referenceId: movement.referenceId || movement.reference_id,
+        createdAt: movement.createdAt || movement.created_at,
+        organizationId: movement.organizationId || movement.organization_id,
+        inventoryItemId: movement.inventoryItemId || movement.inventory_item_id,
+      }));
     },
     staleTime: 60000,
   });
@@ -164,8 +216,8 @@ export function useCreatePurchase() {
     mutationFn: async (purchase: InventoryPurchaseFormData) => {
       const result = await inventoryApi.createPurchase(purchase);
       if (result.error) {
-        const errorMsg = typeof result.error === 'string' 
-          ? result.error 
+        const errorMsg = typeof result.error === 'string'
+          ? result.error
           : (result.error as any)?.message || "Error al registrar compra";
         throw new Error(errorMsg);
       }
@@ -238,6 +290,40 @@ export function useMarkAlertRead() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.alerts });
+    },
+  });
+}
+
+// Hook para eliminar item de inventario
+export function useDeleteInventoryItem() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (itemId: string) => {
+      const result = await inventoryApi.deleteItem(itemId);
+      if (result.error) {
+        const errorMsg = typeof result.error === 'string'
+          ? result.error
+          : (result.error as any)?.message || "Error al eliminar item de inventario";
+        throw new Error(errorMsg);
+      }
+      return (result as any).data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.items });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.alerts });
+      toast({
+        title: "Item eliminado",
+        description: "El item ha sido eliminado del inventario",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 }

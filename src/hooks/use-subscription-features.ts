@@ -45,7 +45,8 @@ export function useSubscriptionFeatures() {
 
     // Priority Support
     priority_support: ['professional', 'enterprise'],
-
+    // Inventory Alerts
+    inventory_alerts: ['enterprise'],
     // Dedicated Support
     dedicated_support: ['enterprise'],
 

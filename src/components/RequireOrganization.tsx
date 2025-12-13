@@ -15,7 +15,7 @@ interface RequireOrganizationProps {
  */
 export const RequireOrganization = ({ children }: RequireOrganizationProps) => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading: isAuthLoading } = useAuth();
   const { organizations, isInitializing } = useOrganization();
 
   useEffect(() => {
@@ -28,15 +28,16 @@ export const RequireOrganization = ({ children }: RequireOrganizationProps) => {
       return;
     }
 
-    if (!isInitializing && organizations.length === 0) {
+    // Wait for both auth and organization loading to complete
+    if (!isAuthLoading && !isInitializing && organizations.length === 0) {
       navigate("/create-organization");
     }
-  }, [isAuthenticated, isInitializing, organizations, navigate, user]);
+  }, [isAuthenticated, isAuthLoading, isInitializing, organizations, navigate, user]);
 
   // Super admins pueden acceder sin organización
   const isSuperAdmin = user?.roles.includes("super_admin");
 
-  if (isInitializing) {
+  if (isAuthLoading || isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

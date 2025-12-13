@@ -5,7 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { Search, ShoppingCart, Package, AlertTriangle, Edit2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Search, ShoppingCart, Package, AlertTriangle, Edit2, Trash2 } from "lucide-react";
 import { InventoryItem } from "@/types/inventory";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "@/components/PaginationControls";
@@ -15,16 +25,18 @@ interface InventoryItemsListProps {
   isLoading: boolean;
   onRestock: (item: InventoryItem) => void;
   onEdit?: (item: InventoryItem) => void;
+  onDelete?: (item: InventoryItem) => void;
 }
 
-export function InventoryItemsList({ items, isLoading, onRestock, onEdit }: InventoryItemsListProps) {
+export function InventoryItemsList({ items, isLoading, onRestock, onEdit, onDelete }: InventoryItemsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "low" | "out">("all");
+  const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
 
   const filteredItems = useMemo(() => {
     return items.filter(item => {
-      const matchesSearch = item.itemName.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesFilter = 
+      const matchesSearch = searchQuery === "" || (item.itemName?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+      const matchesFilter =
         filter === "all" ? true :
         filter === "low" ? item.isLowStock && item.currentStock > 0 :
         filter === "out" ? item.currentStock === 0 : true;
@@ -111,7 +123,7 @@ export function InventoryItemsList({ items, isLoading, onRestock, onEdit }: Inve
                     const percentage = getStockPercentage(item);
                     return (
                       <TableRow key={item.id} className={item.currentStock === 0 ? "bg-destructive/5" : item.isLowStock ? "bg-amber-50 dark:bg-amber-950/20" : ""}>
-                        <TableCell className="font-medium">{item.itemName}</TableCell>
+                        <TableCell className="font-medium">{item.itemName || "Sin nombre"}</TableCell>
                         <TableCell><Badge variant="outline">{item.itemType === "ingredient" ? "Ingrediente" : "Suministro"}</Badge></TableCell>
                         <TableCell>
                           <div className="space-y-1">
@@ -129,6 +141,16 @@ export function InventoryItemsList({ items, isLoading, onRestock, onEdit }: Inve
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             {onEdit && <Button variant="ghost" size="sm" onClick={() => onEdit(item)}><Edit2 className="h-4 w-4" /></Button>}
+                            {onDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setItemToDelete(item)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button variant={item.isLowStock ? "default" : "outline"} size="sm" onClick={() => onRestock(item)}>
                               <ShoppingCart className="h-4 w-4 mr-1" />Reponer
                             </Button>
@@ -144,6 +166,32 @@ export function InventoryItemsList({ items, isLoading, onRestock, onEdit }: Inve
           </>
         )}
       </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar item de inventario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro que deseas eliminar "{itemToDelete?.itemName || "este item"}"? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (itemToDelete && onDelete) {
+                  onDelete(itemToDelete);
+                  setItemToDelete(null);
+                }
+              }}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

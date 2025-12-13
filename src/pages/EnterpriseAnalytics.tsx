@@ -25,11 +25,11 @@ import {
   AreaChart,
   Area
 } from "recharts";
-import { 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
-  ShoppingCart, 
+import {
+  TrendingUp,
+  Users,
+  DollarSign,
+  ShoppingCart,
   Package,
   ArrowUpRight,
   ArrowDownRight,
@@ -37,7 +37,8 @@ import {
   Calendar as CalendarIcon,
   Download,
   FileSpreadsheet,
-  FileText
+  FileText,
+  Receipt
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -252,6 +253,7 @@ export default function EnterpriseAnalytics() {
       head: [["Métrica", "Valor", "Cambio"]],
       body: [
         ["Ingresos Totales", formatCurrency(summary?.revenue?.total || 0), `${(summary?.revenue?.growth || 0).toFixed(1)}%`],
+        ["Gastos del Período", formatCurrency(summary?.expenses?.total || 0), `${(summary?.expenses?.growth || 0).toFixed(1)}%`],
         ["Pedidos", formatNumber(summary?.orders?.total || 0), `${(summary?.orders?.growth || 0).toFixed(1)}%`],
         ["Clientes Activos", formatNumber(summary?.customers?.total || 0), `${(summary?.customers?.retention || 0).toFixed(1)}%`],
         ["Productos Vendidos", formatNumber(summary?.products?.totalSold || 0), "-"],
@@ -313,6 +315,7 @@ export default function EnterpriseAnalytics() {
     csvContent += "RESUMEN GENERAL\n";
     csvContent += "Métrica,Valor,Cambio\n";
     csvContent += `Ingresos Totales,${summary?.revenue?.total || 0},${(summary?.revenue?.growth || 0).toFixed(1)}%\n`;
+    csvContent += `Gastos del Período,${summary?.expenses?.total || 0},${(summary?.expenses?.growth || 0).toFixed(1)}%\n`;
     csvContent += `Pedidos,${summary?.orders?.total || 0},${(summary?.orders?.growth || 0).toFixed(1)}%\n`;
     csvContent += `Clientes Activos,${summary?.customers?.total || 0},${(summary?.customers?.retention || 0).toFixed(1)}%\n`;
     csvContent += `Productos Vendidos,${summary?.products?.totalSold || 0},-\n\n`;
@@ -517,6 +520,14 @@ export default function EnterpriseAnalytics() {
             isLoading={summaryLoading}
           />
           <StatCard
+            title="Gastos del Período"
+            value={formatCurrency(summary?.expenses?.total || 0)}
+            change={summary?.expenses?.growth || 0}
+            trend={(summary?.expenses?.growth || 0) >= 0 ? "down" : "up"}
+            icon={<Receipt className="h-6 w-6 text-primary" />}
+            isLoading={summaryLoading}
+          />
+          <StatCard
             title="Pedidos"
             value={formatNumber(summary?.orders?.total || 0)}
             change={summary?.orders?.growth || 0}
@@ -530,14 +541,6 @@ export default function EnterpriseAnalytics() {
             change={summary?.customers?.retention || 0}
             trend={(summary?.customers?.retention || 0) >= 0 ? "up" : "down"}
             icon={<Users className="h-6 w-6 text-primary" />}
-            isLoading={summaryLoading}
-          />
-          <StatCard
-            title="Productos Vendidos"
-            value={formatNumber(summary?.products?.totalSold || 0)}
-            change={0}
-            trend="up"
-            icon={<Package className="h-6 w-6 text-primary" />}
             isLoading={summaryLoading}
           />
         </div>

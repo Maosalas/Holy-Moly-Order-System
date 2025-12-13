@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Beaker } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Package, Beaker, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { InventoryItemFormData } from "@/types/inventory";
 import { useCreateInventoryItem } from "@/hooks/use-inventory";
 import { useIngredients } from "@/hooks/use-ingredients";
@@ -22,6 +24,8 @@ export function AddInventoryItemDialog({ isOpen, onClose }: AddInventoryItemDial
   const { data: supplies = [] } = useSupplies();
 
   const [itemType, setItemType] = useState<"ingredient" | "supply">("ingredient");
+  const [ingredientComboOpen, setIngredientComboOpen] = useState(false);
+  const [supplyComboOpen, setSupplyComboOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<InventoryItemFormData>>({
     itemType: "ingredient",
     ingredientId: "",
@@ -65,7 +69,7 @@ export function AddInventoryItemDialog({ isOpen, onClose }: AddInventoryItemDial
     onClose();
   };
 
-  const selectedItem = itemType === "ingredient" 
+  const selectedItem = itemType === "ingredient"
     ? (ingredients as any[]).find(i => i.id === formData.ingredientId)
     : (supplies as any[]).find(s => s.id === formData.supplyId);
 
@@ -95,42 +99,98 @@ export function AddInventoryItemDialog({ isOpen, onClose }: AddInventoryItemDial
             <TabsContent value="ingredient" className="mt-4">
               <div className="space-y-2">
                 <Label>Seleccionar Ingrediente *</Label>
-                <Select 
-                  value={formData.ingredientId} 
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, ingredientId: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar ingrediente..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(ingredients as any[]).map(ingredient => (
-                      <SelectItem key={ingredient.id} value={ingredient.id}>
-                        {ingredient.name} ({ingredient.units})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={ingredientComboOpen} onOpenChange={setIngredientComboOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={ingredientComboOpen}
+                      className="w-full justify-between"
+                    >
+                      {formData.ingredientId
+                        ? (ingredients as any[]).find((ing: any) => ing.id === formData.ingredientId)?.name
+                        : "Seleccionar ingrediente..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar ingrediente..." />
+                      <CommandList>
+                        <CommandEmpty>No se encontraron ingredientes.</CommandEmpty>
+                        <CommandGroup>
+                          {(ingredients as any[]).map((ingredient: any) => (
+                            <CommandItem
+                              key={ingredient.id}
+                              value={ingredient.name}
+                              onSelect={() => {
+                                setFormData(prev => ({ ...prev, ingredientId: ingredient.id }));
+                                setIngredientComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.ingredientId === ingredient.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {ingredient.name} ({ingredient.units})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             </TabsContent>
 
             <TabsContent value="supply" className="mt-4">
               <div className="space-y-2">
                 <Label>Seleccionar Suministro *</Label>
-                <Select 
-                  value={formData.supplyId} 
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, supplyId: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar suministro..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(supplies as any[]).map(supply => (
-                      <SelectItem key={supply.id} value={supply.id}>
-                        {supply.name} ({supply.unit})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={supplyComboOpen} onOpenChange={setSupplyComboOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={supplyComboOpen}
+                      className="w-full justify-between"
+                    >
+                      {formData.supplyId
+                        ? (supplies as any[]).find((sup: any) => sup.id === formData.supplyId)?.name
+                        : "Seleccionar suministro..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar suministro..." />
+                      <CommandList>
+                        <CommandEmpty>No se encontraron suministros.</CommandEmpty>
+                        <CommandGroup>
+                          {(supplies as any[]).map((supply: any) => (
+                            <CommandItem
+                              key={supply.id}
+                              value={supply.name}
+                              onSelect={() => {
+                                setFormData(prev => ({ ...prev, supplyId: supply.id }));
+                                setSupplyComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.supplyId === supply.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {supply.name} ({supply.unit})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             </TabsContent>
           </Tabs>

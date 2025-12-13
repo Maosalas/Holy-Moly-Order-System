@@ -51,15 +51,14 @@ export function InventoryPurchaseHistory({ purchases, isLoading }: InventoryPurc
           <>
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Item</TableHead><TableHead>Cantidad</TableHead><TableHead>Costo</TableHead><TableHead>Proveedor</TableHead><TableHead>Notas</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Item</TableHead><TableHead>Cantidad</TableHead><TableHead>Gasto Asociado</TableHead><TableHead>Notas</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {(paginatedItems as InventoryPurchase[]).map((purchase) => (
                     <TableRow key={purchase.id}>
                       <TableCell className="whitespace-nowrap">{format(new Date(purchase.purchaseDate), "dd MMM yyyy", { locale: es })}</TableCell>
                       <TableCell className="font-medium">{purchase.itemName}</TableCell>
                       <TableCell><Badge variant="outline">+{purchase.quantity} {purchase.unit}</Badge></TableCell>
-                      <TableCell>{purchase.cost > 0 ? `$${purchase.cost.toFixed(2)}` : "-"}</TableCell>
-                      <TableCell className="text-muted-foreground">{purchase.supplierName || "-"}</TableCell>
+                      <TableCell className="text-muted-foreground">{purchase.expenseName || purchase.supplierName || "-"}</TableCell>
                       <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{purchase.notes || "-"}</TableCell>
                     </TableRow>
                   ))}

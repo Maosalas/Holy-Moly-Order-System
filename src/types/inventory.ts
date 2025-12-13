@@ -37,6 +37,8 @@ export interface InventoryPurchase {
   quantity: number;
   unit: string;
   cost: number;
+  expenseId?: string;
+  expenseName?: string;
   supplierName?: string;
   purchaseDate: string;
   notes?: string;
