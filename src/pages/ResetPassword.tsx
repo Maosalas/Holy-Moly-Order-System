@@ -1,21 +1,21 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { authApi } from "@/lib/api";
-import logo from "@/assets/Orderly-logo.png";
-import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Check, Loader2 } from "lucide-react";
+import logo from "@/assets/Orderly-logo.png";
 
 const ResetPassword = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { updatePassword, session } = useAuth();
 
-  const [token, setToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,26 +24,27 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
+  // Check for error in URL params
   useEffect(() => {
-    const tokenParam = searchParams.get("token");
-    if (!tokenParam) {
-      setError("Token de restablecimiento no válido");
-    } else {
-      setToken(tokenParam);
+    const errorParam = searchParams.get("error");
+    const errorDescription = searchParams.get("error_description");
+    
+    if (errorParam) {
+      setError(errorDescription || "El enlace de recuperación es inválido o ha expirado.");
     }
   }, [searchParams]);
 
   const validatePassword = (password: string): string | null => {
-    if (password.length < 8) {
-      return "La contraseña debe tener al menos 8 caracteres";
+    if (password.length < 6) {
+      return "La contraseña debe tener al menos 6 caracteres";
     }
     return null;
   };
 
   const passwordRequirements = [
     {
-      met: newPassword.length >= 8,
-      text: "Al menos 8 caracteres",
+      met: newPassword.length >= 6,
+      text: "Al menos 6 caracteres",
     },
     {
       met: newPassword === confirmPassword && newPassword.length > 0,
@@ -68,41 +69,32 @@ const ResetPassword = () => {
 
     setIsLoading(true);
 
-    try {
-      const result = await authApi.resetPassword(token, newPassword);
+    const { success: updateSuccess, error: updateError } = await updatePassword(newPassword);
 
-      if (result.error) {
-        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error actualizando contraseña";
-        setError(errorMsg);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: errorMsg,
-        });
-      } else {
-        setSuccess(true);
-        toast({
-          title: "Contraseña actualizada",
-          description: "Tu contraseña ha sido actualizada exitosamente.",
-        });
+    setIsLoading(false);
 
-        setTimeout(() => {
-          navigate("/auth");
-        }, 3000);
-      }
-    } catch (err) {
-      setError("Error de conexión. Por favor, intenta nuevamente.");
+    if (updateSuccess) {
+      setSuccess(true);
+      toast({
+        title: "Contraseña actualizada",
+        description: "Tu contraseña ha sido actualizada exitosamente.",
+      });
+
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 3000);
+    } else {
+      setError(updateError || "Error actualizando contraseña");
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Error de conexión. Por favor, intenta nuevamente.",
+        description: updateError || "Error actualizando contraseña",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  if (!token) {
+  // Show error state if there's an error and no session (link invalid/expired)
+  if (error && !session) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
         <Card className="w-full max-w-md">
@@ -110,8 +102,8 @@ const ResetPassword = () => {
             <div className="flex justify-center mb-4">
               <img
                 src={logo}
-                alt="Holy Moly Logo"
-                className="h-100 w-100 object-contain"
+                alt="Logo"
+                className="h-24 w-auto object-contain"
               />
             </div>
             <CardTitle className="text-2xl flex items-center justify-center gap-2 text-destructive">
@@ -119,7 +111,7 @@ const ResetPassword = () => {
               Enlace Inválido
             </CardTitle>
             <CardDescription className="text-base pt-2">
-              El enlace de restablecimiento no es válido o ha expirado.
+              {error}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -142,8 +134,8 @@ const ResetPassword = () => {
             <div className="flex justify-center mb-4">
               <img
                 src={logo}
-                alt="Holy Moly Logo"
-                className="h-100 w-100 object-contain"
+                alt="Logo"
+                className="h-24 w-auto object-contain"
               />
             </div>
             <CardTitle className="text-2xl flex items-center justify-center gap-2 text-green-600">
@@ -156,11 +148,11 @@ const ResetPassword = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-center text-sm text-muted-foreground">
-              Serás redirigido al inicio de sesión en unos segundos...
+              Serás redirigido al dashboard en unos segundos...
             </p>
-            <Link to="/auth">
+            <Link to="/dashboard">
               <Button className="w-full">
-                Ir al inicio de sesión ahora
+                Ir al Dashboard ahora
               </Button>
             </Link>
           </CardContent>
@@ -176,8 +168,8 @@ const ResetPassword = () => {
           <div className="flex justify-center mb-4">
             <img
               src={logo}
-              alt="Holy Moly Logo"
-              className="h-100 w-100 object-contain"
+              alt="Logo"
+              className="h-24 w-auto object-contain"
             />
           </div>
           <CardTitle className="text-2xl flex items-center justify-center gap-2">
@@ -197,11 +189,12 @@ const ResetPassword = () => {
                 <Input
                   id="newPassword"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder="Mínimo 6 caracteres"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   className="pl-10 pr-10"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -229,6 +222,7 @@ const ResetPassword = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   className="pl-10 pr-10"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -273,7 +267,14 @@ const ResetPassword = () => {
             )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Actualizando..." : "Actualizar Contraseña"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Actualizando...
+                </>
+              ) : (
+                "Actualizar Contraseña"
+              )}
             </Button>
 
             <div className="text-center">

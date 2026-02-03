@@ -1,59 +1,89 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import type { User, AuthState } from "@/types/auth";
+import { supabase } from "@/integrations/supabase/client";
+import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
+import type { User, AuthState, UserRole } from "@/types/auth";
 import type { OrganizationWithRole } from "@/types/organization";
-import { authApi } from "@/lib/api";
 
 interface AuthContextType extends AuthState {
+  // Organization management
   currentOrganization: OrganizationWithRole | null;
   setCurrentOrganization: (org: OrganizationWithRole | null) => void;
+  
+  // Impersonation (for super admins)
   isImpersonating: boolean;
   impersonatedOrgId: string | null;
-  isLoading: boolean;
   startImpersonation: (orgId: string) => void;
   stopImpersonation: () => void;
+  
+  // Loading state
+  isLoading: boolean;
+  isEmailConfirmed: boolean;
+  session: Session | null;
+  
+  // User management
   updateUser: (user: User) => void;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
-  signup: (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin") => Promise<{ success: boolean; error?: string; user?: User }>;
-  logout: () => void;
+  
+  // Auth actions
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User; needsEmailConfirmation?: boolean }>;
+  signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string; user?: User; needsEmailConfirmation?: boolean }>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  resendConfirmationEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_STORAGE_KEY = "holy-moly-auth";
 const CURRENT_ORG_STORAGE_KEY = "holy-moly-current-org";
 const IMPERSONATION_STORAGE_KEY = "holy-moly-impersonation";
+
+// Transform Supabase user to our User type
+const transformUser = (supabaseUser: SupabaseUser | null): User | null => {
+  if (!supabaseUser) return null;
+  
+  // Get roles from user metadata or default to owner
+  const roles: UserRole[] = supabaseUser.user_metadata?.roles || ["owner"];
+  
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email || "",
+    name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "",
+    roles,
+    currentOrganizationId: supabaseUser.user_metadata?.current_organization_id,
+  };
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
   });
-
+  
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEmailConfirmed, setIsEmailConfirmed] = useState(false);
+  
+  // Organization state
   const [currentOrganization, setCurrentOrganizationState] = useState<OrganizationWithRole | null>(null);
   const [isImpersonating, setIsImpersonating] = useState<boolean>(false);
   const [impersonatedOrgId, setImpersonatedOrgId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load current organization from localStorage on mount
+  // Load organization and impersonation state from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(CURRENT_ORG_STORAGE_KEY);
-    if (stored) {
+    const storedOrg = localStorage.getItem(CURRENT_ORG_STORAGE_KEY);
+    if (storedOrg) {
       try {
-        const org = JSON.parse(stored);
-        setCurrentOrganizationState(org);
+        setCurrentOrganizationState(JSON.parse(storedOrg));
       } catch (error) {
         console.error("Error parsing stored organization:", error);
         localStorage.removeItem(CURRENT_ORG_STORAGE_KEY);
       }
     }
-  }, []);
 
-  // Load impersonation state from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(IMPERSONATION_STORAGE_KEY);
-    if (stored) {
+    const storedImpersonation = localStorage.getItem(IMPERSONATION_STORAGE_KEY);
+    if (storedImpersonation) {
       try {
-        const impersonation = JSON.parse(stored);
+        const impersonation = JSON.parse(storedImpersonation);
         setIsImpersonating(impersonation.isImpersonating);
         setImpersonatedOrgId(impersonation.orgId);
       } catch (error) {
@@ -61,6 +91,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem(IMPERSONATION_STORAGE_KEY);
       }
     }
+  }, []);
+
+  // Set up auth state listener
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        console.log("🔐 Auth state changed:", event, newSession?.user?.email);
+        
+        const user = transformUser(newSession?.user ?? null);
+        const emailConfirmed = newSession?.user?.email_confirmed_at != null;
+        
+        setSession(newSession);
+        setIsEmailConfirmed(emailConfirmed);
+        setAuthState({
+          user,
+          isAuthenticated: !!newSession && emailConfirmed,
+        });
+        setIsLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      const user = transformUser(existingSession?.user ?? null);
+      const emailConfirmed = existingSession?.user?.email_confirmed_at != null;
+      
+      setSession(existingSession);
+      setIsEmailConfirmed(emailConfirmed);
+      setAuthState({
+        user,
+        isAuthenticated: !!existingSession && emailConfirmed,
+      });
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Wrapper function to persist organization to localStorage
@@ -71,91 +140,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       localStorage.removeItem(CURRENT_ORG_STORAGE_KEY);
     }
-  };
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      setIsLoading(true);
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (stored) {
-        const authData = JSON.parse(stored);
-        console.log("🔐 Checking auth - stored data:", authData);
-        
-        // Load stored user immediately (optimistic)
-        if (authData.user) {
-          setAuthState({ user: authData.user, isAuthenticated: true });
-        }
-        
-        // Then verify token with backend
-        const result = await authApi.getCurrentUser();
-        console.log("🔐 Current user from API:", result.data);
-        if (result.data) {
-          const apiUser = result.data as any;
-          // Transform backend response to match frontend User type
-          const user: User = {
-            id: apiUser.id,
-            email: apiUser.email,
-            name: apiUser.name,
-            roles: apiUser.roles || (apiUser.role ? [apiUser.role] : []),
-            currentOrganizationId: apiUser.organizationId || apiUser.currentOrganizationId
-          };
-          console.log("✅ User authenticated - roles:", user.roles, "organizationId:", user.currentOrganizationId);
-          setAuthState({ user, isAuthenticated: true });
-        } else {
-          console.log("❌ Auth verification failed");
-          localStorage.removeItem(AUTH_STORAGE_KEY);
-          setAuthState({ user: null, isAuthenticated: false });
-        }
-      } else {
-        console.log("ℹ️ No stored auth found");
-      }
-      setIsLoading(false);
-    };
-    checkAuth();
-  }, []);
-
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
-    const result = await authApi.login(email, password);
-
-    if (result.error) {
-      return { success: false, error: result.error };
-    }
-
-    const apiResponse = result.data as any;
-    // Transform backend response to match frontend User type
-    const user: User = {
-      id: apiResponse.user.id,
-      email: apiResponse.user.email,
-      name: apiResponse.user.name,
-      roles: apiResponse.user.roles || (apiResponse.user.role ? [apiResponse.user.role] : []),
-      currentOrganizationId: apiResponse.user.organizationId || apiResponse.user.currentOrganizationId
-    };
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, token: apiResponse.token }));
-    setAuthState({ user, isAuthenticated: true });
-
-    return { success: true, user };
-  };
-
-  const signup = async (email: string, password: string, name: string, role: "owner" | "cake_topper_provider" | "super_admin"): Promise<{ success: boolean; error?: string; user?: User }> => {
-    const result = await authApi.signup(email, password, name, role);
-
-    if (result.error) {
-      return { success: false, error: result.error };
-    }
-
-    const apiResponse = result.data as any;
-    // Transform backend response to match frontend User type
-    const user: User = {
-      id: apiResponse.user.id,
-      email: apiResponse.user.email,
-      name: apiResponse.user.name,
-      roles: apiResponse.user.roles || (apiResponse.user.role ? [apiResponse.user.role] : []),
-      currentOrganizationId: apiResponse.user.organizationId || apiResponse.user.currentOrganizationId
-    };
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, token: apiResponse.token }));
-    setAuthState({ user, isAuthenticated: true });
-
-    return { success: true, user };
   };
 
   const startImpersonation = (orgId: string) => {
@@ -177,41 +161,162 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUser = (user: User) => {
     setAuthState({ user, isAuthenticated: true });
-    // Update localStorage with new user data
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (stored) {
-      const authData = JSON.parse(stored);
-      authData.user = user;
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
+  };
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User; needsEmailConfirmation?: boolean }> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        if (error.message.includes("Email not confirmed")) {
+          return { 
+            success: false, 
+            error: "Por favor confirma tu email antes de iniciar sesión.",
+            needsEmailConfirmation: true 
+          };
+        }
+        return { success: false, error: error.message };
+      }
+
+      if (!data.user?.email_confirmed_at) {
+        return { 
+          success: false, 
+          error: "Por favor confirma tu email antes de iniciar sesión.",
+          needsEmailConfirmation: true 
+        };
+      }
+
+      const user = transformUser(data.user);
+      return { success: true, user: user || undefined };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Error al iniciar sesión" };
+    }
+  };
+
+  const signup = async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string; user?: User; needsEmailConfirmation?: boolean }> => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth`,
+          data: {
+            full_name: name,
+            name: name,
+            roles: ["owner"],
+          },
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      const user = transformUser(data.user);
+      
+      if (data.user && !data.user.email_confirmed_at) {
+        return { 
+          success: true, 
+          user: user || undefined,
+          needsEmailConfirmation: true 
+        };
+      }
+
+      return { success: true, user: user || undefined, needsEmailConfirmation: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Error al registrarse" };
     }
   };
 
   const logout = async () => {
-    await authApi.logout();
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    await supabase.auth.signOut();
     localStorage.removeItem(CURRENT_ORG_STORAGE_KEY);
     localStorage.removeItem(IMPERSONATION_STORAGE_KEY);
+    setSession(null);
     setAuthState({ user: null, isAuthenticated: false });
     setCurrentOrganizationState(null);
     setIsImpersonating(false);
     setImpersonatedOrgId(null);
+    setIsEmailConfirmed(false);
+  };
+
+  const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Error al enviar email" };
+    }
+  };
+
+  const updatePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Error al actualizar contraseña" };
+    }
+  };
+
+  const resendConfirmationEmail = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth`,
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Error al reenviar email" };
+    }
   };
 
   return (
-    <AuthContext.Provider value={{
-      ...authState,
-      currentOrganization,
-      setCurrentOrganization,
-      isImpersonating,
-      impersonatedOrgId,
-      isLoading,
-      startImpersonation,
-      stopImpersonation,
-      updateUser,
-      login,
-      signup,
-      logout
-    }}>
+    <AuthContext.Provider
+      value={{
+        ...authState,
+        session,
+        isLoading,
+        isEmailConfirmed,
+        currentOrganization,
+        setCurrentOrganization,
+        isImpersonating,
+        impersonatedOrgId,
+        startImpersonation,
+        stopImpersonation,
+        updateUser,
+        login,
+        signup,
+        logout,
+        resetPassword,
+        updatePassword,
+        resendConfirmationEmail,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,87 +1,80 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { authApi } from "@/lib/api";
+import { ArrowLeft, Mail, CheckCircle2, Loader2 } from "lucide-react";
 import logo from "@/assets/Orderly-logo.png";
-import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 
 const ForgotPassword = () => {
+  const navigate = useNavigate();
+  const { resetPassword } = useAuth();
   const { toast } = useToast();
+
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const result = await authApi.forgotPassword(email);
+    const { success, error } = await resetPassword(email);
 
-      if (result.error) {
-        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error enviando email";
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: errorMsg,
-        });
-      } else {
-        setIsSubmitted(true);
-        toast({
-          title: "Correo enviado",
-          description: "Si el correo existe, recibirás un enlace para restablecer tu contraseña.",
-        });
-      }
-    } catch (error) {
+    setIsLoading(false);
+
+    if (success) {
+      setEmailSent(true);
+      toast({
+        title: "Email enviado",
+        description: "Revisa tu bandeja de entrada para restablecer tu contraseña.",
+      });
+    } else {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Error de conexión. Por favor, intenta nuevamente.",
+        description: error || "No se pudo enviar el email",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  if (isSubmitted) {
+  if (emailSent) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
         <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1 text-center">
-            <div className="flex justify-center mb-4">
-              <img
-                src={logo}
-                alt="Holy Moly Logo"
-                className="h-100 w-100 object-contain"
-              />
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <CheckCircle2 className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl flex items-center justify-center gap-2 text-green-600">
-              <CheckCircle2 className="h-6 w-6" />
-              Correo Enviado
-            </CardTitle>
-            <CardDescription className="text-base pt-2">
-              Si el correo existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.
+            <CardTitle className="text-2xl">Revisa tu email</CardTitle>
+            <CardDescription>
+              Hemos enviado instrucciones para restablecer tu contraseña a:
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Revisa tu bandeja de entrada y carpeta de spam.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                El enlace expirará en 60 minutos.
-              </p>
+            <div className="rounded-lg bg-muted p-3 text-center">
+              <p className="font-medium">{email}</p>
             </div>
-            <Link to="/auth">
-              <Button variant="outline" className="w-full">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver al inicio de sesión
-              </Button>
-            </Link>
+            
+            <Alert>
+              <Mail className="h-4 w-4" />
+              <AlertDescription>
+                El enlace expirará en 1 hora. Si no recibes el email, revisa tu carpeta de spam.
+              </AlertDescription>
+            </Alert>
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate("/auth")}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver al inicio de sesión
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -91,39 +84,43 @@ const ForgotPassword = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
+        <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <img
               src={logo}
-              alt="Holy Moly Logo"
-              className="h-100 w-100 object-contain"
+              alt="Logo"
+              className="h-24 w-auto object-contain"
             />
           </div>
           <CardTitle className="text-2xl">¿Olvidaste tu contraseña?</CardTitle>
-          <CardDescription className="text-base pt-2">
-            Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
+          <CardDescription>
+            Ingresa tu email y te enviaremos un enlace para restablecerla
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Correo Electrónico</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="tu@ejemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="pl-10"
-                />
-              </div>
+              <Input
+                id="email"
+                type="email"
+                placeholder="tu@ejemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Enviando..." : "Enviar Enlace de Restablecimiento"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                "Enviar enlace de recuperación"
+              )}
             </Button>
 
             <div className="text-center">
