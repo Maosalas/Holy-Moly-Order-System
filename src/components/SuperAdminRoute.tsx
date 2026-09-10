@@ -1,28 +1,29 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 interface SuperAdminRouteProps {
   children: React.ReactNode;
 }
 
 export const SuperAdminRoute = ({ children }: SuperAdminRouteProps) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  console.log("🛡️ SuperAdminRoute check - authenticated:", isAuthenticated);
-  console.log("🛡️ SuperAdminRoute check - user:", user);
-  console.log("🛡️ SuperAdminRoute check - roles:", user?.roles);
-  console.log("🛡️ SuperAdminRoute check - has super_admin:", user?.roles.includes("super_admin"));
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
-    console.log("❌ Not authenticated, redirecting to /auth");
     return <Navigate to="/auth" replace />;
   }
 
   if (!user?.roles.includes("super_admin")) {
-    console.log("❌ Not super_admin, redirecting to /");
     return <Navigate to="/" replace />;
   }
 
-  console.log("✅ Super admin access granted");
   return <>{children}</>;
 };
