@@ -378,13 +378,6 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string[]
       }
-      has_global_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["global_app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
       is_organization_admin: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean

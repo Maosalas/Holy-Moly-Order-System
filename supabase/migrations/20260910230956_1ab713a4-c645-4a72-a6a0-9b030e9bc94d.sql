@@ -1,0 +1,1 @@
+DROP FUNCTION public.has_global_role(uuid, public.global_app_role);
