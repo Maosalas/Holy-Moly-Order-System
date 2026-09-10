@@ -37,12 +37,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const CURRENT_ORG_STORAGE_KEY = "holy-moly-current-org";
 const IMPERSONATION_STORAGE_KEY = "holy-moly-impersonation";
 
-// Transform Supabase user to our User type
-const transformUser = (supabaseUser: SupabaseUser | null): User | null => {
+// Transform an authenticated account and load protected global roles.
+const transformUser = async (supabaseUser: SupabaseUser | null): Promise<User | null> => {
   if (!supabaseUser) return null;
-  
-  // Get roles from user metadata or default to owner
-  const roles: UserRole[] = supabaseUser.user_metadata?.roles || ["owner"];
+
+  const metadataRoles = Array.isArray(supabaseUser.user_metadata?.roles)
+    ? supabaseUser.user_metadata.roles.filter(
+        (role: unknown): role is UserRole =>
+          role === "owner" || role === "cake_topper_provider"
+      )
+    : [];
+  const roles: UserRole[] = metadataRoles.length > 0 ? metadataRoles : ["owner"];
+
+  const { data: globalRoles, error: globalRolesError } = await supabase
+    .from("user_global_roles")
+    .select("role")
+    .eq("user_id", supabaseUser.id);
+
+  if (globalRolesError) {
+    console.error("No se pudieron cargar los permisos globales:", globalRolesError.message);
+  } else if (globalRoles?.some(({ role }) => role === "super_admin")) {
+    roles.push("super_admin");
+  }
   
   return {
     id: supabaseUser.id,
@@ -96,35 +112,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Set up auth state listener
   useEffect(() => {
     // Set up auth state listener FIRST
+    let hydrationVersion = 0;
+
+    const hydrateSession = async (newSession: Session | null) => {
+      const version = ++hydrationVersion;
+      const user = await transformUser(newSession?.user ?? null);
+      if (version !== hydrationVersion) return;
+
+      const emailConfirmed = newSession?.user?.email_confirmed_at != null;
+      setSession(newSession);
+      setIsEmailConfirmed(emailConfirmed);
+      setAuthState({
+        user,
+        isAuthenticated: !!newSession && emailConfirmed,
+      });
+      setIsLoading(false);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
         console.log("🔐 Auth state changed:", event, newSession?.user?.email);
-        
-        const user = transformUser(newSession?.user ?? null);
-        const emailConfirmed = newSession?.user?.email_confirmed_at != null;
-        
-        setSession(newSession);
-        setIsEmailConfirmed(emailConfirmed);
-        setAuthState({
-          user,
-          isAuthenticated: !!newSession && emailConfirmed,
-        });
-        setIsLoading(false);
+        window.setTimeout(() => void hydrateSession(newSession), 0);
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      const user = transformUser(existingSession?.user ?? null);
-      const emailConfirmed = existingSession?.user?.email_confirmed_at != null;
-      
-      setSession(existingSession);
-      setIsEmailConfirmed(emailConfirmed);
-      setAuthState({
-        user,
-        isAuthenticated: !!existingSession && emailConfirmed,
-      });
-      setIsLoading(false);
+      void hydrateSession(existingSession);
     });
 
     return () => {
@@ -178,6 +192,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             needsEmailConfirmation: true 
           };
         }
+        if (error.message.includes("Invalid login credentials")) {
+          return {
+            success: false,
+            error: "No existe una cuenta con esos datos o la contraseña no es correcta. Puedes crear una cuenta o recuperar tu contraseña.",
+          };
+        }
         return { success: false, error: error.message };
       }
 
@@ -189,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      const user = transformUser(data.user);
+      const user = await transformUser(data.user);
       return { success: true, user: user || undefined };
     } catch (error: any) {
       return { success: false, error: error.message || "Error al iniciar sesión" };
@@ -206,7 +226,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: name,
             name: name,
-            roles: ["owner"],
           },
         },
       });
@@ -215,7 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: error.message };
       }
 
-      const user = transformUser(data.user);
+      const user = await transformUser(data.user);
       
       if (data.user && !data.user.email_confirmed_at) {
         return { 
