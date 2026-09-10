@@ -306,6 +306,38 @@ export type Database = {
           },
         ]
       }
+      user_global_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["global_app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["global_app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["global_app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_global_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -346,6 +378,13 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string[]
       }
+      has_global_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["global_app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_organization_admin: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -362,6 +401,7 @@ export type Database = {
     Enums: {
       app_role: "owner" | "admin" | "member"
       billing_interval: "monthly" | "yearly"
+      global_app_role: "super_admin"
       subscription_status:
         | "active"
         | "canceled"
@@ -499,6 +539,7 @@ export const Constants = {
     Enums: {
       app_role: ["owner", "admin", "member"],
       billing_interval: ["monthly", "yearly"],
+      global_app_role: ["super_admin"],
       subscription_status: [
         "active",
         "canceled",
