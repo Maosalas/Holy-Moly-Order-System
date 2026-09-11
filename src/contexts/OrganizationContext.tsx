@@ -32,24 +32,21 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [isInitializing, setIsInitializing] = useState(true);
   const { toast } = useToast();
 
-  // Fetch organizations when authenticated
   useEffect(() => {
     const initializeOrganizations = async () => {
-      console.log("🏢 OrganizationContext: isAuthenticated =", isAuthenticated);
-      if (isAuthenticated) {
-        console.log("🏢 Starting organizations initialization...");
+      if (isAuthenticated && user?.id) {
         setIsInitializing(true);
         await fetchOrganizations();
         setIsInitializing(false);
-        console.log("🏢 Organizations initialization complete");
-      } else {
-        console.log("🏢 Not authenticated, skipping initialization");
+      } else if (!isAuthenticated) {
+        setOrganizations([]);
         setIsInitializing(false);
       }
     };
 
     initializeOrganizations();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.id]);
+
 
   const fetchOrganizations = async () => {
     console.log("🏢 fetchOrganizations called");
