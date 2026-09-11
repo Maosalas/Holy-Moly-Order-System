@@ -186,13 +186,16 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const createOrganization = async (name: string, slug: string): Promise<OrganizationWithRole | null> => {
     setIsLoading(true);
     try {
-      const { data: orgData, error } = await supabase
-        .from("organizations")
-        .insert({ name, slug })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc("create_organization", {
+        _name: name,
+        _slug: slug,
+      });
 
       if (error) throw error;
+      const orgData = (Array.isArray(data) ? data[0] : data) as any;
+      if (!orgData) throw new Error("No organization returned");
+
+
 
       // Transform API response to match OrganizationWithRole type
       const newOrg: OrganizationWithRole = {
