@@ -29,6 +29,8 @@ import RecipeParameters from "./pages/RecipeParameters";
 import CostingSettings from "./pages/CostingSettings";
 import Purchases from "./pages/Purchases";
 import Preparations from "./pages/Preparations";
+import Products from "./pages/Products";
+import ProductEditor from "./pages/ProductEditor";
 import PreparationEditor from "./pages/PreparationEditor";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import Checkout from "./pages/Checkout";
@@ -90,6 +92,8 @@ const App = () => (
               <Route path="/purchases" element={<ProtectedRoute><RequireOrganization><AppLayout><Purchases /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/preparations" element={<ProtectedRoute><RequireOrganization><AppLayout><Preparations /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/preparations/:id" element={<ProtectedRoute><RequireOrganization><AppLayout><PreparationEditor /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/products" element={<ProtectedRoute><RequireOrganization><AppLayout><Products /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/products/:id" element={<ProtectedRoute><RequireOrganization><AppLayout><ProductEditor /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/costing-settings" element={<ProtectedRoute><RequireOrganization><AppLayout><CostingSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute><RequireOrganization><AppLayout><EnterpriseAnalytics /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/inventory" element={<ProtectedRoute><RequireOrganization><AppLayout><Inventory /></AppLayout></RequireOrganization></ProtectedRoute>} />
