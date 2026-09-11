@@ -930,6 +930,219 @@ export type Database = {
         }
         Relationships: []
       }
+      preparation_components: {
+        Row: {
+          base_qty: number
+          child_prep_id: string | null
+          component_type: string
+          created_at: string
+          id: string
+          ingredient_id: string | null
+          notes: string | null
+          preparation_id: string
+          qty: number
+          sort_order: number
+          unit_code: string
+          updated_at: string
+          waste_pct_override: number | null
+        }
+        Insert: {
+          base_qty?: number
+          child_prep_id?: string | null
+          component_type: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string | null
+          notes?: string | null
+          preparation_id: string
+          qty: number
+          sort_order?: number
+          unit_code: string
+          updated_at?: string
+          waste_pct_override?: number | null
+        }
+        Update: {
+          base_qty?: number
+          child_prep_id?: string | null
+          component_type?: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string | null
+          notes?: string | null
+          preparation_id?: string
+          qty?: number
+          sort_order?: number
+          unit_code?: string
+          updated_at?: string
+          waste_pct_override?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preparation_components_child_prep_id_fkey"
+            columns: ["child_prep_id"]
+            isOneToOne: false
+            referencedRelation: "preparations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preparation_components_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preparation_components_preparation_id_fkey"
+            columns: ["preparation_id"]
+            isOneToOne: false
+            referencedRelation: "preparations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preparation_components_unit_code_fkey"
+            columns: ["unit_code"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      preparation_costs: {
+        Row: {
+          batch_cost: number
+          breakdown: Json
+          calculated_at: string
+          cost_per_g: number
+          cost_per_portion: number | null
+          depth: number
+          energy_cost: number
+          energy_per_g: number
+          labor_cost: number
+          labor_per_g: number
+          material_cost: number
+          material_per_g: number
+          preparation_id: string
+        }
+        Insert: {
+          batch_cost?: number
+          breakdown?: Json
+          calculated_at?: string
+          cost_per_g?: number
+          cost_per_portion?: number | null
+          depth?: number
+          energy_cost?: number
+          energy_per_g?: number
+          labor_cost?: number
+          labor_per_g?: number
+          material_cost?: number
+          material_per_g?: number
+          preparation_id: string
+        }
+        Update: {
+          batch_cost?: number
+          breakdown?: Json
+          calculated_at?: string
+          cost_per_g?: number
+          cost_per_portion?: number | null
+          depth?: number
+          energy_cost?: number
+          energy_per_g?: number
+          labor_cost?: number
+          labor_per_g?: number
+          material_cost?: number
+          material_per_g?: number
+          preparation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preparation_costs_preparation_id_fkey"
+            columns: ["preparation_id"]
+            isOneToOne: true
+            referencedRelation: "preparations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preparations: {
+        Row: {
+          active: boolean
+          baking_loss_pct: number
+          created_at: string
+          id: string
+          is_seasonal: boolean
+          name: string
+          notes: string | null
+          organization_id: string
+          oven_minutes: number
+          oven_temp_c: number | null
+          photo_url: string | null
+          procedure_text: string | null
+          setup_minutes: number
+          source_url: string | null
+          time_minutes: number
+          type: string
+          updated_at: string
+          version: number
+          waste_pct: number
+          yield_g: number
+          yield_portions: number | null
+        }
+        Insert: {
+          active?: boolean
+          baking_loss_pct?: number
+          created_at?: string
+          id?: string
+          is_seasonal?: boolean
+          name: string
+          notes?: string | null
+          organization_id: string
+          oven_minutes?: number
+          oven_temp_c?: number | null
+          photo_url?: string | null
+          procedure_text?: string | null
+          setup_minutes?: number
+          source_url?: string | null
+          time_minutes?: number
+          type?: string
+          updated_at?: string
+          version?: number
+          waste_pct?: number
+          yield_g: number
+          yield_portions?: number | null
+        }
+        Update: {
+          active?: boolean
+          baking_loss_pct?: number
+          created_at?: string
+          id?: string
+          is_seasonal?: boolean
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          oven_minutes?: number
+          oven_temp_c?: number | null
+          photo_url?: string | null
+          procedure_text?: string | null
+          setup_minutes?: number
+          source_url?: string | null
+          time_minutes?: number
+          type?: string
+          updated_at?: string
+          version?: number
+          waste_pct?: number
+          yield_g?: number
+          yield_portions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preparations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
