@@ -44,6 +44,7 @@ const menuItems = [
       { title: "Costeo", url: "/costing-settings", icon: Calculator }
     ]
   },
+  { title: "Elaboraciones", url: "/preparations", icon: ChefHat },
   { title: "Ingredientes", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
   { title: "Compras", url: "/purchases", icon: Receipt },
