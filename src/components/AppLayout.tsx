@@ -46,6 +46,7 @@ const menuItems = [
   },
   { title: "Ingredientes", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
+  { title: "Compras", url: "/purchases", icon: Receipt },
   { title: "Gastos", url: "/expenses", icon: Receipt },
 ];
 
