@@ -7,6 +7,14 @@ export interface Ingredient {
   qtyProvider: number;
   units: string;
   cost: number;
+  baseUnit?: string;
+  densityGMl?: number | null;
+  unitWeightG?: number | null;
+  wastePct?: number;
+  currentCost?: number;
+  lastCost?: number;
+  category?: string | null;
+  active?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
