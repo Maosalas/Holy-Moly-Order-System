@@ -347,6 +347,23 @@ export type Database = {
         Args: { _current_value: number; _limit_type: string; _org_id: string }
         Returns: boolean
       }
+      create_organization: {
+        Args: { _name: string; _slug?: string }
+        Returns: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          slug: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "organizations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_organization_plan: {
         Args: { _org_id: string }
         Returns: {
