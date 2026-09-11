@@ -1782,6 +1782,19 @@ export type Database = {
         Args: { p_invoice_id: string }
         Returns: undefined
       }
+      fn_recalc_all: { Args: { p_org: string }; Returns: undefined }
+      fn_recalc_preparation_cascade: {
+        Args: { p_prep_id: string }
+        Returns: undefined
+      }
+      fn_recalc_preparation_cost: {
+        Args: { p_prep_id: string }
+        Returns: undefined
+      }
+      fn_recalc_preparations_using_ingredient: {
+        Args: { p_ingredient_id: string }
+        Returns: undefined
+      }
       fn_round_price: {
         Args: { p_step?: number; p_value: number }
         Returns: number
