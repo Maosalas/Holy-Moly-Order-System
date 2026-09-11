@@ -40,7 +40,8 @@ const menuItems = [
     url: "/recipes",
     icon: ChefHat,
     submenu: [
-      { title: "Parámetros", url: "/recipe-parameters", icon: Sliders }
+      { title: "Parámetros", url: "/recipe-parameters", icon: Sliders },
+      { title: "Costeo", url: "/costing-settings", icon: Calculator }
     ]
   },
   { title: "Ingredientes", url: "/ingredients", icon: Package },

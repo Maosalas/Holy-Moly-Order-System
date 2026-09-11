@@ -26,6 +26,7 @@ import OrganizationSettings from "./pages/OrganizationSettings";
 import OrganizationMembers from "./pages/OrganizationMembers";
 import SuperAdmin from "./pages/SuperAdmin";
 import RecipeParameters from "./pages/RecipeParameters";
+import CostingSettings from "./pages/CostingSettings";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="/settings/subscription" element={<ProtectedRoute><RequireOrganization><AppLayout><OrganizationSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/organization/members" element={<ProtectedRoute><RequireOrganization><AppLayout><OrganizationMembers /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/recipe-parameters" element={<ProtectedRoute><RequireOrganization><AppLayout><RecipeParameters /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/costing-settings" element={<ProtectedRoute><RequireOrganization><AppLayout><CostingSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute><RequireOrganization><AppLayout><EnterpriseAnalytics /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/inventory" element={<ProtectedRoute><RequireOrganization><AppLayout><Inventory /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/super-admin" element={<SuperAdminRoute><AppLayout><SuperAdmin /></AppLayout></SuperAdminRoute>} />

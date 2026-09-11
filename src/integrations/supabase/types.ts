@@ -68,6 +68,86 @@ export type Database = {
           },
         ]
       }
+      costing_settings: {
+        Row: {
+          cost_method: string
+          created_at: string
+          currency: string
+          default_margin_pct: number
+          deposit_percent: number
+          hourly_rate: number
+          include_energy: boolean
+          include_labor: boolean
+          kwh_price: number
+          min_margin_pct: number
+          min_order_amount: number
+          organization_id: string
+          oven_kw: number
+          overhead_percent: number
+          price_rounding: number
+          production_loss_pct: number
+          quote_valid_days: number
+          rush_surcharge_pct: number
+          tax_enabled: boolean
+          tax_percent: number
+          updated_at: string
+        }
+        Insert: {
+          cost_method?: string
+          created_at?: string
+          currency?: string
+          default_margin_pct?: number
+          deposit_percent?: number
+          hourly_rate?: number
+          include_energy?: boolean
+          include_labor?: boolean
+          kwh_price?: number
+          min_margin_pct?: number
+          min_order_amount?: number
+          organization_id: string
+          oven_kw?: number
+          overhead_percent?: number
+          price_rounding?: number
+          production_loss_pct?: number
+          quote_valid_days?: number
+          rush_surcharge_pct?: number
+          tax_enabled?: boolean
+          tax_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_method?: string
+          created_at?: string
+          currency?: string
+          default_margin_pct?: number
+          deposit_percent?: number
+          hourly_rate?: number
+          include_energy?: boolean
+          include_labor?: boolean
+          kwh_price?: number
+          min_margin_pct?: number
+          min_order_amount?: number
+          organization_id?: string
+          oven_kw?: number
+          overhead_percent?: number
+          price_rounding?: number
+          production_loss_pct?: number
+          quote_valid_days?: number
+          rush_surcharge_pct?: number
+          tax_enabled?: boolean
+          tax_percent?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costing_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -1192,6 +1272,24 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      fn_costing_price: {
+        Args: {
+          p_hourly_rate: number
+          p_hours: number
+          p_include_energy: boolean
+          p_include_labor: boolean
+          p_kwh_price: number
+          p_margin_pct: number
+          p_materials: number
+          p_oven_kw: number
+          p_overhead_percent: number
+          p_price_rounding: number
+          p_production_loss_pct: number
+          p_tax_enabled: boolean
+          p_tax_percent: number
+        }
+        Returns: number
       }
       fn_round_price: {
         Args: { p_step?: number; p_value: number }
