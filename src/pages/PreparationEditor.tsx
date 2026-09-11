@@ -483,6 +483,13 @@ function DraftRow({
               </option>
             ))}
           </select>
+          {emptyList && (
+            <p className="text-xs text-destructive">
+              {draft.componentType === "ingredient"
+                ? "No hay insumos registrados. Agregalos en Ingredientes."
+                : "No hay otras elaboraciones para usar como componente."}
+            </p>
+          )}
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Cantidad</Label>
