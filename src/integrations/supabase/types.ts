@@ -2092,6 +2092,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      fn_calc_product_cost: {
+        Args: {
+          p_include_optional?: boolean
+          p_product_id: string
+          p_size_id: string
+          p_variant_id: string
+        }
+        Returns: Json
+      }
       fn_costing_price: {
         Args: {
           p_hourly_rate: number
@@ -2114,6 +2123,10 @@ export type Database = {
         Args: { p_ingredient_id: string; p_waste_override?: number }
         Returns: number
       }
+      fn_margin_at_price: {
+        Args: { p_cost: number; p_price: number }
+        Returns: number
+      }
       fn_process_purchase: {
         Args: { p_invoice_id: string }
         Returns: undefined
@@ -2129,6 +2142,10 @@ export type Database = {
       }
       fn_recalc_preparations_using_ingredient: {
         Args: { p_ingredient_id: string }
+        Returns: undefined
+      }
+      fn_recalc_product_costs: {
+        Args: { p_product_id: string }
         Returns: undefined
       }
       fn_resolve_product_components: {
