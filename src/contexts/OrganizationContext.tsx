@@ -3,6 +3,7 @@ import type { OrganizationWithRole, OrganizationMember, Organization } from "@/t
 import { useAuth } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { organizationsApi } from "@/lib/api";
+import { supabase } from "@/lib/supabaseClient";
 
 interface OrganizationContextType {
   organizations: OrganizationWithRole[];
@@ -54,19 +55,22 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     console.log("🏢 fetchOrganizations called");
     setIsLoading(true);
     try {
-      // Super admins use different endpoint
       const isSuperAdmin = user?.roles?.includes("super_admin");
-      const result = isSuperAdmin
-        ? await organizationsApi.getAllForSuperAdmin()
-        : await organizationsApi.getAll();
-      console.log("🏢 API result (isSuperAdmin:", isSuperAdmin, "):", result);
-      
-      if (result.error) {
-        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error al obtener organizaciones";
-        throw new Error(errorMsg);
-      }
+      const { data, error } = isSuperAdmin
+        ? await supabase.from("organizations").select("*").order("created_at", { ascending: false })
+        : await supabase
+            .from("organization_memberships")
+            .select("role, organizations(*)")
+            .eq("user_id", user?.id ?? "");
 
-      const orgs = result.data as any[];
+      if (error) throw error;
+
+      const orgs = isSuperAdmin
+        ? (data ?? [])
+        : (data ?? []).flatMap((membership: any) => {
+            const organization = membership.organizations;
+            return organization ? [{ ...organization, user_role: membership.role }] : [];
+          });
       console.log("🏢 Organizations from API (RAW):", orgs);
 
       // Transform API response to match OrganizationWithRole type
@@ -84,7 +88,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           name: org.name || org.organizationName || org.organization_name,
           slug: org.slug || org.organizationSlug || org.organization_slug,
           logoUrl: org.logoUrl || org.organizationLogoUrl || org.logo_url,
-          subscriptionStatus: org.subscriptionStatus || org.subscription_status || "trial",
+          subscriptionStatus: org.subscriptionStatus || org.subscription_status || "incomplete",
           subscriptionPlan: org.subscriptionPlan || org.subscription_plan || "free",
           subscriptionStripeCustomerId: org.subscriptionStripeCustomerId || org.subscription_stripe_customer_id,
           subscriptionStripeSubscriptionId: org.subscriptionStripeSubscriptionId || org.subscription_stripe_subscription_id,
@@ -182,19 +186,13 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const createOrganization = async (name: string, slug: string): Promise<OrganizationWithRole | null> => {
     setIsLoading(true);
     try {
-      const result = await organizationsApi.create({ name, slug });
-      
-      if (result.error) {
-        const errorMsg = typeof result.error === 'string' ? result.error : (result.error as any)?.message || "Error creando organización";
-        toast({
-          title: "Error",
-          description: errorMsg,
-          variant: "destructive",
-        });
-        return null;
-      }
+      const { data: orgData, error } = await supabase
+        .from("organizations")
+        .insert({ name, slug })
+        .select()
+        .single();
 
-      const orgData = result.data as any;
+      if (error) throw error;
 
       // Transform API response to match OrganizationWithRole type
       const newOrg: OrganizationWithRole = {
@@ -202,12 +200,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         name: orgData.name,
         slug: orgData.slug,
         logoUrl: orgData.organizationLogoUrl || orgData.logoUrl || orgData.logo_url,
-        subscriptionStatus: orgData.subscription_status,
-        subscriptionPlan: orgData.subscription_plan,
+        subscriptionStatus: "incomplete",
+        subscriptionPlan: "free",
         subscriptionStripeCustomerId: orgData.subscription_stripe_customer_id,
         subscriptionStripeSubscriptionId: orgData.subscription_stripe_subscription_id,
         trialEndsAt: orgData.trial_ends_at ? new Date(orgData.trial_ends_at) : undefined,
-        settings: orgData.settings || {},
+        settings: {},
         createdAt: new Date(orgData.created_at),
         updatedAt: new Date(orgData.updated_at),
         userRole: "owner", // Creator is always owner

@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Building2, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { organizationsApi } from "@/lib/api";
@@ -219,16 +218,16 @@ const CreateOrganization = () => {
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addMember())}
                     className="flex-1"
                   />
-                  <Select value={newMemberRole} onValueChange={(val) => setNewMemberRole(val as any)}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="staff">Staff</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <select
+                    aria-label="Rol del miembro"
+                    value={newMemberRole}
+                    onChange={(event) => setNewMemberRole(event.target.value as Member["role"])}
+                    className="h-10 w-32 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
                   <Button type="button" onClick={addMember} size="icon" variant="secondary">
                     <Plus className="h-4 w-4" />
                   </Button>
