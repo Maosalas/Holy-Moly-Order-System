@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, Search, ChevronDown, ChevronRight, Plus } from "lucide-react";
-import { useState, useMemo } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
 import {
@@ -144,8 +144,8 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
                   const isOpen = expanded === ingredient.id;
                   const rows = presentations.filter((p) => p.ingredient_id === ingredient.id);
                   return (
-                    <>
-                      <TableRow key={ingredient.id}>
+                    <Fragment key={ingredient.id}>
+                      <TableRow>
                         <TableCell>
                           <Button
                             variant="ghost"
@@ -272,7 +272,7 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </TableBody>
