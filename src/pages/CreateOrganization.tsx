@@ -19,7 +19,7 @@ interface Member {
 const CreateOrganization = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { createOrganization } = useOrganization();
+  const { createOrganization, organizations, isInitializing } = useOrganization();
   const { toast } = useToast();
 
   const [name, setName] = useState("");
@@ -33,8 +33,14 @@ const CreateOrganization = () => {
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/auth');
+      return;
     }
-  }, [isAuthenticated, navigate]);
+    // Si ya tiene organización, ir directo al dashboard
+    if (!isInitializing && organizations.length > 0) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate, isInitializing, organizations]);
+
 
   const handleNameChange = (value: string) => {
     setName(value);
