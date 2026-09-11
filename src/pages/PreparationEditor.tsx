@@ -431,15 +431,22 @@ function DraftRow({
   units: { code: string; name: string }[];
 }) {
   const ing = ingredients.find((i) => i.id === draft.refId);
+  // Los insumos llegan en camelCase desde la capa de datos
+  const ingBaseUnit = ing?.baseUnit ?? ing?.base_unit ?? null;
+  const ingDensity = ing?.densityGMl ?? ing?.density_g_ml ?? null;
+  const ingUnitWeight = ing?.unitWeightG ?? ing?.unit_weight_g ?? null;
+
   const preview = useBaseQtyPreview({
-    baseUnit: draft.componentType === "preparation" ? "g" : ing?.base_unit ?? null,
-    density: draft.componentType === "preparation" ? null : ing?.density_g_ml ?? null,
-    unitWeight: draft.componentType === "preparation" ? null : ing?.unit_weight_g ?? null,
+    baseUnit: draft.componentType === "preparation" ? "g" : ingBaseUnit,
+    density: draft.componentType === "preparation" ? null : ingDensity,
+    unitWeight: draft.componentType === "preparation" ? null : ingUnitWeight,
     qty: Number(draft.qty) || 0,
     unit: draft.unit,
   });
 
-  const baseUnitLabel = draft.componentType === "preparation" ? "g" : ing?.base_unit ?? "";
+  const baseUnitLabel = draft.componentType === "preparation" ? "g" : ingBaseUnit ?? "";
+  const emptyList =
+    draft.componentType === "ingredient" ? ingredients.length === 0 : preparations.length === 0;
 
   return (
     <div className="space-y-2 rounded-md border border-dashed p-3">
