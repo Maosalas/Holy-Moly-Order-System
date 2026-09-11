@@ -124,42 +124,73 @@ export type Database = {
       }
       ingredients: {
         Row: {
+          active: boolean
+          base_unit: string
+          category: string | null
           cost: number
           created_at: string
+          current_cost: number
+          density_g_ml: number | null
           id: string
+          last_cost: number
           name: string
           organization_id: string
           provider: string
           qty_provider: number
+          unit_weight_g: number | null
           units: string
           updated_at: string
           user_id: string | null
+          waste_pct: number
         }
         Insert: {
+          active?: boolean
+          base_unit?: string
+          category?: string | null
           cost?: number
           created_at?: string
+          current_cost?: number
+          density_g_ml?: number | null
           id?: string
+          last_cost?: number
           name: string
           organization_id: string
           provider?: string
           qty_provider?: number
+          unit_weight_g?: number | null
           units?: string
           updated_at?: string
           user_id?: string | null
+          waste_pct?: number
         }
         Update: {
+          active?: boolean
+          base_unit?: string
+          category?: string | null
           cost?: number
           created_at?: string
+          current_cost?: number
+          density_g_ml?: number | null
           id?: string
+          last_cost?: number
           name?: string
           organization_id?: string
           provider?: string
           qty_provider?: number
+          unit_weight_g?: number | null
           units?: string
           updated_at?: string
           user_id?: string | null
+          waste_pct?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "ingredients_base_unit_fkey"
+            columns: ["base_unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
           {
             foreignKeyName: "ingredients_organization_id_fkey"
             columns: ["organization_id"]
@@ -1006,9 +1037,12 @@ export type Database = {
       }
       supplies: {
         Row: {
+          base_unit: string
           cost: number
           created_at: string
+          current_cost: number
           id: string
+          last_cost: number
           name: string
           organization_id: string
           quantity: number
@@ -1018,9 +1052,12 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          base_unit?: string
           cost?: number
           created_at?: string
+          current_cost?: number
           id?: string
+          last_cost?: number
           name: string
           organization_id: string
           quantity?: number
@@ -1030,9 +1067,12 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          base_unit?: string
           cost?: number
           created_at?: string
+          current_cost?: number
           id?: string
+          last_cost?: number
           name?: string
           organization_id?: string
           quantity?: number
@@ -1042,6 +1082,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "supplies_base_unit_fkey"
+            columns: ["base_unit"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
           {
             foreignKeyName: "supplies_organization_id_fkey"
             columns: ["organization_id"]
@@ -1057,6 +1104,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      units: {
+        Row: {
+          code: string
+          created_at: string
+          factor_to_base: number
+          is_input_only: boolean
+          magnitude: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          factor_to_base: number
+          is_input_only?: boolean
+          magnitude: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          factor_to_base?: number
+          is_input_only?: boolean
+          magnitude?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_global_roles: {
         Row: {
@@ -1115,6 +1192,20 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      fn_round_price: {
+        Args: { p_step?: number; p_value: number }
+        Returns: number
+      }
+      fn_to_base_qty: {
+        Args: {
+          p_base_unit: string
+          p_density: number
+          p_qty: number
+          p_unit: string
+          p_unit_weight: number
+        }
+        Returns: number
       }
       get_order_by_portal_token: { Args: { _token: string }; Returns: Json }
       get_organization_plan: {
