@@ -28,6 +28,8 @@ import SuperAdmin from "./pages/SuperAdmin";
 import RecipeParameters from "./pages/RecipeParameters";
 import CostingSettings from "./pages/CostingSettings";
 import Purchases from "./pages/Purchases";
+import Preparations from "./pages/Preparations";
+import PreparationEditor from "./pages/PreparationEditor";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
