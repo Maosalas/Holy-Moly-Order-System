@@ -138,9 +138,9 @@ export const quotationsApi = {
   getFillingMultipliers: async (_recipeId: string): Promise<Result<any[]>> => ({ data: [] }),
   getCoveringMultipliers: async (_recipeId: string): Promise<Result<any[]>> => ({ data: [] }),
   getCakeMultipliers: async (_recipeId: string): Promise<Result<any[]>> => ({ data: [] }),
-  saveFillingMultipliers: async (): Promise<Result<{}>> => ({ data: {} }),
-  saveCoveringMultipliers: async (): Promise<Result<{}>> => ({ data: {} }),
-  saveCakeMultipliers: async (): Promise<Result<{}>> => ({ data: {} }),
+  saveFillingMultipliers: async (..._args: any[]): Promise<Result<{}>> => ({ data: {} }),
+  saveCoveringMultipliers: async (..._args: any[]): Promise<Result<{}>> => ({ data: {} }),
+  saveCakeMultipliers: async (..._args: any[]): Promise<Result<{}>> => ({ data: {} }),
 };
 
 // ============ GASTOS ============
@@ -486,9 +486,9 @@ const staticCatalog = (items: any[]) => ({
     const found = items.find((i) => i.id === id);
     return found ? { data: found } : { error: "No encontrado" };
   },
-  create: async (): Promise<Result<any>> => ({ error: "Catálogo no editable" }),
-  update: async (): Promise<Result<any>> => ({ error: "Catálogo no editable" }),
-  delete: async (): Promise<Result<any>> => ({ error: "Catálogo no editable" }),
+  create: async (..._args: any[]): Promise<Result<any>> => ({ error: "Catálogo no editable" }),
+  update: async (..._args: any[]): Promise<Result<any>> => ({ error: "Catálogo no editable" }),
+  delete: async (..._args: any[]): Promise<Result<any>> => ({ error: "Catálogo no editable" }),
 });
 
 export const paymentMethodsApi = staticCatalog(
