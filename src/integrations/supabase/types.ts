@@ -1143,6 +1143,342 @@ export type Database = {
           },
         ]
       }
+      product_components: {
+        Row: {
+          base_qty: number
+          component_type: string
+          created_at: string
+          id: string
+          ingredient_id: string | null
+          is_optional: boolean
+          preparation_id: string | null
+          product_id: string
+          qty: number
+          role: string
+          size_id: string | null
+          sort_order: number
+          supply_id: string | null
+          unit_code: string
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          base_qty?: number
+          component_type: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string | null
+          is_optional?: boolean
+          preparation_id?: string | null
+          product_id: string
+          qty: number
+          role?: string
+          size_id?: string | null
+          sort_order?: number
+          supply_id?: string | null
+          unit_code: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          base_qty?: number
+          component_type?: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string | null
+          is_optional?: boolean
+          preparation_id?: string | null
+          product_id?: string
+          qty?: number
+          role?: string
+          size_id?: string | null
+          sort_order?: number
+          supply_id?: string | null
+          unit_code?: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_components_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_components_preparation_id_fkey"
+            columns: ["preparation_id"]
+            isOneToOne: false
+            referencedRelation: "preparations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_components_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_components_size_id_fkey"
+            columns: ["size_id"]
+            isOneToOne: false
+            referencedRelation: "product_sizes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_components_supply_id_fkey"
+            columns: ["supply_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_components_unit_code_fkey"
+            columns: ["unit_code"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "product_components_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_costs: {
+        Row: {
+          breakdown: Json
+          calculated_at: string
+          cost_per_portion: number | null
+          direct_cost: number
+          energy_cost: number
+          id: string
+          labor_cost: number
+          labor_minutes: number
+          loss_cost: number
+          material_cost: number
+          overhead_cost: number
+          packaging_cost: number
+          product_id: string
+          size_id: string | null
+          suggested_price: number
+          total_cost: number
+          variant_id: string | null
+        }
+        Insert: {
+          breakdown?: Json
+          calculated_at?: string
+          cost_per_portion?: number | null
+          direct_cost?: number
+          energy_cost?: number
+          id?: string
+          labor_cost?: number
+          labor_minutes?: number
+          loss_cost?: number
+          material_cost?: number
+          overhead_cost?: number
+          packaging_cost?: number
+          product_id: string
+          size_id?: string | null
+          suggested_price?: number
+          total_cost?: number
+          variant_id?: string | null
+        }
+        Update: {
+          breakdown?: Json
+          calculated_at?: string
+          cost_per_portion?: number | null
+          direct_cost?: number
+          energy_cost?: number
+          id?: string
+          labor_cost?: number
+          labor_minutes?: number
+          loss_cost?: number
+          material_cost?: number
+          overhead_cost?: number
+          packaging_cost?: number
+          product_id?: string
+          size_id?: string | null
+          suggested_price?: number
+          total_cost?: number
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_costs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_costs_size_id_fkey"
+            columns: ["size_id"]
+            isOneToOne: false
+            referencedRelation: "product_sizes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_costs_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_sizes: {
+        Row: {
+          active: boolean
+          assembly_minutes: number
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          oven_minutes: number
+          portions: number | null
+          product_id: string
+          sort_order: number
+          target_weight_g: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          assembly_minutes?: number
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          oven_minutes?: number
+          portions?: number | null
+          product_id: string
+          sort_order?: number
+          target_weight_g?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          assembly_minutes?: number
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          oven_minutes?: number
+          portions?: number | null
+          product_id?: string
+          sort_order?: number
+          target_weight_g?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sizes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variants: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean
+          name: string
+          product_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          product_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          product_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_seasonal: boolean
+          name: string
+          organization_id: string
+          photo_url: string | null
+          price_basis: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_seasonal?: boolean
+          name: string
+          organization_id: string
+          photo_url?: string | null
+          price_basis?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_seasonal?: boolean
+          name?: string
+          organization_id?: string
+          photo_url?: string | null
+          price_basis?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1794,6 +2130,30 @@ export type Database = {
       fn_recalc_preparations_using_ingredient: {
         Args: { p_ingredient_id: string }
         Returns: undefined
+      }
+      fn_resolve_product_components: {
+        Args: {
+          p_include_optional?: boolean
+          p_product_id: string
+          p_size_id: string
+          p_variant_id: string
+        }
+        Returns: {
+          base_qty: number
+          component_type: string
+          id: string
+          ingredient_id: string
+          is_optional: boolean
+          preparation_id: string
+          product_id: string
+          qty: number
+          role: string
+          size_id: string
+          sort_order: number
+          supply_id: string
+          unit_code: string
+          variant_id: string
+        }[]
       }
       fn_round_price: {
         Args: { p_step?: number; p_value: number }
