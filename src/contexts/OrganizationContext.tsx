@@ -187,12 +187,12 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setIsLoading(true);
     try {
       const { data: orgData, error } = await supabase
-        .from("organizations")
-        .insert({ name, slug })
-        .select()
+        .rpc("create_organization", { _name: name, _slug: slug })
         .single();
 
       if (error) throw error;
+      if (!orgData) throw new Error("No organization returned");
+
 
       // Transform API response to match OrganizationWithRole type
       const newOrg: OrganizationWithRole = {
