@@ -202,6 +202,122 @@ export type Database = {
           },
         ]
       }
+      ingredient_presentations: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          id: string
+          ingredient_id: string
+          is_default: boolean
+          organization_id: string
+          price: number
+          qty: number
+          supplier_id: string | null
+          unit_code: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description: string
+          id?: string
+          ingredient_id: string
+          is_default?: boolean
+          organization_id: string
+          price?: number
+          qty: number
+          supplier_id?: string | null
+          unit_code: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          id?: string
+          ingredient_id?: string
+          is_default?: boolean
+          organization_id?: string
+          price?: number
+          qty?: number
+          supplier_id?: string | null
+          unit_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_presentations_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_presentations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_presentations_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_presentations_unit_code_fkey"
+            columns: ["unit_code"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      ingredient_price_history: {
+        Row: {
+          cost_per_base: number
+          id: string
+          ingredient_id: string
+          organization_id: string
+          recorded_at: string
+          source: string
+        }
+        Insert: {
+          cost_per_base: number
+          id?: string
+          ingredient_id: string
+          organization_id: string
+          recorded_at?: string
+          source: string
+        }
+        Update: {
+          cost_per_base?: number
+          id?: string
+          ingredient_id?: string
+          organization_id?: string
+          recorded_at?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_price_history_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_price_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredients: {
         Row: {
           active: boolean
@@ -479,45 +595,63 @@ export type Database = {
       }
       inventory_purchases: {
         Row: {
+          base_qty: number
           cost: number
+          cost_per_base: number
           created_at: string
           expense_id: string | null
           id: string
-          inventory_item_id: string
+          ingredient_id: string | null
+          inventory_item_id: string | null
           item_name: string
           notes: string | null
           organization_id: string
+          presentation_id: string | null
           purchase_date: string
+          purchase_invoice_id: string | null
           quantity: number
           supplier_name: string | null
+          supply_id: string | null
           unit: string
         }
         Insert: {
+          base_qty?: number
           cost?: number
+          cost_per_base?: number
           created_at?: string
           expense_id?: string | null
           id?: string
-          inventory_item_id: string
+          ingredient_id?: string | null
+          inventory_item_id?: string | null
           item_name?: string
           notes?: string | null
           organization_id: string
+          presentation_id?: string | null
           purchase_date?: string
+          purchase_invoice_id?: string | null
           quantity?: number
           supplier_name?: string | null
+          supply_id?: string | null
           unit?: string
         }
         Update: {
+          base_qty?: number
           cost?: number
+          cost_per_base?: number
           created_at?: string
           expense_id?: string | null
           id?: string
-          inventory_item_id?: string
+          ingredient_id?: string | null
+          inventory_item_id?: string | null
           item_name?: string
           notes?: string | null
           organization_id?: string
+          presentation_id?: string | null
           purchase_date?: string
+          purchase_invoice_id?: string | null
           quantity?: number
           supplier_name?: string | null
+          supply_id?: string | null
           unit?: string
         }
         Relationships: [
@@ -526,6 +660,13 @@ export type Database = {
             columns: ["expense_id"]
             isOneToOne: false
             referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_purchases_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
             referencedColumns: ["id"]
           },
           {
@@ -540,6 +681,27 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_purchases_presentation_id_fkey"
+            columns: ["presentation_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_presentations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_purchases_purchase_invoice_id_fkey"
+            columns: ["purchase_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_purchases_supply_id_fkey"
+            columns: ["supply_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
             referencedColumns: ["id"]
           },
         ]
@@ -794,6 +956,73 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      purchase_invoices: {
+        Row: {
+          created_at: string
+          expense_id: string | null
+          freight: number
+          id: string
+          notes: string | null
+          organization_id: string
+          purchase_date: string
+          receipt_url: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expense_id?: string | null
+          freight?: number
+          id?: string
+          notes?: string | null
+          organization_id: string
+          purchase_date?: string
+          receipt_url?: string | null
+          supplier_id?: string | null
+          supplier_name?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expense_id?: string | null
+          freight?: number
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          purchase_date?: string
+          receipt_url?: string | null
+          supplier_id?: string | null
+          supplier_name?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_invoices_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quotations: {
         Row: {
@@ -1115,6 +1344,47 @@ export type Database = {
           },
         ]
       }
+      suppliers: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplies: {
         Row: {
           base_unit: string
@@ -1290,6 +1560,14 @@ export type Database = {
           p_tax_percent: number
         }
         Returns: number
+      }
+      fn_ingredient_effective_cost: {
+        Args: { p_ingredient_id: string; p_waste_override?: number }
+        Returns: number
+      }
+      fn_process_purchase: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
       }
       fn_round_price: {
         Args: { p_step?: number; p_value: number }
