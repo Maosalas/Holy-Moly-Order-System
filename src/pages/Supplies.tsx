@@ -106,8 +106,8 @@ const Supplies = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Insumos</h1>
-          <p className="text-muted-foreground">Rastrea tu inventario de insumos y costos</p>
+          <h1 className="text-3xl font-bold tracking-tight">Suministros</h1>
+          <p className="text-muted-foreground">Rastrea tu inventario de suministros y costos</p>
         </div>
         {!isFormOpen && (
           <div className="flex gap-2">
@@ -153,7 +153,7 @@ const Supplies = () => {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        title="Eliminar Insumo"
+        title="Eliminar Suministro"
         description={`¿Estás seguro de que deseas eliminar "${supplies.find((s) => s.id === supplyToDelete)?.name || ""}"? Esta acción no se puede deshacer.`}
       />
     </div>
