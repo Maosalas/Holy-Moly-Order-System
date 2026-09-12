@@ -138,6 +138,17 @@ const Supplies = () => {
         />
       )}
 
+      <CsvImportDialog
+        mode="supplies"
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        onCreate={async (payload) => {
+          const res = await suppliesApi.create(payload);
+          if ((res as any).error) throw new Error(String((res as any).error));
+        }}
+        onFinished={() => queryClient.invalidateQueries({ queryKey: supplyKeys.all })}
+      />
+
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
