@@ -121,6 +121,17 @@ const Ingredients = () => {
         />
       )}
 
+      <CsvImportDialog
+        mode="ingredients"
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        onCreate={async (payload) => {
+          const res = await ingredientsApi.create(payload);
+          if ((res as any).error) throw new Error(String((res as any).error));
+        }}
+        onFinished={() => queryClient.invalidateQueries({ queryKey: ingredientKeys.all })}
+      />
+
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
