@@ -69,6 +69,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
       quantity: parsedQuantity,
       unit: unit.trim(),
       cost: parsedCost,
+      photoUrl,
       createdAt: initialData?.createdAt || new Date().toISOString(),
     };
 
@@ -81,6 +82,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
         setQuantity("");
         setUnit("");
         setCost("");
+        setPhotoUrl(null);
       }
     } finally {
       setIsSubmitting(false);
