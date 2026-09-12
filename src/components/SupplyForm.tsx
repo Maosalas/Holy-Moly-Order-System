@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { PhotoField } from "@/components/PhotoField";
 
 interface SupplyFormProps {
   onSubmit: (supply: Supply) => void;
@@ -21,6 +22,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
   const [quantity, setQuantity] = useState(initialData?.quantity?.toString() || "");
   const [unit, setUnit] = useState(initialData?.unit || "");
   const [cost, setCost] = useState(initialData?.cost?.toString() || "");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initialData?.photoUrl ?? null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
