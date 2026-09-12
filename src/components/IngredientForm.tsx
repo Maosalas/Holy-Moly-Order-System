@@ -52,6 +52,7 @@ export const IngredientForm = ({ open, ingredient, onSubmit, onCancel }: Ingredi
   const [unitWeight, setUnitWeight] = useState(ingredient?.unitWeightG?.toString() || "");
   const [usesVolumeMeasures, setUsesVolumeMeasures] = useState(Boolean(ingredient?.densityGMl));
   const [needsGramsFromUnit, setNeedsGramsFromUnit] = useState(Boolean(ingredient?.unitWeightG));
+  const [photoUrl, setPhotoUrl] = useState<string | null>(ingredient?.photoUrl ?? null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: presentations = [] } = usePresentations();
@@ -127,6 +128,7 @@ export const IngredientForm = ({ open, ingredient, onSubmit, onCancel }: Ingredi
         wastePct: waste,
         densityGMl: showDensity && density ? Number(density) : null,
         unitWeightG: showUnitWeight && unitWeight ? Number(unitWeight) : null,
+        photoUrl,
       });
     } finally {
       setIsSubmitting(false);
