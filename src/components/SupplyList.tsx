@@ -3,11 +3,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Trash2, Package, Search } from "lucide-react";
+import { Edit, Trash2, Search } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePagination } from "@/hooks/use-pagination";
 import { PaginationControls } from "./PaginationControls";
+import { PhotoThumb } from "@/components/PhotoThumb";
 
 interface SupplyListProps {
   supplies: Supply[];
@@ -71,7 +72,7 @@ const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps)
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Package className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <PhotoThumb value={supply.photoUrl} alt={supply.name} className="h-12 w-12" />
                       <h3 className="font-semibold text-base truncate">{supply.name}</h3>
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
@@ -163,7 +164,7 @@ const SupplyList = ({ supplies, onEdit, onDelete, isDeleting }: SupplyListProps)
                   <TableRow key={supply.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <PhotoThumb value={supply.photoUrl} alt={supply.name} />
                         <span className="font-medium">{supply.name}</span>
                       </div>
                     </TableCell>

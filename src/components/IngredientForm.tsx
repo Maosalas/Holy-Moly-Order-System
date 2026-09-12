@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2 } from "lucide-react";
+import { PhotoField } from "@/components/PhotoField";
 import { Ingredient, IngredientFormData } from "@/types/ingredient";
 import { toast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
@@ -52,6 +53,7 @@ export const IngredientForm = ({ open, ingredient, onSubmit, onCancel }: Ingredi
   const [unitWeight, setUnitWeight] = useState(ingredient?.unitWeightG?.toString() || "");
   const [usesVolumeMeasures, setUsesVolumeMeasures] = useState(Boolean(ingredient?.densityGMl));
   const [needsGramsFromUnit, setNeedsGramsFromUnit] = useState(Boolean(ingredient?.unitWeightG));
+  const [photoUrl, setPhotoUrl] = useState<string | null>(ingredient?.photoUrl ?? null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: presentations = [] } = usePresentations();
@@ -127,6 +129,7 @@ export const IngredientForm = ({ open, ingredient, onSubmit, onCancel }: Ingredi
         wastePct: waste,
         densityGMl: showDensity && density ? Number(density) : null,
         unitWeightG: showUnitWeight && unitWeight ? Number(unitWeight) : null,
+        photoUrl,
       });
     } finally {
       setIsSubmitting(false);
@@ -193,6 +196,8 @@ export const IngredientForm = ({ open, ingredient, onSubmit, onCancel }: Ingredi
               />
             </div>
           </div>
+
+          <PhotoField value={photoUrl} onChange={setPhotoUrl} label="Foto del ingrediente" />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

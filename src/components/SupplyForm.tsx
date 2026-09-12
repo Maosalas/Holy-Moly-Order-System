@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { PhotoField } from "@/components/PhotoField";
 
 interface SupplyFormProps {
   onSubmit: (supply: Supply) => void;
@@ -21,6 +22,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
   const [quantity, setQuantity] = useState(initialData?.quantity?.toString() || "");
   const [unit, setUnit] = useState(initialData?.unit || "");
   const [cost, setCost] = useState(initialData?.cost?.toString() || "");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initialData?.photoUrl ?? null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,6 +69,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
       quantity: parsedQuantity,
       unit: unit.trim(),
       cost: parsedCost,
+      photoUrl,
       createdAt: initialData?.createdAt || new Date().toISOString(),
     };
 
@@ -79,6 +82,7 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
         setQuantity("");
         setUnit("");
         setCost("");
+        setPhotoUrl(null);
       }
     } finally {
       setIsSubmitting(false);
@@ -92,6 +96,8 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <PhotoField value={photoUrl} onChange={setPhotoUrl} label="Foto del suministro" />
+
           <div className="space-y-2">
             <Label htmlFor="name">Supply Name *</Label>
             <Input

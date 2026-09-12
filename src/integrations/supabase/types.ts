@@ -422,6 +422,7 @@ export type Database = {
           last_cost: number
           name: string
           organization_id: string
+          photo_url: string | null
           provider: string
           qty_provider: number
           unit_weight_g: number | null
@@ -442,6 +443,7 @@ export type Database = {
           last_cost?: number
           name: string
           organization_id: string
+          photo_url?: string | null
           provider?: string
           qty_provider?: number
           unit_weight_g?: number | null
@@ -462,6 +464,7 @@ export type Database = {
           last_cost?: number
           name?: string
           organization_id?: string
+          photo_url?: string | null
           provider?: string
           qty_provider?: number
           unit_weight_g?: number | null
@@ -2320,6 +2323,7 @@ export type Database = {
           last_cost: number
           name: string
           organization_id: string
+          photo_url: string | null
           quantity: number
           supplier_name: string
           unit: string
@@ -2335,6 +2339,7 @@ export type Database = {
           last_cost?: number
           name: string
           organization_id: string
+          photo_url?: string | null
           quantity?: number
           supplier_name?: string
           unit?: string
@@ -2350,6 +2355,7 @@ export type Database = {
           last_cost?: number
           name?: string
           organization_id?: string
+          photo_url?: string | null
           quantity?: number
           supplier_name?: string
           unit?: string

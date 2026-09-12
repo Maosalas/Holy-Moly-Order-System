@@ -105,11 +105,12 @@ function createResource<T = any>(table: string, columns: string[], orderBy = "cr
 export const ingredientsApi = createResource("ingredients", [
   "user_id", "name", "provider", "qty_provider", "units", "cost",
   "base_unit", "density_g_ml", "unit_weight_g", "waste_pct", "category", "active",
+  "photo_url",
 ]);
 
 // ============ SUMINISTROS ============
 export const suppliesApi = createResource("supplies", [
-  "user_id", "name", "supplier_name", "quantity", "unit", "cost",
+  "user_id", "name", "supplier_name", "quantity", "unit", "cost", "photo_url",
 ]);
 
 // ============ RECETAS ============

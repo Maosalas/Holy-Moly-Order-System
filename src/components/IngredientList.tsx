@@ -17,6 +17,7 @@ import {
   useUpdateIngredientWaste,
 } from "@/hooks/use-purchasing";
 import { toast } from "@/hooks/use-toast";
+import { PhotoThumb } from "@/components/PhotoThumb";
 
 interface IngredientListProps {
   ingredients: Ingredient[];
@@ -158,7 +159,10 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
                           </Button>
                         </TableCell>
                         <TableCell className="font-medium">
-                          {ingredient.name}
+                          <div className="flex items-center gap-2">
+                            <PhotoThumb value={ingredient.photoUrl} alt={ingredient.name} />
+                            <span>{ingredient.name}</span>
+                          </div>
                           {rows.length > 0 && (
                             <Badge variant="secondary" className="ml-2">
                               {rows.length} present.
