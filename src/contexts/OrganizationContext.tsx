@@ -11,6 +11,7 @@ interface OrganizationContextType {
   members: OrganizationMember[];
   isLoading: boolean;
   isInitializing: boolean;
+  loadedUserId: string | null;
   fetchOrganizations: () => Promise<void>;
   fetchOrganizationMembers: (orgId: string) => Promise<void>;
   getMember: (orgId: string, userId: string) => Promise<OrganizationMember | null>;
