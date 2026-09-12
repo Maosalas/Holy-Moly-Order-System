@@ -4,8 +4,12 @@ import { IngredientForm } from "@/components/IngredientForm";
 import { IngredientList } from "@/components/IngredientList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useIngredients, useCreateIngredient, useUpdateIngredient, useDeleteIngredient } from "@/hooks/use-ingredients";
+import { CsvImportDialog } from "@/components/CsvImportDialog";
+import { ingredientsApi } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { ingredientKeys } from "@/hooks/use-ingredients";
 
 const Ingredients = () => {
   // Usar React Query hooks
