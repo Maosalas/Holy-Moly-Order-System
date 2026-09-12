@@ -2498,6 +2498,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_quotation_by_public_token: {
+        Args: { _token: string }
+        Returns: Json
+      }
       check_plan_limit: {
         Args: { _current_value: number; _limit_type: string; _org_id: string }
         Returns: boolean
@@ -2528,6 +2532,7 @@ export type Database = {
         }
         Returns: Json
       }
+      fn_check_quote_drift: { Args: { p_quotation_id: string }; Returns: Json }
       fn_costing_price: {
         Args: {
           p_hourly_rate: number
@@ -2546,6 +2551,7 @@ export type Database = {
         }
         Returns: number
       }
+      fn_expire_quotations: { Args: never; Returns: number }
       fn_ingredient_effective_cost: {
         Args: { p_ingredient_id: string; p_waste_override?: number }
         Returns: number
@@ -2611,6 +2617,7 @@ export type Database = {
         Args: { p_step?: number; p_value: number }
         Returns: number
       }
+      fn_send_quotation: { Args: { p_quotation_id: string }; Returns: Json }
       fn_to_base_qty: {
         Args: {
           p_base_unit: string
@@ -2620,6 +2627,16 @@ export type Database = {
           p_unit_weight: number
         }
         Returns: number
+      }
+      fn_volume_discount_check: {
+        Args: {
+          p_organization_id: string
+          p_product_id: string
+          p_qty: number
+          p_unit_cost: number
+          p_unit_price: number
+        }
+        Returns: Json
       }
       get_order_by_portal_token: { Args: { _token: string }; Returns: Json }
       get_organization_plan: {
