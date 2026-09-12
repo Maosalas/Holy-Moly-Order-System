@@ -130,9 +130,13 @@ export const recipeParametersApi = createResource("recipe_parameters", [
 
 // ============ COTIZACIONES ============
 const quotationsResource = createResource("quotations", [
-  "user_id", "client_name", "size", "recipes", "selected_supplies",
-  "additional_expenses", "additional_ingredients", "total_cost",
-  "selling_price", "profit", "profit_margin", "notes",
+  "user_id", "number", "client_id", "client_name", "client_phone", "status",
+  "quote_date", "valid_until", "delivery_date", "items_subtotal", "packaging_total",
+  "extras_total", "rush_surcharge", "discount_amount", "tax_amount", "total",
+  "cost_total", "margin_pct", "labor_minutes", "deposit_pct", "deposit_amount",
+  "snapshot", "snapshot_at", "costs_changed", "cost_now", "needs_cake_topper",
+  "reference_photos", "client_notes", "internal_notes", "pdf_url", "public_token",
+  "total_cost", "selling_price", "profit", "profit_margin", "notes", "size",
 ]);
 export const quotationsApi = {
   ...quotationsResource,
