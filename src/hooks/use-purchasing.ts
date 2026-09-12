@@ -85,7 +85,10 @@ export const useCreatePresentation = () => {
         .insert({ ...payload, organization_id: id } as never);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["ingredient_presentations"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ingredient_presentations"] });
+      qc.invalidateQueries({ queryKey: ["ingredients"] });
+    },
   });
 };
 
@@ -96,7 +99,10 @@ export const useDeletePresentation = () => {
       const { error } = await supabase.from("ingredient_presentations").delete().eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["ingredient_presentations"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ingredient_presentations"] });
+      qc.invalidateQueries({ queryKey: ["ingredients"] });
+    },
   });
 };
 

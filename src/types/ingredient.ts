@@ -3,10 +3,14 @@ export interface Ingredient {
   organizationId: string;
   userId?: string;
   name: string;
-  provider: string;
-  qtyProvider: number;
-  units: string;
-  cost: number;
+  /** @deprecated columna heredada, se eliminará */
+  provider?: string;
+  /** @deprecated columna heredada, se eliminará */
+  qtyProvider?: number;
+  /** @deprecated columna heredada, se eliminará */
+  units?: string;
+  /** @deprecated columna heredada, se eliminará */
+  cost?: number;
   baseUnit?: string;
   densityGMl?: number | null;
   unitWeightG?: number | null;
