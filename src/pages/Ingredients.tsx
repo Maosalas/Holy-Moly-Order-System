@@ -25,6 +25,8 @@ const Ingredients = () => {
     updatedAt: new Date(i.updated_at || i.updatedAt)
   }));
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const queryClient = useQueryClient();
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ingredientToDelete, setIngredientToDelete] = useState<string | null>(null);
