@@ -31,6 +31,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -38,9 +39,11 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (isAuthenticated && user?.id) {
         setIsInitializing(true);
         await fetchOrganizations();
+        setLoadedUserId(user.id);
         setIsInitializing(false);
       } else if (!isAuthenticated) {
         setOrganizations([]);
+        setLoadedUserId(null);
         setIsInitializing(false);
       }
     };
