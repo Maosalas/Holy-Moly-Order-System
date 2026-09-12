@@ -2568,6 +2568,10 @@ export type Database = {
         Args: { p_invoice_id: string }
         Returns: undefined
       }
+      fn_quote_line_recalc: {
+        Args: { p_item_id: string; p_keep_price?: boolean }
+        Returns: Json
+      }
       fn_recalc_all: { Args: { p_org: string }; Returns: undefined }
       fn_recalc_preparation_cascade: {
         Args: { p_prep_id: string }
