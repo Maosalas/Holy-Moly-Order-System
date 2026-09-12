@@ -4,8 +4,11 @@ import SupplyForm from "@/components/SupplyForm";
 import SupplyList from "@/components/SupplyList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useSupplies, useCreateSupply, useUpdateSupply, useDeleteSupply } from "@/hooks/use-supplies";
+import { Plus, Upload } from "lucide-react";
+import { useSupplies, useCreateSupply, useUpdateSupply, useDeleteSupply, supplyKeys } from "@/hooks/use-supplies";
+import { CsvImportDialog } from "@/components/CsvImportDialog";
+import { suppliesApi } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -23,6 +26,8 @@ const Supplies = () => {
   }));
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const queryClient = useQueryClient();
   const [editingSupply, setEditingSupply] = useState<Supply | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [supplyToDelete, setSupplyToDelete] = useState<string | null>(null);
@@ -101,14 +106,20 @@ const Supplies = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Insumos</h1>
-          <p className="text-muted-foreground">Rastrea tu inventario de insumos y costos</p>
+          <h1 className="text-3xl font-bold tracking-tight">Suministros</h1>
+          <p className="text-muted-foreground">Rastrea tu inventario de suministros y costos</p>
         </div>
         {!isFormOpen && (
-          <Button onClick={() => setIsFormOpen(true)} size="lg" className="gap-2">
-            <Plus className="h-5 w-5" />
-            Nuevo Insumo
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setIsImportOpen(true)} size="lg" variant="outline" className="gap-2">
+              <Upload className="h-5 w-5" />
+              Importar CSV
+            </Button>
+            <Button onClick={() => setIsFormOpen(true)} size="lg" className="gap-2">
+              <Plus className="h-5 w-5" />
+              Nuevo Suministro
+            </Button>
+          </div>
         )}
       </div>
 
@@ -127,11 +138,22 @@ const Supplies = () => {
         />
       )}
 
+      <CsvImportDialog
+        mode="supplies"
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        onCreate={async (payload) => {
+          const res = await suppliesApi.create(payload);
+          if ((res as any).error) throw new Error(String((res as any).error));
+        }}
+        onFinished={() => queryClient.invalidateQueries({ queryKey: supplyKeys.all })}
+      />
+
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        title="Eliminar Insumo"
+        title="Eliminar Suministro"
         description={`¿Estás seguro de que deseas eliminar "${supplies.find((s) => s.id === supplyToDelete)?.name || ""}"? Esta acción no se puede deshacer.`}
       />
     </div>

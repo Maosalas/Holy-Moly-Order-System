@@ -4,8 +4,12 @@ import { IngredientForm } from "@/components/IngredientForm";
 import { IngredientList } from "@/components/IngredientList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useIngredients, useCreateIngredient, useUpdateIngredient, useDeleteIngredient } from "@/hooks/use-ingredients";
+import { CsvImportDialog } from "@/components/CsvImportDialog";
+import { ingredientsApi } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { ingredientKeys } from "@/hooks/use-ingredients";
 
 const Ingredients = () => {
   // Usar React Query hooks
@@ -21,6 +25,8 @@ const Ingredients = () => {
     updatedAt: new Date(i.updated_at || i.updatedAt)
   }));
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const queryClient = useQueryClient();
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ingredientToDelete, setIngredientToDelete] = useState<string | null>(null);
@@ -78,14 +84,25 @@ const Ingredients = () => {
           <p className="text-muted-foreground mt-1">Administra tu inventario de ingredientes</p>
         </div>
         {!isFormOpen && (
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            size="lg"
-            className="gap-2"
-          >
-            <Plus className="h-5 w-5" />
-            Nuevo Ingrediente
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setIsImportOpen(true)}
+              size="lg"
+              variant="outline"
+              className="gap-2"
+            >
+              <Upload className="h-5 w-5" />
+              Importar CSV
+            </Button>
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              size="lg"
+              className="gap-2"
+            >
+              <Plus className="h-5 w-5" />
+              Nuevo Ingrediente
+            </Button>
+          </div>
         )}
       </div>
 
@@ -103,6 +120,17 @@ const Ingredients = () => {
           isDeleting={deleteIngredient.isPending}
         />
       )}
+
+      <CsvImportDialog
+        mode="ingredients"
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        onCreate={async (payload) => {
+          const res = await ingredientsApi.create(payload);
+          if ((res as any).error) throw new Error(String((res as any).error));
+        }}
+        onFinished={() => queryClient.invalidateQueries({ queryKey: ingredientKeys.all })}
+      />
 
       <DeleteConfirmDialog
         open={deleteDialogOpen}
