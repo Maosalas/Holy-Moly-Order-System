@@ -110,10 +110,16 @@ const Supplies = () => {
           <p className="text-muted-foreground">Rastrea tu inventario de insumos y costos</p>
         </div>
         {!isFormOpen && (
-          <Button onClick={() => setIsFormOpen(true)} size="lg" className="gap-2">
-            <Plus className="h-5 w-5" />
-            Nuevo Insumo
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setIsImportOpen(true)} size="lg" variant="outline" className="gap-2">
+              <Upload className="h-5 w-5" />
+              Importar CSV
+            </Button>
+            <Button onClick={() => setIsFormOpen(true)} size="lg" className="gap-2">
+              <Plus className="h-5 w-5" />
+              Nuevo Suministro
+            </Button>
+          </div>
         )}
       </div>
 
