@@ -264,9 +264,9 @@ export const analyticsApi = {
     try {
       const { start, end } = range(options);
       const res = await supabase
-        .from("quotations")
-        .select("recipes, additional_ingredients, created_at")
-        .eq("organization_id", organizationId)
+        .from("quotation_items")
+        .select("composition, created_at, quotations!inner(organization_id)")
+        .eq("quotations.organization_id", organizationId)
         .gte("created_at", start.toISOString())
         .lte("created_at", end.toISOString());
       if (res.error) throw new Error(res.error.message);
@@ -278,26 +278,31 @@ export const analyticsApi = {
 
       const add = (ing: any) => {
         if (!ing) return;
-        const key = ing.ingredientId || ing.ingredientName;
+        const key = ing.ingredientId || ing.ingredient_id || ing.ingredientName || ing.name;
         if (!key) return;
         const entry = map.get(key) || {
-          name: ing.ingredientName || "Sin nombre",
-          unit: ing.units || ing.unit || "",
+          name: ing.ingredientName || ing.name || "Sin nombre",
+          unit: ing.units || ing.unit || ing.unit_code || "",
           used: 0,
           times: 0,
           cost: 0,
         };
-        entry.used += Number(ing.quantity || 0);
+        entry.used += Number(ing.quantity ?? ing.qty ?? ing.base_qty ?? 0);
         entry.times += 1;
-        entry.cost += Number(ing.totalCost ?? ing.cost ?? 0);
+        entry.cost += Number(ing.totalCost ?? ing.cost ?? ing.line_cost ?? 0);
         map.set(key, entry);
       };
 
-      (res.data || []).forEach((q: any) => {
-        (Array.isArray(q.additional_ingredients) ? q.additional_ingredients : []).forEach(add);
-        (Array.isArray(q.recipes) ? q.recipes : []).forEach((r: any) => {
-          (Array.isArray(r.ingredients) ? r.ingredients : []).forEach(add);
-        });
+      (res.data || []).forEach((item: any) => {
+        const comp = item?.composition;
+        const list = Array.isArray(comp)
+          ? comp
+          : Array.isArray(comp?.ingredients)
+            ? comp.ingredients
+            : Array.isArray(comp?.components)
+              ? comp.components
+              : [];
+        list.forEach(add);
       });
 
       const topIngredients = Array.from(map.entries())
