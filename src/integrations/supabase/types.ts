@@ -68,6 +68,53 @@ export type Database = {
           },
         ]
       }
+      clients: {
+        Row: {
+          active: boolean
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       costing_settings: {
         Row: {
           cost_method: string
@@ -143,6 +190,50 @@ export type Database = {
             foreignKeyName: "costing_settings_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decoration_tiers: {
+        Row: {
+          active: boolean
+          created_at: string
+          extra_amount: number
+          extra_minutes: number
+          id: string
+          name: string
+          organization_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          extra_amount?: number
+          extra_minutes?: number
+          id?: string
+          name: string
+          organization_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          extra_amount?: number
+          extra_minutes?: number
+          id?: string
+          name?: string
+          organization_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decoration_tiers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1573,62 +1664,347 @@ export type Database = {
           },
         ]
       }
-      quotations: {
+      quotation_extras: {
         Row: {
-          additional_expenses: Json
-          additional_ingredients: Json
-          client_name: string
           created_at: string
           id: string
-          notes: string | null
+          is_cost: boolean
+          kind: string
+          name: string
+          qty: number
+          quotation_id: string
+          sort_order: number
+          total: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_cost?: boolean
+          kind?: string
+          name: string
+          qty?: number
+          quotation_id: string
+          sort_order?: number
+          total?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_cost?: boolean
+          kind?: string
+          name?: string
+          qty?: number
+          quotation_id?: string
+          sort_order?: number
+          total?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_extras_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_items: {
+        Row: {
+          composition: Json
+          created_at: string
+          decoration_tier_id: string | null
+          description: string | null
+          id: string
+          item_type: string
+          line_cost: number
+          line_total: number
+          margin_pct: number | null
+          optional_ids: string[]
+          preparation_id: string | null
+          product_id: string | null
+          qty: number
+          quotation_id: string
+          size_id: string | null
+          sort_order: number
+          unit_cost: number
+          unit_price: number
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          composition?: Json
+          created_at?: string
+          decoration_tier_id?: string | null
+          description?: string | null
+          id?: string
+          item_type: string
+          line_cost?: number
+          line_total?: number
+          margin_pct?: number | null
+          optional_ids?: string[]
+          preparation_id?: string | null
+          product_id?: string | null
+          qty?: number
+          quotation_id: string
+          size_id?: string | null
+          sort_order?: number
+          unit_cost?: number
+          unit_price?: number
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          composition?: Json
+          created_at?: string
+          decoration_tier_id?: string | null
+          description?: string | null
+          id?: string
+          item_type?: string
+          line_cost?: number
+          line_total?: number
+          margin_pct?: number | null
+          optional_ids?: string[]
+          preparation_id?: string | null
+          product_id?: string | null
+          qty?: number
+          quotation_id?: string
+          size_id?: string | null
+          sort_order?: number
+          unit_cost?: number
+          unit_price?: number
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_items_decoration_tier_id_fkey"
+            columns: ["decoration_tier_id"]
+            isOneToOne: false
+            referencedRelation: "decoration_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_items_preparation_id_fkey"
+            columns: ["preparation_id"]
+            isOneToOne: false
+            referencedRelation: "preparations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_items_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_items_size_id_fkey"
+            columns: ["size_id"]
+            isOneToOne: false
+            referencedRelation: "product_sizes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
           organization_id: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          payload?: Json
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotations: {
+        Row: {
+          client_id: string | null
+          client_name: string
+          client_notes: string | null
+          client_phone: string | null
+          cost_now: number | null
+          cost_total: number
+          costs_changed: boolean
+          created_at: string
+          delivery_date: string | null
+          deposit_amount: number
+          deposit_pct: number
+          discount_amount: number
+          extras_total: number
+          id: string
+          internal_notes: string | null
+          items_subtotal: number
+          labor_minutes: number
+          margin_pct: number | null
+          needs_cake_topper: boolean
+          notes: string | null
+          number: string | null
+          organization_id: string
+          packaging_total: number
+          pdf_url: string | null
           profit: number | null
           profit_margin: number | null
-          recipes: Json
-          selected_supplies: Json
+          public_token: string
+          quote_date: string
+          reference_photos: Json
+          rush_surcharge: number
           selling_price: number | null
           size: string | null
+          snapshot: Json
+          snapshot_at: string | null
+          status: string
+          tax_amount: number
+          total: number
           total_cost: number
           updated_at: string
           user_id: string | null
+          valid_until: string | null
         }
         Insert: {
-          additional_expenses?: Json
-          additional_ingredients?: Json
+          client_id?: string | null
           client_name: string
+          client_notes?: string | null
+          client_phone?: string | null
+          cost_now?: number | null
+          cost_total?: number
+          costs_changed?: boolean
           created_at?: string
+          delivery_date?: string | null
+          deposit_amount?: number
+          deposit_pct?: number
+          discount_amount?: number
+          extras_total?: number
           id?: string
+          internal_notes?: string | null
+          items_subtotal?: number
+          labor_minutes?: number
+          margin_pct?: number | null
+          needs_cake_topper?: boolean
           notes?: string | null
+          number?: string | null
           organization_id: string
+          packaging_total?: number
+          pdf_url?: string | null
           profit?: number | null
           profit_margin?: number | null
-          recipes?: Json
-          selected_supplies?: Json
+          public_token?: string
+          quote_date?: string
+          reference_photos?: Json
+          rush_surcharge?: number
           selling_price?: number | null
           size?: string | null
+          snapshot?: Json
+          snapshot_at?: string | null
+          status?: string
+          tax_amount?: number
+          total?: number
           total_cost?: number
           updated_at?: string
           user_id?: string | null
+          valid_until?: string | null
         }
         Update: {
-          additional_expenses?: Json
-          additional_ingredients?: Json
+          client_id?: string | null
           client_name?: string
+          client_notes?: string | null
+          client_phone?: string | null
+          cost_now?: number | null
+          cost_total?: number
+          costs_changed?: boolean
           created_at?: string
+          delivery_date?: string | null
+          deposit_amount?: number
+          deposit_pct?: number
+          discount_amount?: number
+          extras_total?: number
           id?: string
+          internal_notes?: string | null
+          items_subtotal?: number
+          labor_minutes?: number
+          margin_pct?: number | null
+          needs_cake_topper?: boolean
           notes?: string | null
+          number?: string | null
           organization_id?: string
+          packaging_total?: number
+          pdf_url?: string | null
           profit?: number | null
           profit_margin?: number | null
-          recipes?: Json
-          selected_supplies?: Json
+          public_token?: string
+          quote_date?: string
+          reference_photos?: Json
+          rush_surcharge?: number
           selling_price?: number | null
           size?: string | null
+          snapshot?: Json
+          snapshot_at?: string | null
+          status?: string
+          tax_amount?: number
+          total?: number
           total_cost?: number
           updated_at?: string
           user_id?: string | null
+          valid_until?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "quotations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotations_organization_id_fkey"
             columns: ["organization_id"]
@@ -2066,6 +2442,57 @@ export type Database = {
           },
         ]
       }
+      volume_discounts: {
+        Row: {
+          active: boolean
+          created_at: string
+          discount_pct: number
+          floor_margin_pct: number
+          id: string
+          min_qty: number
+          organization_id: string
+          product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          discount_pct?: number
+          floor_margin_pct?: number
+          id?: string
+          min_qty: number
+          organization_id: string
+          product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          discount_pct?: number
+          floor_margin_pct?: number
+          id?: string
+          min_qty?: number
+          organization_id?: string
+          product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volume_discounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volume_discounts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2127,6 +2554,10 @@ export type Database = {
         Args: { p_cost: number; p_price: number }
         Returns: number
       }
+      fn_next_quotation_number: {
+        Args: { p_date: string; p_org: string }
+        Returns: string
+      }
       fn_process_purchase: {
         Args: { p_invoice_id: string }
         Returns: undefined
@@ -2146,6 +2577,10 @@ export type Database = {
       }
       fn_recalc_product_costs: {
         Args: { p_product_id: string }
+        Returns: undefined
+      }
+      fn_recalc_quotation_totals: {
+        Args: { p_quotation_id: string }
         Returns: undefined
       }
       fn_resolve_product_components: {
@@ -2214,6 +2649,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_quotation_by_public_token: { Args: { _token: string }; Returns: Json }
       get_user_organization_ids: {
         Args: { _user_id: string }
         Returns: string[]
