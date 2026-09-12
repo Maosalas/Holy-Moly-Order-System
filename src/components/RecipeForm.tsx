@@ -328,7 +328,7 @@ export const RecipeForm = ({ recipe, onSubmit, onCancel }: RecipeFormProps) => {
               const baseIngredient = availableIngredients.find((i) => i.id === ing.ingredientId);
               if (!baseIngredient) return ing;
 
-              const cost = (quantity / baseIngredient.qtyProvider) * baseIngredient.cost;
+              const cost = (quantity / (baseIngredient.qtyProvider || 1)) * (baseIngredient.cost || 0);
               return { ...ing, quantity, cost };
             }
             return ing;
