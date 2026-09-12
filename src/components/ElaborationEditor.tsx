@@ -133,7 +133,7 @@ export function ElaborationEditor({
                   if (!baseIngredient) return ing;
 
                   const cost =
-                    (quantity / baseIngredient.qtyProvider) * baseIngredient.cost;
+                    (quantity / (baseIngredient.qtyProvider || 1)) * (baseIngredient.cost || 0);
                   return { ...ing, quantity, cost };
                 }
                 return ing;

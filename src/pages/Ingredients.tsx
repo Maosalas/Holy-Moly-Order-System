@@ -106,18 +106,19 @@ const Ingredients = () => {
         )}
       </div>
 
-      {isFormOpen ? (
+      <IngredientList
+        ingredients={ingredients}
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+        isDeleting={deleteIngredient.isPending}
+      />
+
+      {isFormOpen && (
         <IngredientForm
-          ingredient={editingIngredient}
+          open={isFormOpen}
+          ingredient={editingIngredient ? ingredients.find((i) => i.id === editingIngredient.id) : undefined}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
-        />
-      ) : (
-        <IngredientList
-          ingredients={ingredients}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
-          isDeleting={deleteIngredient.isPending}
         />
       )}
 
