@@ -166,8 +166,14 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
                           )}
                         </TableCell>
                         <TableCell>{baseUnitLabel(ingredient.baseUnit)}</TableCell>
-                        <TableCell className="bg-muted/60 font-mono tabular-nums" title="Se calcula con las compras registradas">
-                          {money(ingredient.currentCost ?? 0)}
+                        <TableCell className="bg-muted/60 font-mono tabular-nums" title="Se calcula desde las presentaciones y las compras registradas">
+                          {(ingredient.currentCost ?? 0) > 0 ? (
+                            money(ingredient.currentCost ?? 0)
+                          ) : (
+                            <Badge variant="destructive" className="font-sans font-normal whitespace-normal text-left">
+                              Sin precio — falta registrar una presentación de compra.
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Input
