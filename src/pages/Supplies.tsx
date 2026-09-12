@@ -6,6 +6,8 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useSupplies, useCreateSupply, useUpdateSupply, useDeleteSupply } from "@/hooks/use-supplies";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const Supplies = () => {
   // Usar React Query hooks
@@ -51,17 +53,42 @@ const Supplies = () => {
   };
 
   const handleDeleteConfirm = async () => {
-    if (supplyToDelete) {
-      try {
-        await deleteSupply.mutateAsync(supplyToDelete);
+    if (!supplyToDelete) return;
+
+    const supplyName = supplies.find((s) => s.id === supplyToDelete)?.name || "este suministro";
+
+    try {
+      // Verificar si el suministro está en uso por algún producto
+      const { data: usedIn, error: usageError } = await supabase
+        .from("product_components")
+        .select("product_id, products(name)")
+        .eq("supply_id", supplyToDelete)
+        .limit(20);
+
+      if (usageError) throw usageError;
+
+      if (usedIn && usedIn.length > 0) {
+        const names = Array.from(
+          new Set(usedIn.map((row: any) => row.products?.name).filter(Boolean))
+        );
+        toast({
+          variant: "destructive",
+          title: "No se puede eliminar",
+          description: names.length
+            ? `"${supplyName}" se usa en: ${names.join(", ")}. Quitalo de esos productos antes de eliminarlo.`
+            : `"${supplyName}" se usa en uno o más productos. Quitalo de esos productos antes de eliminarlo.`,
+        });
         setDeleteDialogOpen(false);
         setSupplyToDelete(null);
-      } catch (error) {
-        // Los errores ya son manejados por los hooks
-        console.error("Error deleting supply:", error);
-        setDeleteDialogOpen(false);
-        setSupplyToDelete(null);
+        return;
       }
+
+      await deleteSupply.mutateAsync(supplyToDelete);
+    } catch (error) {
+      console.error("Error deleting supply:", error);
+    } finally {
+      setDeleteDialogOpen(false);
+      setSupplyToDelete(null);
     }
   };
 
