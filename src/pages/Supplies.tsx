@@ -26,6 +26,8 @@ const Supplies = () => {
   }));
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const queryClient = useQueryClient();
   const [editingSupply, setEditingSupply] = useState<Supply | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [supplyToDelete, setSupplyToDelete] = useState<string | null>(null);
