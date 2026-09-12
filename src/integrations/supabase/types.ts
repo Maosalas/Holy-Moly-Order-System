@@ -2523,6 +2523,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      fn_apply_presentation_pricing: {
+        Args: { p_ingredient_id: string }
+        Returns: undefined
+      }
       fn_calc_product_cost: {
         Args: {
           p_include_optional?: boolean
