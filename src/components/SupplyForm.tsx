@@ -96,6 +96,8 @@ const SupplyForm = ({ onSubmit, initialData, onCancel }: SupplyFormProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <PhotoField value={photoUrl} onChange={setPhotoUrl} label="Foto del suministro" />
+
           <div className="space-y-2">
             <Label htmlFor="name">Supply Name *</Label>
             <Input
