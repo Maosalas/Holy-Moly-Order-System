@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings, Sliders, ChevronDown, Bell, Search, BarChart3, Warehouse } from "lucide-react";
+import { Home, ChefHat, Package, ShoppingBag, Receipt, Box, LogOut, User, Calculator, Shield, Settings, Sliders, Bell, Search, BarChart3, Warehouse } from "lucide-react";
 import { useSubscriptionFeatures } from "@/hooks/use-subscription-features";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -18,38 +18,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Pedidos", url: "/orders", icon: ShoppingBag },
-  { title: "Cotizador", url: "/quotations", icon: Calculator },
-  {
-    title: "Recetas",
-    url: "/recipes",
-    icon: ChefHat,
-    submenu: [
-      { title: "Parámetros", url: "/recipe-parameters", icon: Sliders },
-      { title: "Costeo", url: "/costing-settings", icon: Calculator }
-    ]
-  },
   { title: "Elaboraciones", url: "/preparations", icon: ChefHat },
   { title: "Productos", url: "/products", icon: Package },
-  { title: "Ingredientes", url: "/ingredients", icon: Package },
+  { title: "Insumos", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
   { title: "Compras", url: "/purchases", icon: Receipt },
-  { title: "Gastos", url: "/expenses", icon: Receipt },
+  { title: "Cotizaciones", url: "/quotations", icon: Calculator },
+  { title: "Pedidos", url: "/orders", icon: ShoppingBag },
 ];
 
 function AppSidebar() {
@@ -84,43 +66,6 @@ function AppSidebar() {
             <SidebarMenu>
               {visibleMenuItems.map((item) => {
                 const isActive = location.pathname === item.url;
-                const hasSubmenu = 'submenu' in item && item.submenu;
-
-                if (hasSubmenu) {
-                  return (
-                    <Collapsible key={item.title} asChild defaultOpen={false} className="group/collapsible">
-                      <SidebarMenuItem>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title} className="hover:bg-muted/50">
-                            <item.icon className="h-5 w-5" />
-                            {!collapsed && <span>{item.title}</span>}
-                            {!collapsed && <ChevronDown className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />}
-                          </SidebarMenuButton>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <SidebarMenuSub>
-                            <SidebarMenuSubItem>
-                              <SidebarMenuSubButton asChild isActive={location.pathname === item.url}>
-                                <NavLink to={item.url}>
-                                  <span>Ver todas</span>
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                            {item.submenu.map((subItem: any) => (
-                              <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild isActive={location.pathname === subItem.url}>
-                                  <NavLink to={subItem.url}>
-                                    <span>{subItem.title}</span>
-                                  </NavLink>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
-                      </SidebarMenuItem>
-                    </Collapsible>
-                  );
-                }
 
                 return (
                   <SidebarMenuItem key={item.title}>
@@ -153,6 +98,22 @@ function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location.pathname === "/expenses"} className="hover:bg-muted/50">
+                  <NavLink to="/expenses">
+                    <Receipt className="h-5 w-5" />
+                    {!collapsed && <span>Gastos</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location.pathname === "/costing-settings"} className="hover:bg-muted/50">
+                  <NavLink to="/costing-settings">
+                    <Sliders className="h-5 w-5" />
+                    {!collapsed && <span>Configuración de costeo</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               {isSuperAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location.pathname === "/super-admin"} className="hover:bg-muted/50">
