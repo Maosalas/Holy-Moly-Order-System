@@ -450,6 +450,7 @@ export const OrganizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         members,
         isLoading,
         isInitializing,
+        loadedUserId,
         fetchOrganizations,
         fetchOrganizationMembers,
         getMember,
