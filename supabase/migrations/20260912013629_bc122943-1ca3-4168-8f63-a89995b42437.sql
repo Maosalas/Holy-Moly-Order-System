@@ -1,0 +1,2 @@
+ALTER TABLE public.ingredient_price_history DROP CONSTRAINT ingredient_price_history_source_check;
+ALTER TABLE public.ingredient_price_history ADD CONSTRAINT ingredient_price_history_source_check CHECK (source = ANY (ARRAY['purchase'::text, 'manual'::text, 'import'::text, 'presentation'::text]));
