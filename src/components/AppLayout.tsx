@@ -143,6 +143,22 @@ function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location.pathname === "/expenses"} className="hover:bg-muted/50">
+                  <NavLink to="/expenses">
+                    <Receipt className="h-5 w-5" />
+                    {!collapsed && <span>Gastos</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location.pathname === "/costing-settings"} className="hover:bg-muted/50">
+                  <NavLink to="/costing-settings">
+                    <Sliders className="h-5 w-5" />
+                    {!collapsed && <span>Configuración de costeo</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               {isSuperAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location.pathname === "/super-admin"} className="hover:bg-muted/50">
