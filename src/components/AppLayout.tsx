@@ -33,23 +33,13 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Pedidos", url: "/orders", icon: ShoppingBag },
-  { title: "Cotizador", url: "/quotations", icon: Calculator },
-  {
-    title: "Recetas",
-    url: "/recipes",
-    icon: ChefHat,
-    submenu: [
-      { title: "Parámetros", url: "/recipe-parameters", icon: Sliders },
-      { title: "Costeo", url: "/costing-settings", icon: Calculator }
-    ]
-  },
   { title: "Elaboraciones", url: "/preparations", icon: ChefHat },
   { title: "Productos", url: "/products", icon: Package },
-  { title: "Ingredientes", url: "/ingredients", icon: Package },
+  { title: "Insumos", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
   { title: "Compras", url: "/purchases", icon: Receipt },
-  { title: "Gastos", url: "/expenses", icon: Receipt },
+  { title: "Cotizaciones", url: "/quotations", icon: Calculator },
+  { title: "Pedidos", url: "/orders", icon: ShoppingBag },
 ];
 
 function AppSidebar() {
