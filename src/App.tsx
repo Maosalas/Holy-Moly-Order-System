@@ -40,6 +40,8 @@ import CreateOrganization from "./pages/CreateOrganization";
 import EnterpriseAnalytics from "./pages/EnterpriseAnalytics";
 import Inventory from "./pages/Inventory";
 import CustomerPortal from "./pages/CustomerPortal";
+import QuotationEditor from "./pages/QuotationEditor";
+import PublicQuotation from "./pages/PublicQuotation";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +70,7 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/portal/:token" element={<CustomerPortal />} />
+              <Route path="/cotizacion/:token" element={<PublicQuotation />} />
               
               {/* Checkout and organization setup - authenticated but no org required */}
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
@@ -84,6 +87,7 @@ const App = () => (
               <Route path="/orders" element={<ProtectedRoute><RequireOrganization><AppLayout><Orders /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/expenses" element={<ProtectedRoute><RequireOrganization><AppLayout><Expenses /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/quotations" element={<ProtectedRoute><RequireOrganization><AppLayout><Quotations /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/quotations/:id" element={<ProtectedRoute><RequireOrganization><AppLayout><QuotationEditor /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/user/settings" element={<ProtectedRoute><RequireOrganization><AppLayout><UserSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/organization/settings" element={<ProtectedRoute><RequireOrganization><AppLayout><OrganizationSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/settings/subscription" element={<ProtectedRoute><RequireOrganization><AppLayout><OrganizationSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
