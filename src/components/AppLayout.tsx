@@ -27,7 +27,7 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Elaboraciones", url: "/preparations", icon: ChefHat },
   { title: "Productos", url: "/products", icon: Package },
-  { title: "Insumos", url: "/ingredients", icon: Package },
+  { title: "Ingredientes", url: "/ingredients", icon: Package },
   { title: "Suministros", url: "/supplies", icon: Box },
   { title: "Compras", url: "/purchases", icon: Receipt },
   { title: "Cotizaciones", url: "/quotations", icon: Calculator },
