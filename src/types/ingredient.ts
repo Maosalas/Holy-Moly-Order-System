@@ -18,6 +18,7 @@ export interface Ingredient {
   currentCost?: number;
   lastCost?: number;
   category?: string | null;
+  photoUrl?: string | null;
   active?: boolean;
   createdAt: Date;
   updatedAt: Date;

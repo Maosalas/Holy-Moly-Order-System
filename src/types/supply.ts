@@ -7,5 +7,6 @@ export interface Supply {
   quantity: number;
   unit: string;
   cost: number;
+  photoUrl?: string | null;
   createdAt: string;
 }
