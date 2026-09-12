@@ -74,43 +74,6 @@ function AppSidebar() {
             <SidebarMenu>
               {visibleMenuItems.map((item) => {
                 const isActive = location.pathname === item.url;
-                const hasSubmenu = 'submenu' in item && item.submenu;
-
-                if (hasSubmenu) {
-                  return (
-                    <Collapsible key={item.title} asChild defaultOpen={false} className="group/collapsible">
-                      <SidebarMenuItem>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title} className="hover:bg-muted/50">
-                            <item.icon className="h-5 w-5" />
-                            {!collapsed && <span>{item.title}</span>}
-                            {!collapsed && <ChevronDown className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />}
-                          </SidebarMenuButton>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <SidebarMenuSub>
-                            <SidebarMenuSubItem>
-                              <SidebarMenuSubButton asChild isActive={location.pathname === item.url}>
-                                <NavLink to={item.url}>
-                                  <span>Ver todas</span>
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                            {item.submenu.map((subItem: any) => (
-                              <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild isActive={location.pathname === subItem.url}>
-                                  <NavLink to={subItem.url}>
-                                    <span>{subItem.title}</span>
-                                  </NavLink>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
-                      </SidebarMenuItem>
-                    </Collapsible>
-                  );
-                }
 
                 return (
                   <SidebarMenuItem key={item.title}>
