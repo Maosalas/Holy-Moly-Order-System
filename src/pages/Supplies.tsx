@@ -4,8 +4,11 @@ import SupplyForm from "@/components/SupplyForm";
 import SupplyList from "@/components/SupplyList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useSupplies, useCreateSupply, useUpdateSupply, useDeleteSupply } from "@/hooks/use-supplies";
+import { Plus, Upload } from "lucide-react";
+import { useSupplies, useCreateSupply, useUpdateSupply, useDeleteSupply, supplyKeys } from "@/hooks/use-supplies";
+import { CsvImportDialog } from "@/components/CsvImportDialog";
+import { suppliesApi } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
