@@ -50,6 +50,7 @@ export interface ProductSize {
   is_default: boolean;
   sort_order: number;
   active: boolean;
+  size_preset_id: string | null;
 }
 
 export interface ProductVariant {
@@ -77,6 +78,7 @@ export interface ProductComponent {
   base_qty: number;
   is_optional: boolean;
   sort_order: number;
+  excludes_preset?: boolean;
 }
 
 export interface ProductCostLine {

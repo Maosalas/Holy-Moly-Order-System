@@ -1252,6 +1252,7 @@ export type Database = {
           base_qty: number
           component_type: string
           created_at: string
+          excludes_preset: boolean
           id: string
           ingredient_id: string | null
           is_optional: boolean
@@ -1270,6 +1271,7 @@ export type Database = {
           base_qty?: number
           component_type: string
           created_at?: string
+          excludes_preset?: boolean
           id?: string
           ingredient_id?: string | null
           is_optional?: boolean
@@ -1288,6 +1290,7 @@ export type Database = {
           base_qty?: number
           component_type?: string
           created_at?: string
+          excludes_preset?: boolean
           id?: string
           ingredient_id?: string | null
           is_optional?: boolean
@@ -1447,6 +1450,7 @@ export type Database = {
           oven_minutes: number
           portions: number | null
           product_id: string
+          size_preset_id: string | null
           sort_order: number
           target_weight_g: number | null
           updated_at: string
@@ -1461,6 +1465,7 @@ export type Database = {
           oven_minutes?: number
           portions?: number | null
           product_id: string
+          size_preset_id?: string | null
           sort_order?: number
           target_weight_g?: number | null
           updated_at?: string
@@ -1475,6 +1480,7 @@ export type Database = {
           oven_minutes?: number
           portions?: number | null
           product_id?: string
+          size_preset_id?: string | null
           sort_order?: number
           target_weight_g?: number | null
           updated_at?: string
@@ -1485,6 +1491,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sizes_size_preset_id_fkey"
+            columns: ["size_preset_id"]
+            isOneToOne: false
+            referencedRelation: "size_presets"
             referencedColumns: ["id"]
           },
         ]
@@ -2156,6 +2169,162 @@ export type Database = {
           },
         ]
       }
+      size_preset_components: {
+        Row: {
+          base_qty: number
+          component_type: string
+          created_at: string
+          id: string
+          ingredient_id: string | null
+          qty: number
+          role: string
+          size_preset_id: string
+          supply_id: string | null
+          unit_code: string
+          updated_at: string
+        }
+        Insert: {
+          base_qty?: number
+          component_type: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string | null
+          qty?: number
+          role?: string
+          size_preset_id: string
+          supply_id?: string | null
+          unit_code: string
+          updated_at?: string
+        }
+        Update: {
+          base_qty?: number
+          component_type?: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string | null
+          qty?: number
+          role?: string
+          size_preset_id?: string
+          supply_id?: string | null
+          unit_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "size_preset_components_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "size_preset_components_size_preset_id_fkey"
+            columns: ["size_preset_id"]
+            isOneToOne: false
+            referencedRelation: "size_presets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "size_preset_components_supply_id_fkey"
+            columns: ["supply_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "size_preset_components_unit_code_fkey"
+            columns: ["unit_code"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      size_preset_defaults: {
+        Row: {
+          created_at: string
+          id: string
+          qty_g: number
+          role: string
+          size_preset_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          qty_g?: number
+          role: string
+          size_preset_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          qty_g?: number
+          role?: string
+          size_preset_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "size_preset_defaults_size_preset_id_fkey"
+            columns: ["size_preset_id"]
+            isOneToOne: false
+            referencedRelation: "size_presets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      size_presets: {
+        Row: {
+          active: boolean
+          assembly_minutes: number
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          oven_minutes: number
+          portions: number | null
+          sort_order: number
+          target_weight_g: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          assembly_minutes?: number
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          oven_minutes?: number
+          portions?: number | null
+          sort_order?: number
+          target_weight_g?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          assembly_minutes?: number
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          oven_minutes?: number
+          portions?: number | null
+          sort_order?: number
+          target_weight_g?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "size_presets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           created_at: string
@@ -2543,6 +2712,10 @@ export type Database = {
         Args: { p_ingredient_id: string }
         Returns: undefined
       }
+      fn_apply_size_preset: {
+        Args: { p_preset_id: string; p_product_id: string }
+        Returns: string
+      }
       fn_calc_product_cost: {
         Args: {
           p_include_optional?: boolean
@@ -2570,6 +2743,10 @@ export type Database = {
           p_tax_percent: number
         }
         Returns: number
+      }
+      fn_duplicate_product: {
+        Args: { p_name: string; p_product_id: string }
+        Returns: string
       }
       fn_expire_quotations: { Args: never; Returns: number }
       fn_ingredient_effective_cost: {

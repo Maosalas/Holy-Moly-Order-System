@@ -24,6 +24,7 @@ import { useSupplies } from "@/hooks/use-supplies";
 import { usePreparations } from "@/hooks/use-preparations";
 import { useUnits } from "@/hooks/use-purchasing";
 import {
+  useApplySizePreset,
   useDeleteComponentRow,
   useDeleteSize,
   useDeleteVariant,
@@ -38,6 +39,7 @@ import {
   useSaveVariant,
   type ComponentPayload,
 } from "@/hooks/use-products";
+import { useSizePresets } from "@/hooks/use-size-presets";
 import {
   COMPONENT_TYPE_LABELS,
   ROLE_LABELS,
@@ -67,6 +69,7 @@ export default function ProductEditor() {
   const { data: ingredientsRaw = [] } = useIngredients();
   const { data: suppliesRaw = [] } = useSupplies();
   const { data: units = [] } = useUnits();
+  const { data: presets = [] } = useSizePresets();
 
   const saveSize = useSaveSize();
   const deleteSize = useDeleteSize();
@@ -75,6 +78,28 @@ export default function ProductEditor() {
   const saveRow = useSaveComponentRow();
   const saveRows = useSaveComponentRows();
   const deleteRow = useDeleteComponentRow();
+  const applyPreset = useApplySizePreset();
+  const [presetId, setPresetId] = useState("");
+
+  const addPresetSize = async () => {
+    if (!presetId) {
+      toast({
+        title: "Elegí un tamaño del catálogo",
+        description: "Podés administrarlos en Catálogo de tamaños.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      await applyPreset.mutateAsync({ productId: id as string, presetId });
+      toast({
+        title: "Tamaño agregado",
+        description: "Se heredaron porciones, minutos y empaque, y se copiaron las cantidades sugeridas.",
+      });
+    } catch (e: any) {
+      toast({ title: "No se pudo agregar", description: e.message, variant: "destructive" });
+    }
+  };
 
   const ingredients = ingredientsRaw as any[];
   const supplies = suppliesRaw as any[];
@@ -193,6 +218,7 @@ export default function ProductEditor() {
           unit_code: row.unit_code,
           is_optional: row.is_optional,
           sort_order: row.sort_order,
+          excludes_preset: row.excludes_preset ?? false,
           ...patch,
         },
       });
@@ -474,6 +500,7 @@ export default function ProductEditor() {
                     <TableHead>Peso objetivo (g)</TableHead>
                     <TableHead>Armado (min)</TableHead>
                     <TableHead>Horno (min)</TableHead>
+                    <TableHead>Del catálogo</TableHead>
                     <TableHead>Predeterminado</TableHead>
                     <TableHead className="w-16" />
                   </TableRow>
@@ -517,6 +544,11 @@ export default function ProductEditor() {
                           />
                         </TableCell>
                       ))}
+                      <TableCell className="text-sm text-muted-foreground">
+                        {s.size_preset_id
+                          ? presets.find((p) => p.id === s.size_preset_id)?.name ?? "Sí"
+                          : "—"}
+                      </TableCell>
                       <TableCell>
                         <Checkbox
                           checked={s.is_default}
@@ -541,22 +573,44 @@ export default function ProductEditor() {
                   ))}
                 </TableBody>
               </Table>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() =>
-                  saveSize.mutate({
-                    input: {
-                      product_id: id as string,
-                      name: `Tamaño ${sizes.length + 1}`,
-                      is_default: sizes.length === 0,
-                      sort_order: sizes.length,
-                    },
-                  })
-                }
-              >
-                <Plus className="mr-2 h-4 w-4" /> Agregar tamaño
-              </Button>
+              <div className="mt-4 flex flex-wrap items-end gap-3">
+                <div className="w-56 space-y-1">
+                  <Label className="text-xs">Tamaño del catálogo</Label>
+                  <SearchSelect
+                    className={selectClass}
+                    value={presetId}
+                    onChange={(e) => setPresetId(e.target.value)}
+                  >
+                    <option value="">Seleccionar…</option>
+                    {presets
+                      .filter((p) => p.active)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                  </SearchSelect>
+                </div>
+                <Button onClick={addPresetSize} disabled={applyPreset.isPending}>
+                  {applyPreset.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Plus className="mr-2 h-4 w-4" /> Agregar del catálogo
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    saveSize.mutate({
+                      input: {
+                        product_id: id as string,
+                        name: `Tamaño ${sizes.length + 1}`,
+                        is_default: sizes.length === 0,
+                        sort_order: sizes.length,
+                      },
+                    })
+                  }
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Tamaño en blanco
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -678,6 +732,7 @@ export default function ProductEditor() {
                       <TableHead className="min-w-[90px]">Unidad</TableHead>
                       <TableHead>Base</TableHead>
                       <TableHead>Opcional</TableHead>
+                      <TableHead className="min-w-[110px]">Sin empaque del catálogo</TableHead>
                       <TableHead className="w-16" />
                     </TableRow>
                   </TableHeader>
@@ -763,6 +818,12 @@ export default function ProductEditor() {
                           <Checkbox
                             checked={r.is_optional}
                             onCheckedChange={(c) => patchRow(r, { is_optional: !!c })}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Checkbox
+                            checked={!!r.excludes_preset}
+                            onCheckedChange={(c) => patchRow(r, { excludes_preset: !!c } as any)}
                           />
                         </TableCell>
                         <TableCell>
