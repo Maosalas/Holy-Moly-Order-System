@@ -234,15 +234,17 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <RecipePreviewDialog recipe={recipe} />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onEdit(recipe)}
-                          title="Edit"
-                          disabled={isDeleting}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        {onEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onEdit(recipe)}
+                            title="Edit"
+                            disabled={isDeleting}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
