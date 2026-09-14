@@ -42,6 +42,7 @@ import Inventory from "./pages/Inventory";
 import CustomerPortal from "./pages/CustomerPortal";
 import QuotationEditor from "./pages/QuotationEditor";
 import PublicQuotation from "./pages/PublicQuotation";
+import SizePresets from "./pages/SizePresets";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -98,6 +99,7 @@ const App = () => (
               <Route path="/preparations/:id" element={<ProtectedRoute><RequireOrganization><AppLayout><PreparationEditor /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/products" element={<ProtectedRoute><RequireOrganization><AppLayout><Products /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/products/:id" element={<ProtectedRoute><RequireOrganization><AppLayout><ProductEditor /></AppLayout></RequireOrganization></ProtectedRoute>} />
+              <Route path="/size-presets" element={<ProtectedRoute><RequireOrganization><AppLayout><SizePresets /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/costing-settings" element={<ProtectedRoute><RequireOrganization><AppLayout><CostingSettings /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute><RequireOrganization><AppLayout><EnterpriseAnalytics /></AppLayout></RequireOrganization></ProtectedRoute>} />
               <Route path="/inventory" element={<ProtectedRoute><RequireOrganization><AppLayout><Inventory /></AppLayout></RequireOrganization></ProtectedRoute>} />

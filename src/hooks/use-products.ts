@@ -85,6 +85,42 @@ export const useDeleteProduct = () => {
   });
 };
 
+export const useDuplicateProduct = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { data, error } = await supabase.rpc("fn_duplicate_product", {
+        p_product_id: id,
+        p_name: name,
+      } as never);
+      if (error) throw new Error(error.message);
+      return data as unknown as string;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+  });
+};
+
+/** Agrega un tamaño a partir de un preset del catálogo (hereda empaque y copia cantidades). */
+export const useApplySizePreset = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ productId, presetId }: { productId: string; presetId: string }) => {
+      const { data, error } = await supabase.rpc("fn_apply_size_preset", {
+        p_product_id: productId,
+        p_preset_id: presetId,
+      } as never);
+      if (error) throw new Error(error.message);
+      return data as unknown as string;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["product_sizes", v.productId] });
+      qc.invalidateQueries({ queryKey: ["product_components", v.productId] });
+      qc.invalidateQueries({ queryKey: ["product_cost"] });
+      qc.invalidateQueries({ queryKey: ["size_preset_usage"] });
+    },
+  });
+};
+
 /* ---------------- Tamaños ---------------- */
 
 export const useProductSizes = (productId?: string) =>

@@ -14,9 +14,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Copy, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useCreateProduct, useDeleteProduct, useProducts } from "@/hooks/use-products";
+import {
+  useCreateProduct,
+  useDeleteProduct,
+  useDuplicateProduct,
+  useProducts,
+} from "@/hooks/use-products";
 import { SearchSelect } from "@/components/ui/search-select";
 
 export default function Products() {
@@ -24,11 +29,26 @@ export default function Products() {
   const { data: products = [], isLoading } = useProducts();
   const createProduct = useCreateProduct();
   const deleteProduct = useDeleteProduct();
+  const duplicateProduct = useDuplicateProduct();
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [priceBasis, setPriceBasis] = useState<"unit" | "portion">("unit");
+  const [dupOf, setDupOf] = useState<{ id: string; name: string } | null>(null);
+  const [dupName, setDupName] = useState("");
+
+  const duplicate = async () => {
+    if (!dupOf) return;
+    try {
+      const newId = await duplicateProduct.mutateAsync({ id: dupOf.id, name: dupName.trim() });
+      setDupOf(null);
+      toast({ title: "Producto duplicado" });
+      navigate(`/products/${newId}`);
+    } catch (e: any) {
+      toast({ title: "No se pudo duplicar", description: e.message, variant: "destructive" });
+    }
+  };
 
   const create = async () => {
     if (!name.trim()) {
@@ -85,7 +105,7 @@ export default function Products() {
                   <TableHead>Nombre</TableHead>
                   <TableHead>Categoría</TableHead>
                   <TableHead>Se cobra por</TableHead>
-                  <TableHead className="w-24" />
+                  <TableHead className="w-32" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -96,7 +116,19 @@ export default function Products() {
                     <TableCell>
                       <Badge variant="secondary">{p.price_basis === "portion" ? "Porción" : "Unidad"}</Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Duplicar producto"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDupOf({ id: p.id, name: p.name });
+                          setDupName(`${p.name} (copia)`);
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -160,6 +192,31 @@ export default function Products() {
             <Button onClick={create} disabled={createProduct.isPending}>
               {createProduct.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Crear
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!dupOf} onOpenChange={(o) => !o && setDupOf(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicar producto</DialogTitle>
+            <DialogDescription>
+              Se copian los tamaños, las variantes y toda la composición de “{dupOf?.name}”. Después
+              cambiás solo lo que sea distinto.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="dup-name">Nombre del nuevo producto</Label>
+            <Input id="dup-name" value={dupName} onChange={(e) => setDupName(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDupOf(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={duplicate} disabled={duplicateProduct.isPending}>
+              {duplicateProduct.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Duplicar
             </Button>
           </DialogFooter>
         </DialogContent>
