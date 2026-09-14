@@ -99,7 +99,7 @@ function filterItems(children: React.ReactNode, query: string): React.ReactNode 
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & { searchThreshold?: number }
->(({ className, children, position = "popper", searchThreshold = 2, ...props }, ref) => {
+>(({ className, children, position = "popper", searchThreshold = 5, ...props }, ref) => {
   const [query, setQuery] = React.useState("");
   const searchRef = React.useRef<HTMLInputElement>(null);
   const showSearch = countItems(children) >= searchThreshold;

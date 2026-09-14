@@ -71,7 +71,7 @@ export const SearchSelect = React.forwardRef<HTMLButtonElement, SearchSelectProp
       placeholder = "Seleccionar…",
       searchPlaceholder = "Buscar…",
       emptyMessage = "Sin resultados.",
-      searchThreshold = 6,
+      searchThreshold = 5,
     },
     ref,
   ) => {
