@@ -47,6 +47,7 @@ export const IngredientForm = ({ open, ingredient, onSubmit, onCancel }: Ingredi
   const { currentOrganization } = useOrganization();
   const [name, setName] = useState(ingredient?.name || "");
   const [category, setCategory] = useState(ingredient?.category || "");
+  const [supplierId, setSupplierId] = useState(ingredient?.supplierId || "");
   const [baseUnit, setBaseUnit] = useState(ingredient?.baseUnit || "g");
   const [wastePct, setWastePct] = useState(String(ingredient?.wastePct ?? 0));
   const [density, setDensity] = useState(ingredient?.densityGMl?.toString() || "");
@@ -125,6 +126,7 @@ export const IngredientForm = ({ open, ingredient, onSubmit, onCancel }: Ingredi
         organizationId: currentOrganization?.id || "",
         name: name.trim(),
         category: category.trim() || null,
+        supplierId: supplierId || null,
         baseUnit,
         wastePct: waste,
         densityGMl: showDensity && density ? Number(density) : null,
@@ -194,6 +196,28 @@ export const IngredientForm = ({ open, ingredient, onSubmit, onCancel }: Ingredi
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="Secos, lácteos, chocolatería..."
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Proveedor</Label>
+              <Select
+                value={supplierId || "none"}
+                onValueChange={(v) => setSupplierId(v === "none" ? "" : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sin proveedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin proveedor</SelectItem>
+                  {suppliers.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Proveedor principal de este ingrediente (opcional).
+              </p>
             </div>
           </div>
 
