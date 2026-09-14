@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Order } from "@/types/order";
 import { ordersApi, quotationsApi } from "@/lib/api";
 import { useOrders, useCreateOrder, useUpdateOrder, useDeleteOrder, useOrder, useOrdersUsage } from "@/hooks/use-orders";
-import type { Quotation } from "@/types/quotation";
+import type { Quote } from "@/types/quote";
 
 const Orders = () => {
   const { user } = useAuth();
@@ -34,7 +34,7 @@ const Orders = () => {
   const [isFetchingOrder, setIsFetchingOrder] = useState(false);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [shoppingListOpen, setShoppingListOpen] = useState(false);
-  const [quotationForOrder, setQuotationForOrder] = useState<Quotation | null>(null);
+  const [quotationForOrder, setQuotationForOrder] = useState<Quote | null>(null);
 
   // Detectar quotationId en la URL y cargar la cotización
   useEffect(() => {
@@ -46,7 +46,7 @@ const Orders = () => {
           const { data, error } = await quotationsApi.getById(quotationId);
           if (error) throw new Error(error);
           if (data) {
-            setQuotationForOrder(data as Quotation);
+            setQuotationForOrder(data as Quote);
             setIsFormOpen(true);
             // Limpiar el parámetro de la URL
             searchParams.delete('quotationId');

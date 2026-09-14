@@ -12,7 +12,7 @@ import { PaginationControls } from "./PaginationControls";
 
 interface RecipeListProps {
   recipes: Recipe[];
-  onEdit: (recipe: Recipe) => void;
+  onEdit?: (recipe: Recipe) => void;
   onDelete: (id: string) => void;
   isDeleting?: boolean;
 }
@@ -88,15 +88,17 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
                       <RecipePreviewDialog recipe={recipe} />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEdit(recipe)}
-                        title="Edit"
-                        disabled={isDeleting}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      {onEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onEdit(recipe)}
+                          title="Edit"
+                          disabled={isDeleting}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -232,15 +234,17 @@ export const RecipeList = ({ recipes, onEdit, onDelete, isDeleting }: RecipeList
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <RecipePreviewDialog recipe={recipe} />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onEdit(recipe)}
-                          title="Edit"
-                          disabled={isDeleting}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        {onEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onEdit(recipe)}
+                            title="Edit"
+                            disabled={isDeleting}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"

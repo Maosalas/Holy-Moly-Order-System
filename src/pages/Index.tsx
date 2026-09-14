@@ -1,20 +1,20 @@
 import { useState, useMemo } from "react";
-import { Recipe, RecipeFormData } from "@/types/recipe";
-import { RecipeForm } from "@/components/RecipeForm";
+import { Recipe } from "@/types/recipe";
 import { RecipeList } from "@/components/RecipeList";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useRecipes, useCreateRecipe, useUpdateRecipe, useDeleteRecipe } from "@/hooks/use-recipes";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
+import { useRecipes, useDeleteRecipe } from "@/hooks/use-recipes";
 
+/**
+ * Pantalla heredada de recetas: SOLO LECTURA.
+ * Las recetas nuevas se crean en Elaboraciones y Productos.
+ * Aquí no se crea ni se edita nada para no escribir en las columnas jsonb antiguas.
+ */
 const Index = () => {
-  // Usar React Query hooks
-  const { data: recipesData = [], isLoading } = useRecipes();
-  const createRecipe = useCreateRecipe();
-  const updateRecipe = useUpdateRecipe();
+  const { data: recipesData = [] } = useRecipes();
   const deleteRecipe = useDeleteRecipe();
 
-  // Transformar datos del API con useMemo para estabilizar referencias
   const recipes: Recipe[] = useMemo(() => {
     return recipesData.map((r: any) => ({
       ...r,
@@ -22,24 +22,21 @@ const Index = () => {
       usedParameters: r.used_parameters || r.usedParameters || [],
       createdAt: new Date(r.created_at || r.createdAt),
       updatedAt: new Date(r.updated_at || r.updatedAt),
-      // Mapear elaboraciones y sus ingredientes
       elaborations: (r.elaborations || []).map((elab: any) => ({
         id: elab.id,
         name: elab.name,
         order: elab.order,
         cost: elab.cost || 0,
         variationId: elab.variation_id || elab.variationId || null,
-        // Mapear ingredientes dentro de la elaboración
         ingredients: (elab.ingredients || []).map((ing: any) => ({
           id: ing.id,
           ingredientId: ing.ingredient_id || ing.ingredientId,
           ingredientName: ing.ingredient_name || ing.ingredientName || ing.name,
           quantity: ing.quantity || 0,
-          units: ing.units || ing.unit || '',
-          cost: ing.cost || 0
-        }))
+          units: ing.units || ing.unit || "",
+          cost: ing.cost || 0,
+        })),
       })),
-      // Mapear variaciones si existen
       variations: (r.variations || []).map((v: any) => ({
         ...v,
         createdAt: v.created_at ? new Date(v.created_at) : new Date(),
@@ -51,7 +48,6 @@ const Index = () => {
         unitCost: v.unit_cost || v.unitCost,
         orderNumber: v.order_number || v.orderNumber || 0,
         isDefault: v.is_default !== undefined ? v.is_default : v.isDefault,
-        // Mapear elaboraciones de la variación
         elaborations: (v.elaborations || []).map((elab: any) => ({
           id: elab.id,
           name: elab.name,
@@ -63,37 +59,16 @@ const Index = () => {
             ingredientId: ing.ingredient_id || ing.ingredientId,
             ingredientName: ing.ingredient_name || ing.ingredientName || ing.name,
             quantity: ing.quantity || 0,
-            units: ing.units || ing.unit || '',
-            cost: ing.cost || 0
-          }))
-        }))
-      }))
+            units: ing.units || ing.unit || "",
+            cost: ing.cost || 0,
+          })),
+        })),
+      })),
     }));
   }, [recipesData]);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>();
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState<string | null>(null);
-
-  const handleSubmit = async (data: RecipeFormData) => {
-    try {
-      if (editingRecipe) {
-        await updateRecipe.mutateAsync({ id: editingRecipe.id, recipe: data });
-      } else {
-        await createRecipe.mutateAsync(data);
-      }
-      setIsFormOpen(false);
-      setEditingRecipe(undefined);
-    } catch (error) {
-      // Los errores ya son manejados por los hooks
-      console.error("Error submitting recipe:", error);
-    }
-  };
-
-  const handleEdit = (recipe: Recipe) => {
-    setEditingRecipe(recipe);
-    setIsFormOpen(true);
-  };
 
   const handleDeleteClick = (id: string) => {
     setRecipeToDelete(id);
@@ -101,58 +76,41 @@ const Index = () => {
   };
 
   const handleDeleteConfirm = async () => {
-    if (recipeToDelete) {
-      try {
-        await deleteRecipe.mutateAsync(recipeToDelete);
-        setDeleteDialogOpen(false);
-        setRecipeToDelete(null);
-      } catch (error) {
-        // Los errores ya son manejados por los hooks
-        console.error("Error deleting recipe:", error);
-        setDeleteDialogOpen(false);
-        setRecipeToDelete(null);
-      }
+    if (!recipeToDelete) return;
+    try {
+      await deleteRecipe.mutateAsync(recipeToDelete);
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
     }
-  };
-
-  const handleCancel = () => {
-    setIsFormOpen(false);
-    setEditingRecipe(undefined);
+    setDeleteDialogOpen(false);
+    setRecipeToDelete(null);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold">Recetas</h2>
-          <p className="text-muted-foreground mt-1">Administra tu base de datos de recetas</p>
-        </div>
-        {!isFormOpen && (
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            size="lg"
-            className="gap-2"
-          >
-            <Plus className="h-5 w-5" />
-            Nueva Receta
-          </Button>
-        )}
+      <div>
+        <h2 className="text-3xl font-bold">Recetas (archivo)</h2>
+        <p className="text-muted-foreground mt-1">
+          Registro histórico de solo lectura
+        </p>
       </div>
 
-      {isFormOpen ? (
-        <RecipeForm
-          recipe={editingRecipe}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-        />
-      ) : (
-        <RecipeList
-          recipes={recipes}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
-          isDeleting={deleteRecipe.isPending}
-        />
-      )}
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Esta pantalla ya no recibe datos nuevos</AlertTitle>
+        <AlertDescription>
+          Las recetas ahora se crean en <strong>Elaboraciones</strong> (masas,
+          rellenos, cubiertas) y en <strong>Productos</strong> (lo que se vende,
+          con sus tamaños y variantes). Acá solo podés consultar o eliminar lo
+          antiguo.
+        </AlertDescription>
+      </Alert>
+
+      <RecipeList
+        recipes={recipes}
+        onDelete={handleDeleteClick}
+        isDeleting={deleteRecipe.isPending}
+      />
 
       <DeleteConfirmDialog
         open={deleteDialogOpen}

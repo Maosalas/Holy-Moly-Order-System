@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import type { Order, OrderStatus, PaymentMethod } from "@/types/order";
-import type { Quotation } from "@/types/quotation";
+import type { Quote } from "@/types/quote";
 import { quotationsApi, paymentMethodsApi } from "@/lib/api";
 import { cn, dateToLocalInput, localInputToDate } from "@/lib/utils";
 import { useOrganization } from "@/contexts/OrganizationContext";
@@ -22,13 +22,13 @@ interface OrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "createdAt">) => void;
   initialData?: Order;
   onCancel?: () => void;
-  quotation?: Quotation;
+  quotation?: Quote;
 }
 
 export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderFormProps) => {
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
-  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [quotations, setQuotations] = useState<Quote[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedQuotationId, setSelectedQuotationId] = useState<string>(initialData?.quotationId || "");
   const [clientName, setClientName] = useState(initialData?.clientName || "");
@@ -69,8 +69,9 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
     const fetchQuotations = async () => {
       const result = await quotationsApi.getAll();
       if (result.data) {
-        const quotationsData = Array.isArray(result.data) ? result.data : [];
-        setQuotations(quotationsData);
+        const quotationsData = (Array.isArray(result.data) ? result.data : []) as Quote[];
+        // Solo cotizaciones aceptadas pueden convertirse en pedido
+        setQuotations(quotationsData.filter((q) => q.status === "aceptada"));
       }
     };
 
@@ -91,19 +92,23 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
     fetchPaymentMethods();
   }, [initialData]);
 
-  // Pre-poblar datos cuando se pasa una cotización
+  // Pre-poblar datos cuando se pasa una cotización aceptada
   useEffect(() => {
     if (quotation && !initialData) {
       setSelectedQuotationId(quotation.id);
-      setClientName(quotation.clientName || "");
-      setChargeAmount(quotation.totalCost.toString());
-      // Puedes pre-poblar otros campos si es necesario
+      setClientName(quotation.client_name || "");
+      setPhoneNumber(quotation.client_phone || "");
+      setChargeAmount(String(quotation.total ?? 0));
     }
   }, [quotation, initialData]);
 
-  // Calculate cost from selected quotation
-  const selectedQuotation = quotations.find(q => q.id === selectedQuotationId);
-  const costAmount = selectedQuotation ? selectedQuotation.totalCost : (initialData?.costAmount || 0);
+  // El costo se copia del costo total de la cotización; nunca se escribe a mano
+  const selectedQuotation =
+    quotations.find((q) => q.id === selectedQuotationId) ||
+    (quotation && quotation.id === selectedQuotationId ? quotation : undefined);
+  const costAmount = selectedQuotation
+    ? Number(selectedQuotation.cost_total || 0)
+    : (initialData?.costAmount || 0);
   const profit = (parseFloat(chargeAmount) || 0) - costAmount;
 
   // Update form fields when initialData changes
@@ -513,7 +518,9 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
             <div className="space-y-4">
               <div>
                 <Label className="text-base font-semibold">Cotización *</Label>
-                <p className="text-sm text-muted-foreground mt-1">Seleccione una cotización para este pedido</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Seleccione una cotización aceptada para este pedido
+                </p>
               </div>
 
               <Popover>
@@ -526,7 +533,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
                     <span className="flex items-center gap-2">
                       <FileText className="h-4 w-4" />
                       {selectedQuotation
-                        ? `${selectedQuotation.clientName} - ${selectedQuotation.size} (₡${selectedQuotation.totalCost.toFixed(2)})`
+                        ? `${selectedQuotation.number || "Cotización"} · ${selectedQuotation.client_name} (₡${Number(selectedQuotation.total || 0).toFixed(2)})`
                         : "Seleccionar cotización..."}
                     </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -538,7 +545,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
                     <CommandList>
                       <CommandEmpty>
                         {quotations.length === 0
-                          ? "No hay cotizaciones disponibles. Agregue una cotización primero."
+                          ? "No hay cotizaciones aceptadas. Acepte una cotización primero."
                           : "No se encontraron cotizaciones."}
                       </CommandEmpty>
                       <CommandGroup>
@@ -555,23 +562,26 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
                           />
                           <span className="text-muted-foreground">Ninguna</span>
                         </CommandItem>
-                        {quotations.map((quotation) => (
+                        {quotations.map((q) => (
                           <CommandItem
-                            key={quotation.id}
-                            value={quotation.id}
-                            onSelect={() => setSelectedQuotationId(quotation.id)}
+                            key={q.id}
+                            value={`${q.number || ""} ${q.client_name}`}
+                            onSelect={() => setSelectedQuotationId(q.id)}
                             className="cursor-pointer"
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                selectedQuotationId === quotation.id ? "opacity-100" : "opacity-0"
+                                selectedQuotationId === q.id ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <div className="flex items-center justify-between w-full gap-4">
-                              <span className="font-medium">{quotation.clientName}</span>
+                              <span className="font-medium">
+                                {q.number ? `${q.number} · ` : ""}
+                                {q.client_name}
+                              </span>
                               <div className="text-sm text-muted-foreground">
-                                {quotation.size} - ₡{quotation.totalCost.toFixed(2)}
+                                ₡{Number(q.total || 0).toFixed(2)}
                               </div>
                             </div>
                           </CommandItem>
@@ -591,9 +601,14 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
                   type="number"
                   value={costAmount.toFixed(2)}
                   disabled
-                  className="font-semibold bg-muted"
+                  readOnly
+                  className="font-semibold bg-muted cursor-not-allowed"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Se copia del costo de la cotización aceptada. No se edita a mano.
+                </p>
               </div>
+
 
               <div className="space-y-2">
                 <Label htmlFor="chargeAmount">Precio a cobrar (₡) *</Label>
