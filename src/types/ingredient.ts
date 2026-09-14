@@ -19,6 +19,7 @@ export interface Ingredient {
   lastCost?: number;
   category?: string | null;
   photoUrl?: string | null;
+  supplierId?: string | null;
   active?: boolean;
   createdAt: Date;
   updatedAt: Date;
