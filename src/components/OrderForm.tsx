@@ -92,19 +92,23 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
     fetchPaymentMethods();
   }, [initialData]);
 
-  // Pre-poblar datos cuando se pasa una cotización
+  // Pre-poblar datos cuando se pasa una cotización aceptada
   useEffect(() => {
     if (quotation && !initialData) {
       setSelectedQuotationId(quotation.id);
-      setClientName(quotation.clientName || "");
-      setChargeAmount(quotation.totalCost.toString());
-      // Puedes pre-poblar otros campos si es necesario
+      setClientName(quotation.client_name || "");
+      setPhoneNumber(quotation.client_phone || "");
+      setChargeAmount(String(quotation.total ?? 0));
     }
   }, [quotation, initialData]);
 
-  // Calculate cost from selected quotation
-  const selectedQuotation = quotations.find(q => q.id === selectedQuotationId);
-  const costAmount = selectedQuotation ? selectedQuotation.totalCost : (initialData?.costAmount || 0);
+  // El costo se copia del costo total de la cotización; nunca se escribe a mano
+  const selectedQuotation =
+    quotations.find((q) => q.id === selectedQuotationId) ||
+    (quotation && quotation.id === selectedQuotationId ? quotation : undefined);
+  const costAmount = selectedQuotation
+    ? Number(selectedQuotation.cost_total || 0)
+    : (initialData?.costAmount || 0);
   const profit = (parseFloat(chargeAmount) || 0) - costAmount;
 
   // Update form fields when initialData changes
