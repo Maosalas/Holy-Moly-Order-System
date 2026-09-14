@@ -518,7 +518,9 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
             <div className="space-y-4">
               <div>
                 <Label className="text-base font-semibold">Cotización *</Label>
-                <p className="text-sm text-muted-foreground mt-1">Seleccione una cotización para este pedido</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Seleccione una cotización aceptada para este pedido
+                </p>
               </div>
 
               <Popover>
@@ -531,7 +533,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
                     <span className="flex items-center gap-2">
                       <FileText className="h-4 w-4" />
                       {selectedQuotation
-                        ? `${selectedQuotation.clientName} - ${selectedQuotation.size} (₡${selectedQuotation.totalCost.toFixed(2)})`
+                        ? `${selectedQuotation.number || "Cotización"} · ${selectedQuotation.client_name} (₡${Number(selectedQuotation.total || 0).toFixed(2)})`
                         : "Seleccionar cotización..."}
                     </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -543,7 +545,7 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
                     <CommandList>
                       <CommandEmpty>
                         {quotations.length === 0
-                          ? "No hay cotizaciones disponibles. Agregue una cotización primero."
+                          ? "No hay cotizaciones aceptadas. Acepte una cotización primero."
                           : "No se encontraron cotizaciones."}
                       </CommandEmpty>
                       <CommandGroup>
@@ -560,23 +562,26 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
                           />
                           <span className="text-muted-foreground">Ninguna</span>
                         </CommandItem>
-                        {quotations.map((quotation) => (
+                        {quotations.map((q) => (
                           <CommandItem
-                            key={quotation.id}
-                            value={quotation.id}
-                            onSelect={() => setSelectedQuotationId(quotation.id)}
+                            key={q.id}
+                            value={`${q.number || ""} ${q.client_name}`}
+                            onSelect={() => setSelectedQuotationId(q.id)}
                             className="cursor-pointer"
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                selectedQuotationId === quotation.id ? "opacity-100" : "opacity-0"
+                                selectedQuotationId === q.id ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <div className="flex items-center justify-between w-full gap-4">
-                              <span className="font-medium">{quotation.clientName}</span>
+                              <span className="font-medium">
+                                {q.number ? `${q.number} · ` : ""}
+                                {q.client_name}
+                              </span>
                               <div className="text-sm text-muted-foreground">
-                                {quotation.size} - ₡{quotation.totalCost.toFixed(2)}
+                                ₡{Number(q.total || 0).toFixed(2)}
                               </div>
                             </div>
                           </CommandItem>
@@ -596,9 +601,14 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
                   type="number"
                   value={costAmount.toFixed(2)}
                   disabled
-                  className="font-semibold bg-muted"
+                  readOnly
+                  className="font-semibold bg-muted cursor-not-allowed"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Se copia del costo de la cotización aceptada. No se edita a mano.
+                </p>
               </div>
+
 
               <div className="space-y-2">
                 <Label htmlFor="chargeAmount">Precio a cobrar (₡) *</Label>
