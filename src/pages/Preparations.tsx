@@ -23,6 +23,7 @@ import {
   usePreparations,
 } from "@/hooks/use-preparations";
 import { PREPARATION_TYPE_LABELS, type PreparationType } from "@/types/preparation";
+import { SearchSelect } from "@/components/ui/search-select";
 
 const money = (v: number | null | undefined, digits = 2) =>
   `₡${(v || 0).toLocaleString("es-CR", { maximumFractionDigits: digits })}`;
@@ -168,7 +169,7 @@ export default function Preparations() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="prep-type">Tipo</Label>
-              <select
+              <SearchSelect
                 id="prep-type"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={type}
@@ -179,7 +180,7 @@ export default function Preparations() {
                     {label}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-2">
               <Label htmlFor="prep-yield">Rendimiento (g)</Label>

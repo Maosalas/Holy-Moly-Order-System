@@ -58,36 +58,105 @@ const SelectScrollDownButton = React.forwardRef<
 ));
 SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName;
 
+function nodeText(node: React.ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(nodeText).join("");
+  if (React.isValidElement(node)) return nodeText((node.props as any)?.children);
+  return "";
+}
+
+function countItems(children: React.ReactNode): number {
+  let total = 0;
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) return;
+    if ((child.type as any)?.displayName === SelectPrimitive.Item.displayName) total += 1;
+    else if ((child.props as any)?.children) total += countItems((child.props as any).children);
+  });
+  return total;
+}
+
+function filterItems(children: React.ReactNode, query: string): React.ReactNode {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return children;
+  const mapped = React.Children.map(children, (child) => {
+    if (!React.isValidElement(child)) return child;
+    if ((child.type as any)?.displayName === SelectPrimitive.Item.displayName) {
+      return nodeText((child.props as any).children).toLowerCase().includes(needle) ? child : null;
+    }
+    const inner = (child.props as any)?.children;
+    if (inner) {
+      const filtered = filterItems(inner, query);
+      const kept = React.Children.toArray(filtered).length;
+      if (!kept) return null;
+      return React.cloneElement(child, child.props as any, filtered);
+    }
+    return null;
+  });
+  return mapped;
+}
+
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = "popper", ...props }, ref) => (
-  <SelectPrimitive.Portal>
-    <SelectPrimitive.Content
-      ref={ref}
-      className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-        position === "popper" &&
-          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-        className,
-      )}
-      position={position}
-      {...props}
-    >
-      <SelectScrollUpButton />
-      <SelectPrimitive.Viewport
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & { searchThreshold?: number }
+>(({ className, children, position = "popper", searchThreshold = 6, ...props }, ref) => {
+  const [query, setQuery] = React.useState("");
+  const searchRef = React.useRef<HTMLInputElement>(null);
+  const showSearch = countItems(children) >= searchThreshold;
+  const filtered = showSearch ? filterItems(children, query) : children;
+  const hasResults = React.Children.toArray(filtered).length > 0;
+
+  return (
+    <SelectPrimitive.Portal>
+      <SelectPrimitive.Content
+        ref={ref}
         className={cn(
-          "p-1",
+          "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           position === "popper" &&
-            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]",
+            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+          className,
         )}
+        position={position}
+        onCloseAutoFocus={(event) => {
+          setQuery("");
+          props.onCloseAutoFocus?.(event);
+        }}
+        {...props}
       >
-        {children}
-      </SelectPrimitive.Viewport>
-      <SelectScrollDownButton />
-    </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-));
+        {showSearch && (
+          <div className="sticky top-0 z-10 border-b bg-popover p-1">
+            <input
+              ref={searchRef}
+              value={query}
+              autoFocus
+              placeholder="Buscar…"
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                // Evita que Radix capture la escritura como type-ahead
+                if (event.key !== "Escape" && event.key !== "Enter") event.stopPropagation();
+              }}
+              className="h-8 w-full rounded-sm bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+        )}
+        <SelectScrollUpButton />
+        <SelectPrimitive.Viewport
+          className={cn(
+            "p-1",
+            position === "popper" &&
+              "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]",
+          )}
+        >
+          {filtered}
+          {showSearch && !hasResults && (
+            <div className="px-2 py-3 text-center text-sm text-muted-foreground">Sin resultados.</div>
+          )}
+        </SelectPrimitive.Viewport>
+        <SelectScrollDownButton />
+      </SelectPrimitive.Content>
+    </SelectPrimitive.Portal>
+  );
+});
 SelectContent.displayName = SelectPrimitive.Content.displayName;
 
 const SelectLabel = React.forwardRef<

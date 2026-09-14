@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { SearchSelect } from "@/components/ui/search-select";
 
 type CostingSettings = {
   organization_id: string;
@@ -287,7 +288,7 @@ export default function CostingSettings() {
           {numberField("rush_surcharge_pct", "Recargo por urgencia (%)", "Se aplica a pedidos con poco tiempo.", "0.5")}
           <div className="space-y-2">
             <Label htmlFor="cost_method">Método de costeo</Label>
-            <select
+            <SearchSelect
               id="cost_method"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={settings.cost_method}
@@ -296,7 +297,7 @@ export default function CostingSettings() {
               <option value="weighted_average">Promedio ponderado</option>
               <option value="last_cost">Último costo</option>
               <option value="fifo">Primero en entrar, primero en salir</option>
-            </select>
+            </SearchSelect>
           </div>
         </CardContent>
       </Card>

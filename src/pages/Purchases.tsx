@@ -17,6 +17,7 @@ import {
   useUnits,
 } from "@/hooks/use-purchasing";
 import type { PurchaseLineDraft } from "@/types/purchasing";
+import { SearchSelect } from "@/components/ui/search-select";
 
 const money = (v: number) => `₡${(v || 0).toLocaleString("es-CR", { maximumFractionDigits: 0 })}`;
 const newLine = (): PurchaseLineDraft => ({
@@ -133,7 +134,7 @@ export default function Purchases() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="supplier">Proveedor</Label>
-              <select
+              <SearchSelect
                 id="supplier"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={supplierId}
@@ -145,7 +146,7 @@ export default function Purchases() {
                     {s.name}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
               <div className="flex gap-2">
                 <Input
                   placeholder="Nuevo proveedor"
@@ -189,7 +190,7 @@ export default function Purchases() {
                 {lines.map((l) => (
                   <TableRow key={l.key}>
                     <TableCell>
-                      <select
+                      <SearchSelect
                         className="flex h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                         value={l.ingredientId}
                         onChange={(e) => updateLine(l.key, { ingredientId: e.target.value })}
@@ -200,10 +201,10 @@ export default function Purchases() {
                             {i.name}
                           </option>
                         ))}
-                      </select>
+                      </SearchSelect>
                     </TableCell>
                     <TableCell>
-                      <select
+                      <SearchSelect
                         className="flex h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                         value=""
                         onChange={(e) => applyPresentation(l.key, e.target.value)}
@@ -216,7 +217,7 @@ export default function Purchases() {
                               {p.description}
                             </option>
                           ))}
-                      </select>
+                      </SearchSelect>
                     </TableCell>
                     <TableCell>
                       <Input
@@ -228,7 +229,7 @@ export default function Purchases() {
                       />
                     </TableCell>
                     <TableCell>
-                      <select
+                      <SearchSelect
                         className="flex h-10 rounded-md border border-input bg-background px-2 text-sm"
                         value={l.unit}
                         onChange={(e) => updateLine(l.key, { unit: e.target.value })}
@@ -238,7 +239,7 @@ export default function Purchases() {
                             {u.name}
                           </option>
                         ))}
-                      </select>
+                      </SearchSelect>
                     </TableCell>
                     <TableCell>
                       <Input
