@@ -177,7 +177,7 @@ export const IngredientForm = ({ open, ingredient, onSubmit, onCancel }: Ingredi
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="name">Nombre *</Label>
               <Input
