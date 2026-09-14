@@ -425,6 +425,7 @@ export type Database = {
           photo_url: string | null
           provider: string
           qty_provider: number
+          supplier_id: string | null
           unit_weight_g: number | null
           units: string
           updated_at: string
@@ -446,6 +447,7 @@ export type Database = {
           photo_url?: string | null
           provider?: string
           qty_provider?: number
+          supplier_id?: string | null
           unit_weight_g?: number | null
           units?: string
           updated_at?: string
@@ -467,6 +469,7 @@ export type Database = {
           photo_url?: string | null
           provider?: string
           qty_provider?: number
+          supplier_id?: string | null
           unit_weight_g?: number | null
           units?: string
           updated_at?: string
@@ -486,6 +489,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredients_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
           {
