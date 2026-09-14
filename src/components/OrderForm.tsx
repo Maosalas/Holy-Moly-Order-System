@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import type { Order, OrderStatus, PaymentMethod } from "@/types/order";
-import type { Quotation } from "@/types/quotation";
+import type { Quote } from "@/types/quote";
 import { quotationsApi, paymentMethodsApi } from "@/lib/api";
 import { cn, dateToLocalInput, localInputToDate } from "@/lib/utils";
 import { useOrganization } from "@/contexts/OrganizationContext";
@@ -22,13 +22,13 @@ interface OrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "createdAt">) => void;
   initialData?: Order;
   onCancel?: () => void;
-  quotation?: Quotation;
+  quotation?: Quote;
 }
 
 export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderFormProps) => {
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
-  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [quotations, setQuotations] = useState<Quote[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedQuotationId, setSelectedQuotationId] = useState<string>(initialData?.quotationId || "");
   const [clientName, setClientName] = useState(initialData?.clientName || "");
@@ -69,8 +69,9 @@ export const OrderForm = ({ onSubmit, initialData, onCancel, quotation }: OrderF
     const fetchQuotations = async () => {
       const result = await quotationsApi.getAll();
       if (result.data) {
-        const quotationsData = Array.isArray(result.data) ? result.data : [];
-        setQuotations(quotationsData);
+        const quotationsData = (Array.isArray(result.data) ? result.data : []) as Quote[];
+        // Solo cotizaciones aceptadas pueden convertirse en pedido
+        setQuotations(quotationsData.filter((q) => q.status === "aceptada"));
       }
     };
 
