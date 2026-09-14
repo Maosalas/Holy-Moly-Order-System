@@ -58,6 +58,7 @@ import {
   type QuoteItem,
 } from "@/types/quote";
 import { downloadQuotationPdf } from "@/lib/quotationPdf";
+import { SearchSelect } from "@/components/ui/search-select";
 
 const RUSH_DAYS = 3;
 
@@ -456,7 +457,7 @@ export default function QuotationEditor() {
                 {sizes.length > 0 && (
                   <div className="md:col-span-2">
                     <Label className="text-xs text-muted-foreground">Tamaño</Label>
-                    <select
+                    <SearchSelect
                       className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
                       value={item.size_id || ""}
                       onChange={(e) => patchItem(item, { size_id: e.target.value || null })}
@@ -467,14 +468,14 @@ export default function QuotationEditor() {
                           {s.name}
                         </option>
                       ))}
-                    </select>
+                    </SearchSelect>
                   </div>
                 )}
 
                 {variants.length > 0 && (
                   <div className="md:col-span-2">
                     <Label className="text-xs text-muted-foreground">Variante</Label>
-                    <select
+                    <SearchSelect
                       className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
                       value={item.variant_id || ""}
                       onChange={(e) => patchItem(item, { variant_id: e.target.value || null })}
@@ -485,14 +486,14 @@ export default function QuotationEditor() {
                           {v.name}
                         </option>
                       ))}
-                    </select>
+                    </SearchSelect>
                   </div>
                 )}
 
                 {tiers.length > 0 && (
                   <div className="md:col-span-2">
                     <Label className="text-xs text-muted-foreground">Decoración</Label>
-                    <select
+                    <SearchSelect
                       className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
                       value={item.decoration_tier_id || ""}
                       onChange={(e) => patchItem(item, { decoration_tier_id: e.target.value || null })}
@@ -503,7 +504,7 @@ export default function QuotationEditor() {
                           {t.name}
                         </option>
                       ))}
-                    </select>
+                    </SearchSelect>
                   </div>
                 )}
 
@@ -658,7 +659,7 @@ export default function QuotationEditor() {
               </div>
               <div className="md:col-span-2">
                 <Label className="text-xs text-muted-foreground">Tipo</Label>
-                <select
+                <SearchSelect
                   className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
                   value={extra.kind}
                   onChange={(e) =>
@@ -674,7 +675,7 @@ export default function QuotationEditor() {
                       {label}
                     </option>
                   ))}
-                </select>
+                </SearchSelect>
               </div>
               <div className="md:col-span-2">
                 <Label className="text-xs text-muted-foreground">Precio</Label>

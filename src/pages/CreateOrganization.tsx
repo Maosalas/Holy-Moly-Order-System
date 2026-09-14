@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Building2, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { organizationsApi } from "@/lib/api";
+import { SearchSelect } from "@/components/ui/search-select";
 
 interface Member {
   email: string;
@@ -224,7 +225,7 @@ const CreateOrganization = () => {
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addMember())}
                     className="flex-1"
                   />
-                  <select
+                  <SearchSelect
                     aria-label="Rol del miembro"
                     value={newMemberRole}
                     onChange={(event) => setNewMemberRole(event.target.value as Member["role"])}
@@ -233,7 +234,7 @@ const CreateOrganization = () => {
                     <option value="admin">Admin</option>
                     <option value="staff">Staff</option>
                     <option value="viewer">Viewer</option>
-                  </select>
+                  </SearchSelect>
                   <Button type="button" onClick={addMember} size="icon" variant="secondary">
                     <Plus className="h-4 w-4" />
                   </Button>

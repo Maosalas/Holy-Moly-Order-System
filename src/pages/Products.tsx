@@ -17,6 +17,7 @@ import {
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useCreateProduct, useDeleteProduct, useProducts } from "@/hooks/use-products";
+import { SearchSelect } from "@/components/ui/search-select";
 
 export default function Products() {
   const navigate = useNavigate();
@@ -141,7 +142,7 @@ export default function Products() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="prod-basis">Se cobra por</Label>
-              <select
+              <SearchSelect
                 id="prod-basis"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={priceBasis}
@@ -149,7 +150,7 @@ export default function Products() {
               >
                 <option value="unit">Unidad</option>
                 <option value="portion">Porción</option>
-              </select>
+              </SearchSelect>
             </div>
           </div>
           <DialogFooter>

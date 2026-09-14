@@ -18,6 +18,7 @@ import {
 } from "@/hooks/use-purchasing";
 import { toast } from "@/hooks/use-toast";
 import { PhotoThumb } from "@/components/PhotoThumb";
+import { SearchSelect } from "@/components/ui/search-select";
 
 interface IngredientListProps {
   ingredients: Ingredient[];
@@ -257,7 +258,7 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
                                 value={newPres.qty}
                                 onChange={(e) => setNewPres({ ...newPres, qty: e.target.value })}
                               />
-                              <select
+                              <SearchSelect
                                 className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 value={newPres.unit}
                                 onChange={(e) => setNewPres({ ...newPres, unit: e.target.value })}
@@ -267,7 +268,7 @@ export const IngredientList = ({ ingredients, onEdit, onDelete, isDeleting }: In
                                     {u.name}
                                   </option>
                                 ))}
-                              </select>
+                              </SearchSelect>
                               <Input
                                 type="number"
                                 step="1"

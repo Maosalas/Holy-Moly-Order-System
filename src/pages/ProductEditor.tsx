@@ -45,6 +45,7 @@ import {
   type ProductComponentRole,
   type ProductComponentType,
 } from "@/types/product";
+import { SearchSelect } from "@/components/ui/search-select";
 
 const money = (v: number | null | undefined, digits = 0) =>
   `₡${(v || 0).toLocaleString("es-CR", { maximumFractionDigits: digits })}`;
@@ -304,7 +305,7 @@ export default function ProductEditor() {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>Tamaño</Label>
-              <select
+              <SearchSelect
                 className={selectClass}
                 value={sizeId ?? ""}
                 onChange={(e) => setSizeId(e.target.value || null)}
@@ -315,11 +316,11 @@ export default function ProductEditor() {
                     {s.name}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="space-y-2">
               <Label>Variante</Label>
-              <select
+              <SearchSelect
                 className={selectClass}
                 value={variantId ?? ""}
                 onChange={(e) => setVariantId(e.target.value || null)}
@@ -330,7 +331,7 @@ export default function ProductEditor() {
                     {v.name}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             <div className="flex items-end gap-2 pb-1">
               <Checkbox
@@ -684,7 +685,7 @@ export default function ProductEditor() {
                     {components.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell>
-                          <select
+                          <SearchSelect
                             className={selectClass}
                             value={r.size_id ?? ""}
                             onChange={(e) => patchRow(r, { size_id: e.target.value || null })}
@@ -695,10 +696,10 @@ export default function ProductEditor() {
                                 {s.name}
                               </option>
                             ))}
-                          </select>
+                          </SearchSelect>
                         </TableCell>
                         <TableCell>
-                          <select
+                          <SearchSelect
                             className={selectClass}
                             value={r.variant_id ?? ""}
                             onChange={(e) => patchRow(r, { variant_id: e.target.value || null })}
@@ -709,7 +710,7 @@ export default function ProductEditor() {
                                 {v.name}
                               </option>
                             ))}
-                          </select>
+                          </SearchSelect>
                         </TableCell>
                         <TableCell>
                           <div className="font-medium">{nameOf(r)}</div>
@@ -718,7 +719,7 @@ export default function ProductEditor() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <select
+                          <SearchSelect
                             className={selectClass}
                             value={r.role}
                             onChange={(e) =>
@@ -730,7 +731,7 @@ export default function ProductEditor() {
                                 {label}
                               </option>
                             ))}
-                          </select>
+                          </SearchSelect>
                         </TableCell>
                         <TableCell>
                           <Input
@@ -743,7 +744,7 @@ export default function ProductEditor() {
                           />
                         </TableCell>
                         <TableCell>
-                          <select
+                          <SearchSelect
                             className={selectClass}
                             value={r.unit_code}
                             onChange={(e) => patchRow(r, { unit_code: e.target.value })}
@@ -753,7 +754,7 @@ export default function ProductEditor() {
                                 {u.code}
                               </option>
                             ))}
-                          </select>
+                          </SearchSelect>
                         </TableCell>
                         <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
                           {num(r.base_qty)}
@@ -784,7 +785,7 @@ export default function ProductEditor() {
               <div className="grid gap-3 md:grid-cols-8">
                 <div className="space-y-1">
                   <Label className="text-xs">Tamaño</Label>
-                  <select
+                  <SearchSelect
                     className={selectClass}
                     value={newRow.sizeId}
                     onChange={(e) => setNewRow({ ...newRow, sizeId: e.target.value })}
@@ -795,11 +796,11 @@ export default function ProductEditor() {
                         {s.name}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Variante</Label>
-                  <select
+                  <SearchSelect
                     className={selectClass}
                     value={newRow.variantId}
                     onChange={(e) => setNewRow({ ...newRow, variantId: e.target.value })}
@@ -810,11 +811,11 @@ export default function ProductEditor() {
                         {v.name}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Tipo</Label>
-                  <select
+                  <SearchSelect
                     className={selectClass}
                     value={newRow.componentType}
                     onChange={(e) =>
@@ -831,11 +832,11 @@ export default function ProductEditor() {
                         {label}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-1 md:col-span-2">
                   <Label className="text-xs">Componente</Label>
-                  <select
+                  <SearchSelect
                     className={selectClass}
                     value={newRow.refId}
                     onChange={(e) => setNewRow({ ...newRow, refId: e.target.value })}
@@ -846,11 +847,11 @@ export default function ProductEditor() {
                         {o.name}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Rol</Label>
-                  <select
+                  <SearchSelect
                     className={selectClass}
                     value={newRow.role}
                     onChange={(e) =>
@@ -862,7 +863,7 @@ export default function ProductEditor() {
                         {label}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Cantidad</Label>
@@ -875,7 +876,7 @@ export default function ProductEditor() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Unidad</Label>
-                  <select
+                  <SearchSelect
                     className={selectClass}
                     value={newRow.unit}
                     onChange={(e) => setNewRow({ ...newRow, unit: e.target.value })}
@@ -885,7 +886,7 @@ export default function ProductEditor() {
                         {u.code}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -919,7 +920,7 @@ export default function ProductEditor() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Tamaño base</Label>
-              <select
+              <SearchSelect
                 className={selectClass}
                 value={genBase}
                 onChange={(e) => {
@@ -936,7 +937,7 @@ export default function ProductEditor() {
                     {s.name}
                   </option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
             {sizes
               .filter((s) => s.id !== genBase)

@@ -20,6 +20,7 @@ import {
   useUpdatePreparation,
 } from "@/hooks/use-preparations";
 import { PREPARATION_TYPE_LABELS, type PreparationType } from "@/types/preparation";
+import { SearchSelect } from "@/components/ui/search-select";
 
 const money = (v: number | null | undefined, digits = 2) =>
   `₡${(v || 0).toLocaleString("es-CR", { maximumFractionDigits: digits })}`;
@@ -208,7 +209,7 @@ export default function PreparationEditor() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo</Label>
-                  <select
+                  <SearchSelect
                     id="type"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     value={form.type}
@@ -219,7 +220,7 @@ export default function PreparationEditor() {
                         {label}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="yield_g">Rendimiento (g)</Label>
@@ -453,7 +454,7 @@ function DraftRow({
       <div className="grid gap-3 sm:grid-cols-4">
         <div className="space-y-1">
           <Label className="text-xs">Tipo</Label>
-          <select
+          <SearchSelect
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             value={draft.componentType}
             onChange={(e) =>
@@ -467,11 +468,11 @@ function DraftRow({
           >
             <option value="ingredient">Insumo</option>
             <option value="preparation">Elaboración</option>
-          </select>
+          </SearchSelect>
         </div>
         <div className="space-y-1">
           <Label className="text-xs">{draft.componentType === "ingredient" ? "Insumo" : "Elaboración"}</Label>
-          <select
+          <SearchSelect
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             value={draft.refId}
             onChange={(e) => setDraft({ ...draft, refId: e.target.value })}
@@ -482,7 +483,7 @@ function DraftRow({
                 {o.name}
               </option>
             ))}
-          </select>
+          </SearchSelect>
           {emptyList && (
             <p className="text-xs text-destructive">
               {draft.componentType === "ingredient"
@@ -501,7 +502,7 @@ function DraftRow({
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Unidad</Label>
-          <select
+          <SearchSelect
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             value={draft.unit}
             onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
@@ -511,7 +512,7 @@ function DraftRow({
                 {u.name}
               </option>
             ))}
-          </select>
+          </SearchSelect>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
