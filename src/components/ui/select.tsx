@@ -70,7 +70,7 @@ function countItems(children: React.ReactNode): number {
   let total = 0;
   React.Children.forEach(children, (child) => {
     if (!React.isValidElement(child)) return;
-    if ((child.type as any)?.displayName === SelectPrimitive.Item.displayName) total += 1;
+    if ((child.type as any)?.__isSelectItem) total += 1;
     else if ((child.props as any)?.children) total += countItems((child.props as any).children);
   });
   return total;
@@ -81,7 +81,7 @@ function filterItems(children: React.ReactNode, query: string): React.ReactNode 
   if (!needle) return children;
   const mapped = React.Children.map(children, (child) => {
     if (!React.isValidElement(child)) return child;
-    if ((child.type as any)?.displayName === SelectPrimitive.Item.displayName) {
+    if ((child.type as any)?.__isSelectItem) {
       return nodeText((child.props as any).children).toLowerCase().includes(needle) ? child : null;
     }
     const inner = (child.props as any)?.children;
@@ -99,7 +99,7 @@ function filterItems(children: React.ReactNode, query: string): React.ReactNode 
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & { searchThreshold?: number }
->(({ className, children, position = "popper", searchThreshold = 2, ...props }, ref) => {
+>(({ className, children, position = "popper", searchThreshold = 6, ...props }, ref) => {
   const [query, setQuery] = React.useState("");
   const searchRef = React.useRef<HTMLInputElement>(null);
   const showSearch = countItems(children) >= searchThreshold;
@@ -189,6 +189,7 @@ const SelectItem = React.forwardRef<
   </SelectPrimitive.Item>
 ));
 SelectItem.displayName = SelectPrimitive.Item.displayName;
+(SelectItem as any).__isSelectItem = true;
 
 const SelectSeparator = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Separator>,
