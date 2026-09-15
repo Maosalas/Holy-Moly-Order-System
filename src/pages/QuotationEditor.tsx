@@ -56,6 +56,8 @@ import {
   formatDate,
   type QuoteExtraKind,
   type QuoteItem,
+  type QuoteSubstitution,
+
 } from "@/types/quote";
 import { downloadQuotationPdf } from "@/lib/quotationPdf";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -311,6 +313,17 @@ export default function QuotationEditor() {
   const { data: catalog } = useCatalog();
   const { data: tiers = [] } = useDecorationTiers();
   const { data: settings } = useCostingSettingsRow();
+  const { data: swappable = [] } = useSwappableComponents();
+  const { data: swapCatalog } = useSwapCatalog();
+
+  const swappableOf = (item: QuoteItem) =>
+    swappable.filter(
+      (c) =>
+        c.product_id === item.product_id &&
+        (c.size_id === null || c.size_id === item.size_id) &&
+        (c.variant_id === null || c.variant_id === item.variant_id)
+    );
+
 
   const isDraft = quote?.status === "borrador";
   const { data: drift } = useQuoteDrift(id, !!quote && !isDraft);
