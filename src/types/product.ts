@@ -79,7 +79,10 @@ export interface ProductComponent {
   is_optional: boolean;
   sort_order: number;
   excludes_preset?: boolean;
+  is_swappable?: boolean;
+  swap_label?: string | null;
 }
+
 
 export interface ProductCostLine {
   type: ProductComponentType;

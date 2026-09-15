@@ -219,6 +219,9 @@ export default function ProductEditor() {
           is_optional: row.is_optional,
           sort_order: row.sort_order,
           excludes_preset: row.excludes_preset ?? false,
+          is_swappable: row.is_swappable ?? false,
+          swap_label: row.swap_label ?? null,
+
           ...patch,
         },
       });
