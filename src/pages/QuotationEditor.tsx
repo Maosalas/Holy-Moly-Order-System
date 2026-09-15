@@ -445,10 +445,9 @@ export default function QuotationEditor() {
             const variants = variantsOf(item.product_id);
             const optionals = optionalsOf(item.product_id);
             return (
-              <div
-                key={item.id}
-                className="grid grid-cols-2 items-end gap-2 rounded-lg border p-2 md:grid-cols-12"
-              >
+              <div key={item.id} className="space-y-2 rounded-lg border p-2">
+                <div className="grid grid-cols-2 items-end gap-2 md:grid-cols-12">
+
                 <div className="col-span-2 md:col-span-3">
                   <Label className="text-xs text-muted-foreground">Producto</Label>
                   <p className="truncate text-sm font-medium">{productName(item)}</p>
@@ -580,7 +579,19 @@ export default function QuotationEditor() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
+                </div>
+                {item.item_type === "product" && item.product_id && (
+                  <CustomizeBlock
+                    item={item}
+                    components={swappableOf(item)}
+                    preparations={swapCatalog?.preparations || []}
+                    ingredients={swapCatalog?.ingredients || []}
+                    editable={isDraft}
+                    onChange={(subs) => patchItem(item, { substitutions: subs } as any)}
+                  />
+                )}
               </div>
+
             );
           })}
         </CardContent>
