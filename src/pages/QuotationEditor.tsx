@@ -56,6 +56,8 @@ import {
   formatDate,
   type QuoteExtraKind,
   type QuoteItem,
+  type QuoteSubstitution,
+
 } from "@/types/quote";
 import { downloadQuotationPdf } from "@/lib/quotationPdf";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -96,6 +98,210 @@ const useCatalog = () =>
     },
   });
 
+/* ---------------- Sustitución de componentes ---------------- */
+
+type SwapComponent = {
+  id: string;
+  product_id: string;
+  size_id: string | null;
+  variant_id: string | null;
+  component_type: "preparation" | "ingredient" | "supply";
+  preparation_id: string | null;
+  ingredient_id: string | null;
+  supply_id: string | null;
+  role: string;
+  swap_label: string | null;
+  qty: number;
+  unit_code: string;
+};
+
+type SwapPrep = { id: string; name: string; type: string };
+type SwapIngredient = { id: string; name: string };
+
+const ROLE_PREP_TYPES: Record<string, string[]> = {
+  base: ["base", "masa"],
+  relleno: ["relleno"],
+  cubierta: ["cubierta"],
+  decoracion: ["decoracion"],
+};
+
+const useSwappableComponents = () =>
+  useQuery({
+    queryKey: ["quoter_swappable"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_components")
+        .select(
+          "id, product_id, size_id, variant_id, component_type, preparation_id, ingredient_id, supply_id, role, swap_label, qty, unit_code"
+        )
+        .eq("is_swappable", true)
+        .order("sort_order");
+      if (error) throw new Error(error.message);
+      return (data || []) as unknown as SwapComponent[];
+    },
+  });
+
+const useSwapCatalog = () =>
+  useQuery({
+    queryKey: ["quoter_swap_catalog"],
+    queryFn: async () => {
+      const [preps, ings] = await Promise.all([
+        supabase.from("preparations").select("id, name, type").eq("active", true).order("name"),
+        supabase.from("ingredients").select("id, name").eq("active", true).order("name"),
+      ]);
+      if (preps.error) throw new Error(preps.error.message);
+      if (ings.error) throw new Error(ings.error.message);
+      return {
+        preparations: (preps.data || []) as unknown as SwapPrep[],
+        ingredients: (ings.data || []) as unknown as SwapIngredient[],
+      };
+    },
+  });
+
+function CustomizeBlock({
+  item,
+  components,
+  preparations,
+  ingredients,
+  editable,
+  onChange,
+}: {
+  item: QuoteItem;
+  components: SwapComponent[];
+  preparations: SwapPrep[];
+  ingredients: SwapIngredient[];
+  editable: boolean;
+  onChange: (subs: QuoteSubstitution[]) => void;
+}) {
+  const baseline = useQuery({
+    queryKey: [
+      "quote_line_baseline",
+      item.product_id,
+      item.size_id,
+      item.variant_id,
+      (item.optional_ids?.length || 0) > 0,
+    ],
+    enabled: components.length > 0 && !!item.product_id,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("fn_calc_product_cost", {
+        p_product_id: item.product_id,
+        p_size_id: item.size_id,
+        p_variant_id: item.variant_id,
+        p_include_optional: (item.optional_ids?.length || 0) > 0,
+        p_substitutions: [],
+      } as never);
+      if (error) throw new Error(error.message);
+      return data as any;
+    },
+  });
+
+  if (!components.length) return null;
+
+  const subs = (item.substitutions || []) as QuoteSubstitution[];
+
+  const nameOf = (type: string, refId: string | null) =>
+    type === "preparation"
+      ? preparations.find((p) => p.id === refId)?.name ?? "—"
+      : type === "ingredient"
+        ? ingredients.find((i) => i.id === refId)?.name ?? "—"
+        : "—";
+
+  const defaultRef = (c: SwapComponent) =>
+    c.preparation_id ?? c.ingredient_id ?? c.supply_id ?? "";
+  const defaultKey = (c: SwapComponent) => `${c.component_type}:${defaultRef(c)}`;
+  const subOf = (c: SwapComponent) => subs.find((s) => s.component_id === c.id);
+  const currentKey = (c: SwapComponent) => {
+    const s = subOf(c);
+    return s ? `${s.new_type}:${s.new_id}` : defaultKey(c);
+  };
+
+  const setSub = (c: SwapComponent, key: string) => {
+    const [type, refId] = key.split(":");
+    const rest = subs.filter((s) => s.component_id !== c.id);
+    const next =
+      key === defaultKey(c)
+        ? rest
+        : [
+            ...rest,
+            {
+              component_id: c.id,
+              new_type: type as QuoteSubstitution["new_type"],
+              new_id: refId,
+              qty: Number(c.qty),
+            },
+          ];
+    onChange(next);
+  };
+
+  const basePrice = baseline.data ? Number(baseline.data.suggested_price || 0) : null;
+  const diff = basePrice === null ? null : Number(item.unit_price) - basePrice;
+  const singleChange = subs.length === 1;
+
+  const diffText = (value: number) =>
+    `${value >= 0 ? "+" : "−"}${formatCRC(Math.abs(value))}`;
+
+  return (
+    <div className="rounded-md bg-muted/40 p-3">
+      <p className="mb-2 text-xs font-medium text-muted-foreground">Personalizar</p>
+      <div className="grid gap-3 md:grid-cols-3">
+        {components.map((c) => {
+          const label = c.swap_label || c.role;
+          const matched = preparations.filter((p) =>
+            (ROLE_PREP_TYPES[c.role] || []).includes(p.type)
+          );
+          const others = preparations.filter((p) => !matched.some((m) => m.id === p.id));
+          const changed = !!subOf(c);
+          const chosen = currentKey(c).split(":");
+          return (
+            <div key={c.id} className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{label}</Label>
+              <SearchSelect
+                className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                value={currentKey(c)}
+                disabled={!editable}
+                onChange={(e) => setSub(c, e.target.value)}
+              >
+                <option value={defaultKey(c)}>
+                  {nameOf(c.component_type, defaultRef(c))} (predeterminado)
+                </option>
+                {matched.map((p) => (
+                  <option key={p.id} value={`preparation:${p.id}`}>
+                    {p.name}
+                  </option>
+                ))}
+                {others.map((p) => (
+                  <option key={p.id} value={`preparation:${p.id}`}>
+                    Otra elaboración · {p.name}
+                  </option>
+                ))}
+                {ingredients.map((i) => (
+                  <option key={i.id} value={`ingredient:${i.id}`}>
+                    Ingrediente · {i.name}
+                  </option>
+                ))}
+              </SearchSelect>
+              {changed && (
+                <p className="text-xs text-muted-foreground">
+                  {label} de {nameOf(chosen[0], chosen[1])}
+                  {singleChange && diff !== null ? `: ${diffText(diff)}` : ""} sobre{" "}
+                  {nameOf(c.component_type, defaultRef(c))}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {!singleChange && subs.length > 1 && diff !== null && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Diferencia total sobre el predeterminado: {diffText(diff)}
+        </p>
+      )}
+    </div>
+  );
+}
+
+
 export default function QuotationEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -107,6 +313,17 @@ export default function QuotationEditor() {
   const { data: catalog } = useCatalog();
   const { data: tiers = [] } = useDecorationTiers();
   const { data: settings } = useCostingSettingsRow();
+  const { data: swappable = [] } = useSwappableComponents();
+  const { data: swapCatalog } = useSwapCatalog();
+
+  const swappableOf = (item: QuoteItem) =>
+    swappable.filter(
+      (c) =>
+        c.product_id === item.product_id &&
+        (c.size_id === null || c.size_id === item.size_id) &&
+        (c.variant_id === null || c.variant_id === item.variant_id)
+    );
+
 
   const isDraft = quote?.status === "borrador";
   const { data: drift } = useQuoteDrift(id, !!quote && !isDraft);
@@ -445,10 +662,9 @@ export default function QuotationEditor() {
             const variants = variantsOf(item.product_id);
             const optionals = optionalsOf(item.product_id);
             return (
-              <div
-                key={item.id}
-                className="grid grid-cols-2 items-end gap-2 rounded-lg border p-2 md:grid-cols-12"
-              >
+              <div key={item.id} className="space-y-2 rounded-lg border p-2">
+                <div className="grid grid-cols-2 items-end gap-2 md:grid-cols-12">
+
                 <div className="col-span-2 md:col-span-3">
                   <Label className="text-xs text-muted-foreground">Producto</Label>
                   <p className="truncate text-sm font-medium">{productName(item)}</p>
@@ -580,7 +796,19 @@ export default function QuotationEditor() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
+                </div>
+                {item.item_type === "product" && item.product_id && (
+                  <CustomizeBlock
+                    item={item}
+                    components={swappableOf(item)}
+                    preparations={swapCatalog?.preparations || []}
+                    ingredients={swapCatalog?.ingredients || []}
+                    editable={isDraft}
+                    onChange={(subs) => patchItem(item, { substitutions: subs } as any)}
+                  />
+                )}
               </div>
+
             );
           })}
         </CardContent>

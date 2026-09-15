@@ -1256,6 +1256,7 @@ export type Database = {
           id: string
           ingredient_id: string | null
           is_optional: boolean
+          is_swappable: boolean
           preparation_id: string | null
           product_id: string
           qty: number
@@ -1263,6 +1264,7 @@ export type Database = {
           size_id: string | null
           sort_order: number
           supply_id: string | null
+          swap_label: string | null
           unit_code: string
           updated_at: string
           variant_id: string | null
@@ -1275,6 +1277,7 @@ export type Database = {
           id?: string
           ingredient_id?: string | null
           is_optional?: boolean
+          is_swappable?: boolean
           preparation_id?: string | null
           product_id: string
           qty: number
@@ -1282,6 +1285,7 @@ export type Database = {
           size_id?: string | null
           sort_order?: number
           supply_id?: string | null
+          swap_label?: string | null
           unit_code: string
           updated_at?: string
           variant_id?: string | null
@@ -1294,6 +1298,7 @@ export type Database = {
           id?: string
           ingredient_id?: string | null
           is_optional?: boolean
+          is_swappable?: boolean
           preparation_id?: string | null
           product_id?: string
           qty?: number
@@ -1301,6 +1306,7 @@ export type Database = {
           size_id?: string | null
           sort_order?: number
           supply_id?: string | null
+          swap_label?: string | null
           unit_code?: string
           updated_at?: string
           variant_id?: string | null
@@ -1758,6 +1764,7 @@ export type Database = {
           quotation_id: string
           size_id: string | null
           sort_order: number
+          substitutions: Json
           unit_cost: number
           unit_price: number
           updated_at: string
@@ -1780,6 +1787,7 @@ export type Database = {
           quotation_id: string
           size_id?: string | null
           sort_order?: number
+          substitutions?: Json
           unit_cost?: number
           unit_price?: number
           updated_at?: string
@@ -1802,6 +1810,7 @@ export type Database = {
           quotation_id?: string
           size_id?: string | null
           sort_order?: number
+          substitutions?: Json
           unit_cost?: number
           unit_price?: number
           updated_at?: string
@@ -2721,6 +2730,7 @@ export type Database = {
           p_include_optional?: boolean
           p_product_id: string
           p_size_id: string
+          p_substitutions?: Json
           p_variant_id: string
         }
         Returns: Json

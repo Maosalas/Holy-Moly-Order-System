@@ -47,6 +47,13 @@ export interface Quote {
 
 export type QuoteItemType = "product" | "preparation" | "manual";
 
+export interface QuoteSubstitution {
+  component_id: string;
+  new_type: "preparation" | "ingredient" | "supply";
+  new_id: string;
+  qty?: number | null;
+}
+
 export interface QuoteItem {
   id: string;
   quotation_id: string;
@@ -58,6 +65,7 @@ export interface QuoteItem {
   decoration_tier_id: string | null;
   description: string | null;
   optional_ids: string[];
+  substitutions: QuoteSubstitution[];
   qty: number;
   unit_cost: number;
   unit_price: number;
@@ -67,6 +75,7 @@ export interface QuoteItem {
   composition: any;
   sort_order: number;
 }
+
 
 export type QuoteExtraKind = "entrega" | "montaje" | "evento" | "empaque" | "otro";
 
