@@ -736,6 +736,9 @@ export default function ProductEditor() {
                       <TableHead>Base</TableHead>
                       <TableHead>Opcional</TableHead>
                       <TableHead className="min-w-[110px]">Sin empaque del catálogo</TableHead>
+                      <TableHead className="min-w-[110px]">Se puede cambiar al cotizar</TableHead>
+                      <TableHead className="min-w-[140px]">Etiqueta del hueco</TableHead>
+
                       <TableHead className="w-16" />
                     </TableRow>
                   </TableHeader>
@@ -829,6 +832,24 @@ export default function ProductEditor() {
                             onCheckedChange={(c) => patchRow(r, { excludes_preset: !!c } as any)}
                           />
                         </TableCell>
+                        <TableCell>
+                          <Checkbox
+                            checked={!!r.is_swappable}
+                            onCheckedChange={(c) => patchRow(r, { is_swappable: !!c } as any)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            placeholder="Relleno"
+                            defaultValue={r.swap_label ?? ""}
+                            disabled={!r.is_swappable}
+                            onBlur={(e) =>
+                              (e.target.value || null) !== (r.swap_label ?? null) &&
+                              patchRow(r, { swap_label: e.target.value || null } as any)
+                            }
+                          />
+                        </TableCell>
+
                         <TableCell>
                           <Button
                             variant="ghost"
